@@ -1,0 +1,13 @@
+# BACKEND
+backend/venv
+backend/.env
+backend/.vscode
+
+# FRONTEND
+frontend/node_modules
+frontend/.env
+frontend/.vscode
+
+# ROOT
+.env
+.vscode
