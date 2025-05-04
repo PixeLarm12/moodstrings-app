@@ -2,6 +2,7 @@
 backend/venv
 backend/.env
 backend/.vscode
+backend/__pycache__
 
 # FRONTEND
 frontend/node_modules
