@@ -1,0 +1,14 @@
+# BACKEND
+backend/venv
+backend/.env
+backend/.vscode
+backend/__pycache__
+
+# FRONTEND
+frontend/node_modules
+frontend/.env
+frontend/.vscode
+
+# ROOT
+.env
+.vscode
