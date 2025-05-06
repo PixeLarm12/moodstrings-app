@@ -1,0 +1,1 @@
+# Python class to receive from request data and send it to a Service Class. Use classes from validators/ to validate data coming before send it to service.
