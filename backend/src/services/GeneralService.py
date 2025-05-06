@@ -1,0 +1,1 @@
+# python class to solve an specific problem, for example, a service just to transcript audio file to midi and send it to other service that manipulate just midi files. Be 'atomic' for this one
