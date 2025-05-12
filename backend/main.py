@@ -22,4 +22,4 @@ def ping():
 
 @app.post("/upload")
 async def endpoint(uploaded_file: UploadFile):
-    audio_controller.upload(uploaded_file)
+    return { "code": 200, "message": "success", "data": audio_controller.upload(uploaded_file) }
