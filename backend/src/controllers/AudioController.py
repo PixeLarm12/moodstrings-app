@@ -6,8 +6,9 @@ def upload(file):
 
     if not response:
         midi_service = MidiService(file)
-        instruments = midi_service.get_instruments_name()
 
-        return { "instruments" : instruments }
+        data = midi_service.extract_chords_by_guitar_type()
+
+        return { "instruments" : data }
     
     return response
