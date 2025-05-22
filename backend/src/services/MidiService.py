@@ -25,3 +25,45 @@ class MidiService:
             })
 
         return instruments
+    
+    def extract_chords_by_guitar_type(self, chord_threshold=3):
+        general_midi_guitar_names = {
+            24: "Acoustic Guitar (nylon)",
+            25: "Acoustic Guitar (steel)",
+            26: "Electric Guitar (jazz)",
+            27: "Electric Guitar (clean)",
+            28: "Electric Guitar (muted)",
+            29: "Overdriven Guitar",
+            30: "Distortion Guitar",
+            31: "Guitar Harmonics"
+        }
+
+        result = []
+
+        for instrument in self._midi_data.instruments:
+            if not instrument.is_drum and 24 <= instrument.program <= 31:
+                program = instrument.program
+                notes_by_time = {}
+
+                for note in instrument.notes:
+                    if note.start not in notes_by_time:
+                        notes_by_time[note.start] = []
+                    notes_by_time[note.start].append(note.pitch)
+
+                unique_chords = set()
+
+                for time, pitches in notes_by_time.items():
+                    if len(pitches) >= chord_threshold:
+                        chord = tuple(sorted(pretty_midi.note_number_to_name(p) for p in pitches))
+                        unique_chords.add(chord)
+
+                if unique_chords:
+                    result.append({
+                        "program": f"{program}",
+                        "title": general_midi_guitar_names.get(program, f"Program {program}"),
+                        "chords": [list(chord) for chord in sorted(unique_chords)]
+                    })
+
+        return result
+
+
