@@ -3,6 +3,13 @@ backend/venv
 backend/.env
 backend/.vscode
 backend/__pycache__
+backend/src/__pycache__
+backend/src/controllers/__pycache__
+backend/src/dataset/__pycache__
+backend/src/enums/__pycache__
+backend/src/services/__pycache__
+backend/src/utils/__pycache__
+backend/src/validators/__pycache__
 
 # FRONTEND
 frontend/node_modules
