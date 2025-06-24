@@ -18,7 +18,7 @@ class IAService:
 
     def _load_and_train_models(self):
         if not os.path.exists(self.dataset_path):
-            raise FileNotFoundError(f"Dataset não encontrado: {self.dataset_path}")
+            raise FileNotFoundError(f"Dataset not found: {self.dataset_path}")
 
         df = pd.read_csv(self.dataset_path)
 
@@ -48,5 +48,5 @@ class IAService:
 
         pred_emotion = self._emotion_model.predict([progression])[0]
         pred_genre = self._genre_model.predict([progression])[0]
-        
+
         return pred_emotion, pred_genre
