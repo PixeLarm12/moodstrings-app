@@ -12,14 +12,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-def ping():
-    return {"message": "Welcome aboard!"}
-
-@app.get("/ping")
-def ping():
-    return {"message": "pong"}
-
 @app.post("/upload")
 async def endpoint(uploaded_file: UploadFile):
     return { "code": 200, "message": "success", "data": audio_controller.upload(uploaded_file) }
