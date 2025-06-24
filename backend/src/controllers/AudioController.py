@@ -7,19 +7,20 @@ def upload(file):
 
     if not response:
         midi_service = MidiService(file)
+        ia_service = IAService()
 
         chordsPlayed = midi_service.extract_chords()
 
         if not chordsPlayed:
-            return {"error": "Não foi possível extrair progressão harmônica"}
+            return {"error": "Unable to extract harmonic progression"}
 
-        ia_service = IAService()  # caminho padrão
         emotion, genre = ia_service.predict(chordsPlayed)
 
         return {
             "emotion": emotion,
-            "genre": genre,
-            "progression": chordsPlayed
+            # "genre": genre, will be implemented in the future
+            "progression": chordsPlayed,
+            "progression_named": midi_service.extract_named_progression() 
         }
     
     return response
