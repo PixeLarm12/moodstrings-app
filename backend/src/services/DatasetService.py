@@ -1,4 +1,5 @@
 import os
+import re
 import pandas as pd
 import pretty_midi
 from pathlib import Path
@@ -79,3 +80,47 @@ class DatasetService:
                     })
 
         return result
+    
+    def normalize_dataset(self, csv_path: str, output_path: str):
+        df = pd.read_csv(csv_path)
+
+        instruments_target = {
+            24: 'guitar',
+            25: 'guitar_steel',
+            26: 'jazz_guitar',
+            27: 'clean_guitar',
+            28: 'muted_guitar',
+            29: 'overdrive_guitar',
+            30: 'distortion_guitar',
+            31: 'guitar_harmonics'
+        }
+
+        new_rows = []
+
+        for _, row in df.iterrows():
+            filename = row['file']
+            match = re.match(r'XMIDI_(\w+)_(\w+)_([a-zA-Z0-9]{8})\.midi', filename)
+            if not match:
+                continue
+
+            emotion, genre, file_id = match.groups()
+            program = int(row['program']) if 'program' in row else None
+            instrument = instruments_target.get(program, row['instrument'])
+
+            new_rows.append({
+                'progression': row['chords'],
+                'instrument': instrument,
+                'emotion': emotion,
+                'genre': genre,
+                'file_ID': file_id
+            })
+
+        new_df = pd.DataFrame(new_rows)
+
+        new_df = new_df[['progression', 'instrument', 'emotion', 'genre', 'file_ID']]
+
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        new_df.to_csv(output_path, index=False)
+
+        print(f"Normalized dataset! Saved at: {output_path}")

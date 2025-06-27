@@ -6,7 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 from typing import Tuple
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATASET_PATH = os.path.join(BASE_DIR, '..', 'dataset', 'midi_chord_progressions.csv')
+DATASET_PATH = os.path.join(BASE_DIR, '..', 'dataset', 'dataset_normalized.csv')
 
 class IAService:
     def __init__(self, dataset_path: str = DATASET_PATH):
@@ -24,6 +24,9 @@ class IAService:
 
         if "progression" not in df.columns or "emotion" not in df.columns or "genre" not in df.columns:
             raise ValueError("The .csv need these columns: progression, emotion, genre")
+
+        # Limit to 20% of dataset - performance
+        df = df.sample(frac=0.2, random_state=42)
 
         X = df['progression']
         y_emotion = df['emotion']
