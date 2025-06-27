@@ -8,6 +8,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - "${MIDI_FILES_FROM_PATH}:/app/midi_raw_files"
     environment:
       - PYTHONUNBUFFERED=1
 
