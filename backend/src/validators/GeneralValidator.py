@@ -1,1 +1,0 @@
-# Class with functions to validate data coming from request, for example, validate data to check if file send it's from audio mime type
