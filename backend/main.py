@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from src.controllers import AudioController as audio_controller
+from src.controllers import AdminController as admin_controller
 
 app = FastAPI()
 
@@ -12,14 +13,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-def ping():
-    return {"message": "Welcome aboard!"}
-
-@app.get("/ping")
-def ping():
-    return {"message": "pong"}
-
 @app.post("/upload")
 async def endpoint(uploaded_file: UploadFile):
     return { "code": 200, "message": "success", "data": audio_controller.upload(uploaded_file) }
+
+# @app.get("/create-dataset")
+# def create_dataset():
+#     return { "code": 200, "message": "success", "data": admin_controller.create_dataset() }
+
+# @app.get("/normalize-dataset")
+# def normalize_dataset():
+#     return { "code": 200, "message": "success", "data": admin_controller.normalize_dataset() }
