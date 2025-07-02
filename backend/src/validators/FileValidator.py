@@ -12,4 +12,4 @@ def validate(file):
     # if file_extension == FileEnum.Extensions.MID.value and file_extension == FileEnum.Extensions.MIDI.value:
     #     return { "errors" : "FileExtension must be .mid or .midi"}
     
-    return False
+    # return False
