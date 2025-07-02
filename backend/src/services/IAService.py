@@ -26,7 +26,7 @@ class IAService:
             raise ValueError("The .csv need these columns: progression, emotion, genre")
 
         # Limit to 20% of dataset - performance
-        df = df.sample(frac=0.2, random_state=42)
+        df = df.sample(frac=0.1, random_state=42)
 
         X = df['progression']
         y_emotion = df['emotion']
