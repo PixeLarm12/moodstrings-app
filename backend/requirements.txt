@@ -6,3 +6,5 @@ pandas
 scikit-learn
 music21
 tqdm
+basic-pitch
+pydub
