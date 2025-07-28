@@ -3,8 +3,13 @@ from music21 import chord, pitch
 from io import BytesIO
 
 class MidiService:
-    def __init__(self, file):
-        self._midi_data = pretty_midi.PrettyMIDI(BytesIO(file.file.read()))
+    def __init__(self, file=None, midi_data=None):
+        if midi_data:
+            self._midi_data = midi_data
+        elif file:
+            self._midi_data = pretty_midi.PrettyMIDI(BytesIO(file.file.read()))
+        else:
+            raise ValueError("You must provide either a file or midi_data.")
 
     @property
     def midi_data(self):
