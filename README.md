@@ -1,6 +1,6 @@
 # MOODSTRINGS
 
-#### By: Guilherme Gumiero (@Gumierow) & Lucas Domingues (@PixeLarm12)
+#### By: Guilherme Gumiero (@gumierror) & Lucas Domingues (@PixeLarm12)
 
 ## Emotional recognition systems based on audio files transcriptions into MIDI files with AI
 
