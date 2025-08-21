@@ -2,7 +2,6 @@ from src.validators import FileValidator
 from src.services.MidiService import MidiService
 from src.services.IAService import IAService
 from src.services.AudioService import AudioService
-from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import StreamingResponse
 from src.services.AudioService import AudioService
 import io
@@ -25,7 +24,6 @@ def upload(file):
             "emotion": emotion,
             # "genre": genre, will be implemented in the future
             "progression": chordsPlayed,
-            "progression_named": midi_service.extract_named_progression() 
         }
     
     return response
