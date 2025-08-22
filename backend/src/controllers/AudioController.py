@@ -13,24 +13,26 @@ def upload(file):
         midi_service = MidiService(file=file)
         ia_service = IAService()
 
-        chordsPlayed = midi_service.extract_chords()
+        chordsPlayedV1 = midi_service.extract_chords()
+        chordsPlayedV2 = midi_service.extract_chords_new()
 
-        if not chordsPlayed:
+        if not chordsPlayedV1 and not chordsPlayedV2:
             return {"error": "Unable to extract harmonic progression"}
 
-        emotion, genre = ia_service.predict(chordsPlayed)
+        # emotion, genre = ia_service.predict(chordsPlayed)
 
         return {
-            "emotion": emotion,
+            # "emotion": emotion,
             # "genre": genre, will be implemented in the future
-            "progression": chordsPlayed,
+            "chordsPlayedV1": chordsPlayedV1,
+            "chordsPlayedV2": chordsPlayedV2,
         }
     
     return response
 
 async def test_mp3(file):
     audio_service = AudioService(file)
-    midi_service = audio_service.transcribe_to_midi()
+    midi_service = audio_service.transcribe()
 
     midi_io = io.BytesIO()
     midi_service.midi_data.write(midi_io)
