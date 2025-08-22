@@ -15,6 +15,8 @@ def upload(file):
 
         chordsPlayedV1 = midi_service.extract_chords()
         chordsPlayedV2 = midi_service.extract_chords_new()
+        key_info = midi_service.find_estimate_key()
+        tempo = midi_service.find_tempo()
 
         if not chordsPlayedV1 and not chordsPlayedV2:
             return {"error": "Unable to extract harmonic progression"}
@@ -24,8 +26,12 @@ def upload(file):
         return {
             # "emotion": emotion,
             # "genre": genre, will be implemented in the future
-            "chordsPlayedV1": chordsPlayedV1,
-            "chordsPlayedV2": chordsPlayedV2,
+            "chordProgressionV1": chordsPlayedV1,
+            "chordProgressionV2": chordsPlayedV2,
+            "tempo": tempo,
+            "key": key_info['key'],
+            "mode": key_info['mode'],
+            "tonic": key_info['tonic']
         }
     
     return response
