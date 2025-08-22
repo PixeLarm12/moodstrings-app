@@ -1,6 +1,6 @@
 import pretty_midi
 import tempfile
-from music21 import chord, pitch, converter, stream, note
+from music21 import chord, pitch, converter, stream, note, tempo, analysis
 from src.utils.StringUtil import normalize_chord_name, simplify_chord_name
 from io import BytesIO
 
@@ -86,3 +86,38 @@ class MidiService:
                 prev = sc
 
         return " - ".join(named_chords)
+
+    def find_tempo(self):
+        with tempfile.NamedTemporaryFile(suffix=".mid", delete=False) as tmp_midi:
+            self._midi_data.write(tmp_midi.name)
+            midi_path = tmp_midi.name
+
+        midi_file = converter.parse(midi_path)
+
+        tempos = midi_file.recurse().getElementsByClass(tempo.MetronomeMark)
+
+        response = [];
+
+        if tempos:
+            for t in tempos:
+                response.append(f"{ t.number } BPM");
+        else:
+            print("There's no expressive tempo mark into midi file.")
+
+        return " - ".join(response)
+    
+    def find_estimate_key(self):
+        with tempfile.NamedTemporaryFile(suffix=".mid", delete=False) as tmp_midi:
+            self._midi_data.write(tmp_midi.name)
+            midi_path = tmp_midi.name
+
+        midi = converter.parse(midi_path)
+
+        key = midi.analyze('key')
+
+        return {
+            'key': str(key),
+            'mode': key.mode,
+            'tonic': str(key.tonic),
+        }
+
