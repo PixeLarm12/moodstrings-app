@@ -1,7 +1,7 @@
 import pretty_midi
 import tempfile
-from music21 import chord, pitch, converter, stream, note
-from src.utils.StringUtil import normalize_chord_name, simplify_chord_name
+from music21 import chord, converter, tempo
+from src.utils.StringUtil import simplify_chord_name
 from io import BytesIO
 
 class MidiService:
@@ -69,20 +69,56 @@ class MidiService:
     #     except Exception:
     #         return '+'.join([pretty_midi.note_number_to_name(p) for p in pitches])
         
-    def extract_chords_new(self):
+
+    # This function is not correct, but stuffs here could be used in future, as chordify to find correctly chords
+    # def extract_chords_new(self):
+    #     with tempfile.NamedTemporaryFile(suffix=".mid", delete=False) as tmp_midi:
+    #         self._midi_data.write(tmp_midi.name)
+    #         midi_path = tmp_midi.name
+
+    #     score = converter.parse(midi_path)
+    #     chords = score.chordify()
+
+    #     named_chords = []
+    #     prev = None
+    #     for c in chords.recurse().getElementsByClass('Chord'):
+    #         sc = simplify_chord_name(c.pitchedCommonName)
+    #         if sc and sc != prev:
+    #             named_chords.append(sc)
+    #             prev = sc
+
+    #     return " - ".join(named_chords)
+
+    def create_midi_converter(self):
         with tempfile.NamedTemporaryFile(suffix=".mid", delete=False) as tmp_midi:
             self._midi_data.write(tmp_midi.name)
             midi_path = tmp_midi.name
 
-        score = converter.parse(midi_path)
-        chords = score.chordify()
+        return converter.parse(midi_path)
 
-        named_chords = []
-        prev = None
-        for c in chords.recurse().getElementsByClass('Chord'):
-            sc = simplify_chord_name(c.pitchedCommonName)
-            if sc and sc != prev:
-                named_chords.append(sc)
-                prev = sc
+    def find_tempo(self):
+        midi_file = self.create_midi_converter()
 
-        return " - ".join(named_chords)
+        tempos = midi_file.recurse().getElementsByClass(tempo.MetronomeMark)
+
+        response = [];
+
+        if tempos:
+            for t in tempos:
+                response.append(f"{ t.number } BPM");
+        else:
+            print("There's no expressive tempo mark into midi file.")
+
+        return " - ".join(response)
+    
+    def find_estimate_key(self):
+        midi_file = self.create_midi_converter()
+
+        key = midi_file.analyze('key')
+
+        return {
+            'key': str(key),
+            'mode': key.mode,
+            'tonic': str(key.tonic),
+        }
+
