@@ -13,13 +13,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/upload")
-async def endpoint(uploaded_file: UploadFile):
-    return { "code": 200, "message": "success", "data": audio_controller.upload(uploaded_file) }
-
-@app.post("/testmp3")
+@app.post("/upload-file")
 async def transcribe(uploaded_file: UploadFile):
-    return await audio_controller.test_mp3(uploaded_file)
+    return audio_controller.test_audio(uploaded_file)
 
 # @app.get("/create-dataset")
 # def create_dataset():
