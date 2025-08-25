@@ -1,7 +1,7 @@
 <template>
-  <Home />
+  <UploadForm />
 </template>
 
 <script setup>
-import Home from './components/Home.vue'
+import UploadForm from './views/UploadForm.vue'
 </script>
