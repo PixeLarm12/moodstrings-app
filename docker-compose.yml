@@ -4,6 +4,7 @@ version: '3.9'
 services:
   backend:
     build: ./backend
+    container_name: ms-back
     ports:
       - "8000:8000"
     volumes:
@@ -14,6 +15,7 @@ services:
 
   frontend:
     build: ./frontend
+    container_name: ms-front
     ports:
       - "5173:5173"
     volumes:
