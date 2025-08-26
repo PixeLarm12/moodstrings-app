@@ -19,3 +19,7 @@ frontend/.vscode
 # ROOT
 .env
 .vscode
+
+# DATASETS - Ignorar arquivos CSV grandes, manter apenas os comprimidos (.gz)
+dataset_forteclass_FULL.csv
+backend/dataset_forteclass_FULL.csv
