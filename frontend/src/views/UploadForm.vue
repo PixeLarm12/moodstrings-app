@@ -1,6 +1,6 @@
 <template>
   <div class="p-4 max-w-md mx-auto">
-    <h1 class="text-xl font-bold mb-4">Upload de Arquivo</h1>
+    <h1 class="text-4xl font-bold text-red-600">Upload de Arquivo</h1>
 
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <input type="file" @change="handleFileChange" />
