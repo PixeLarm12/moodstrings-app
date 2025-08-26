@@ -13,41 +13,82 @@
       </button>
     </form>
 
+    <br>
+
+    <ul v-if="chordProgression">
+      <li>Progressão tocada: {{ chordProgression }}</li>
+      <li>Tom: {{ key }}</li>
+      <li>Andamento (BPM): {{ tempo }}</li>
+      <li>Tônica: {{ tonic }}</li>
+      <li>Modo: {{ mode }}</li>
+    </ul>
+    
+    <br>
+
     <p v-if="message" class="mt-4 text-green-600">{{ message }}</p>
   </div>
 </template>
 
-<script setup>
-import { ref } from "vue";
+<script>
 import axios from "axios";
 
-const file = ref(null);
-const message = ref("");
-const API_URL = import.meta.env.VITE_API_URL;
+export default {
+  name: "UploadForm",
+  data() {
+    return {
+      API_URL: "",
+      chordProgression: "",
+      key: "",
+      tempo: "",
+      tonic: "",
+      mode: "",
+      uploadedFile: null,
+      message: ""
+    }
+  },
+  methods: {
+    handleFileChange(event) {
+      this.uploadedFile = event.target.files[0];
+    },
 
-const handleFileChange = (event) => {
-  file.value = event.target.files[0];
-};
+    async handleSubmit() {
+      if (!this.uploadedFile) {
+        this.message = "Selecione um arquivo primeiro!";
+        return;
+      }
 
-const handleSubmit = async () => {
-  if (!file.value) {
-    message.value = "Selecione um arquivo primeiro!";
-    return;
+      const formData = new FormData();
+      formData.append("uploaded_file", this.uploadedFile);
+
+      try {
+        const response = await axios.post(
+          `${this.API_URL}/upload-file`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        this.message = `Arquivo enviado com sucesso: ${
+          response.data.filename || ""
+        }`;
+
+        if (response.data.chordProgression) {
+          this.chordProgression = response.data.chordProgression;
+          this.key = response.data.key;
+          this.tempo = response.data.tempo;
+          this.tonic = response.data.tonic;
+          this.mode = response.data.mode;
+        }
+      } catch (error) {
+        this.message = `Erro ao enviar: ${error.message}`;
+      }
+    },
+  },
+  mounted() {
+    this.API_URL = import.meta.env.VITE_API_URL;
   }
-
-  const formData = new FormData();
-  formData.append("uploaded_file", file.value);
-
-  try {
-    const response = await axios.post(`${API_URL}/upload-file`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    message.value = `Arquivo enviado com sucesso: ${response.data.filename || ''}`;
-  } catch (error) {
-    message.value = `Erro ao enviar: ${error.message}`;
-  }
-};
+}
 </script>
