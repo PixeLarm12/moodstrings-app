@@ -35,7 +35,7 @@ def test_audio(file):
         return {
             # "emotion": emotion,
             # "genre": genre, will be implemented in the future
-            "chordProgressionV1": chordsPlayedV1,
+            "chordProgression": chordsPlayedV1,
             # "chordProgressionV2": chordsPlayedV2,
             "tempo": tempo,
             "key": key_info['key'],
