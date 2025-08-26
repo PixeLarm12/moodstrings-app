@@ -1,94 +1,89 @@
 <template>
-  <div class="p-4 max-w-md mx-auto">
-    <h1 class="text-4xl font-bold text-red-600">Upload de Arquivo</h1>
+  <div class="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+    <div class="w-full max-w-md text-center space-y-6">
+      <img src="/logo.png" alt="Logo" class="w-24 h-24 mx-auto rounded-full shadow-lg" />
 
-    <form @submit.prevent="handleSubmit" class="space-y-4">
-      <input type="file" @change="handleFileChange" />
+      <h1 class="text-3xl font-bold">Upload de Arquivo</h1>
 
-      <button
-        type="submit"
-        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-      >
-        Enviar
-      </button>
-    </form>
+      <form @submit.prevent="handleSubmit" class="space-y-4">
+        <input
+          type="file"
+          @change="handleFileChange"
+          class="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 
+                 file:rounded-lg file:border-0 file:text-sm file:font-semibold 
+                 file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+        />
 
-    <br>
+        <button
+          type="submit"
+          class="w-full py-2 bg-blue-600 rounded-lg font-semibold hover:bg-blue-700"
+        >
+          Enviar
+        </button>
+      </form>
 
-    <ul v-if="chordProgression">
-      <li>Progressão tocada: {{ chordProgression }}</li>
-      <li>Tom: {{ key }}</li>
-      <li>Andamento (BPM): {{ tempo }}</li>
-      <li>Tônica: {{ tonic }}</li>
-      <li>Modo: {{ mode }}</li>
-    </ul>
-    
-    <br>
+      <p v-if="message" class="mt-4 text-red-400 font-medium">
+        {{ message }}
+      </p>
 
-    <p v-if="message" class="mt-4 text-green-600">{{ message }}</p>
+      <div v-if="chordProgression" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
+        <p><span class="font-semibold">Progressão:</span> {{ chordProgression }}</p>
+        <p><span class="font-semibold">Tom:</span> {{ key }}</p>
+        <p><span class="font-semibold">Andamento (BPM):</span> {{ tempo }}</p>
+        <p><span class="font-semibold">Tônica:</span> {{ tonic }}</p>
+        <p><span class="font-semibold">Modo:</span> {{ mode }}</p>
+      </div>
+
+    </div>
   </div>
 </template>
 
 <script>
-import axios from "axios";
+import { ref } from "vue"
+import axios from "axios"
 
 export default {
   name: "UploadForm",
   data() {
     return {
-      API_URL: "",
+      file: null,
+      message: "",
       chordProgression: "",
       key: "",
       tempo: "",
       tonic: "",
       mode: "",
-      uploadedFile: null,
-      message: ""
+      API_URL: import.meta.env.VITE_API_URL
     }
   },
   methods: {
     handleFileChange(event) {
-      this.uploadedFile = event.target.files[0];
+      this.file = event.target.files[0]
     },
-
     async handleSubmit() {
-      if (!this.uploadedFile) {
-        this.message = "Selecione um arquivo primeiro!";
-        return;
+      if (!this.file) {
+        this.message = "Selecione um arquivo primeiro!"
+        return
       }
 
-      const formData = new FormData();
-      formData.append("uploaded_file", this.uploadedFile);
+      const formData = new FormData()
+      formData.append("uploaded_file", this.file)
 
       try {
-        const response = await axios.post(
-          `${this.API_URL}/upload-file`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
+        const response = await axios.post(`${this.API_URL}/upload-file`, formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        })
 
-        this.message = `Arquivo enviado com sucesso: ${
-          response.data.filename || ""
-        }`;
-
-        if (response.data.chordProgression) {
-          this.chordProgression = response.data.chordProgression;
-          this.key = response.data.key;
-          this.tempo = response.data.tempo;
-          this.tonic = response.data.tonic;
-          this.mode = response.data.mode;
-        }
+        this.message = 'Veja as informações extraídas:'
+        this.chordProgression = response.data.chordProgression || ""
+        this.key = response.data.key || ""
+        this.tempo = response.data.tempo || ""
+        this.tonic = response.data.tonic || ""
+        this.mode = response.data.mode || ""
       } catch (error) {
-        this.message = `Erro ao enviar: ${error.message}`;
+        this.message = `Erro: ${error.message}`
       }
-    },
-  },
-  mounted() {
-    this.API_URL = import.meta.env.VITE_API_URL;
+    }
   }
 }
 </script>
