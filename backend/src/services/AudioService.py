@@ -40,14 +40,14 @@ class AudioService:
 
         samples = nr.reduce_noise(y=samples, sr=sr, prop_decrease=0.7)
 
-        board = Pedalboard([
-            # HighpassFilter(cutoff_frequency_hz=40.0),   
-            # LowpassFilter(cutoff_frequency_hz=16000.0), 
-            Gain(gain_db=3.0),                         
-            Compressor(threshold_db=-25, ratio=2.0),   
-        ])
+        # board = Pedalboard([
+        #     # HighpassFilter(cutoff_frequency_hz=40.0),   
+        #     # LowpassFilter(cutoff_frequency_hz=16000.0), 
+        #     Gain(gain_db=3.0),                         
+        #     Compressor(threshold_db=-25, ratio=2.0),   
+        # ])
 
-        samples = board(samples, sr)
+        # samples = board(samples, sr)
 
         sf.write(self.get_wav_path(), samples, sr)
     
