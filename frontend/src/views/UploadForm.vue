@@ -22,16 +22,17 @@
         </button>
       </form>
 
-      <p v-if="message" class="mt-4 text-red-400 font-medium">
-        {{ message }}
+      <p v-if="message" class="mt-4 font-medium">
+        <span v-if="loading" class="text-blue-700 italic">{{ message }}</span>
+        <span v-else :class="success">{{ message }}</span>
       </p>
 
       <div v-if="chordProgression" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
-        <p><span class="font-semibold">Progressão:</span> {{ chordProgression }}</p>
-        <p><span class="font-semibold">Tom:</span> {{ key }}</p>
-        <p><span class="font-semibold">Andamento (BPM):</span> {{ tempo }}</p>
-        <p><span class="font-semibold">Tônica:</span> {{ tonic }}</p>
-        <p><span class="font-semibold">Modo:</span> {{ mode }}</p>
+        <p><span class="font-semibold text-blue-400">Tom:</span> {{ key }}</p>
+        <p><span class="font-semibold text-blue-400">Progressão:</span> {{ chordProgression }}</p>
+        <p><span class="font-semibold text-blue-400">Andamento (BPM):</span> {{ tempo }}</p>
+        <p><span class="font-semibold text-blue-400">Tônica:</span> {{ tonic }}</p>
+        <p><span class="font-semibold text-blue-400">Modo:</span> {{ mode }}</p>
       </div>
 
     </div>
@@ -47,6 +48,7 @@ export default {
   data() {
     return {
       file: null,
+      loading: false,
       message: "",
       chordProgression: "",
       key: "",
@@ -63,6 +65,8 @@ export default {
     async handleSubmit() {
       if (!this.file) {
         this.message = "Selecione um arquivo primeiro!"
+        this.cleanFields()
+        this.loading = false
         return
       }
 
@@ -70,19 +74,45 @@ export default {
       formData.append("uploaded_file", this.file)
 
       try {
+        this.cleanFields()
+
+        this.message = 'Carregando...'
+        this.loading = true
+
         const response = await axios.post(`${this.API_URL}/upload-file`, formData, {
           headers: { "Content-Type": "multipart/form-data" }
         })
-
-        this.message = 'Veja as informações extraídas:'
-        this.chordProgression = response.data.chordProgression || ""
-        this.key = response.data.key || ""
-        this.tempo = response.data.tempo || ""
-        this.tonic = response.data.tonic || ""
-        this.mode = response.data.mode || ""
+        
+        if(!response.data.error) {
+          this.loading = false
+          this.message = 'Veja as informações extraídas:'
+          this.chordProgression = response.data.chordProgression || ""
+          this.key = response.data.key || ""
+          this.tempo = response.data.tempo || ""
+          this.tonic = response.data.tonic || ""
+          this.mode = response.data.mode || ""
+        } else {
+          this.loading = false
+          this.message = `Error: ${response.data.error}`
+        }
+        
       } catch (error) {
-        this.message = `Erro: ${error.message}`
+        this.loading = false
+        this.message = `Error: ${error.message}`
       }
+    },
+    cleanFields() {
+      this.message = ''
+      this.chordProgression = ''
+      this.key = ''
+      this.tempo = ''
+      this.tonic = ''
+      this.mode = ''
+    }
+  },
+  computed: {
+    success() {
+      return this.chordProgression ? 'text-green-600' : 'text-red-500';
     }
   }
 }
