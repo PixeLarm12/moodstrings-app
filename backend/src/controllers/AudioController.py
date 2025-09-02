@@ -31,11 +31,20 @@ def test_audio(file):
 
         if not chordsPlayedV1:
             return {"error": "Unable to extract harmonic progression"}
-        
+
+        chord_list = [
+            {
+                "chord": k,
+                "notes": [v[0]],  # ou v[0].split(',') se tiver várias notas separadas por vírgula
+                "name": v[1]
+            }
+            for k, v in chordsPlayedV1.items()
+        ]
+
         return {
             # "emotion": emotion,
             # "genre": genre, will be implemented in the future
-            "chordProgression": chordsPlayedV1,
+            "chordProgression": chord_list,
             # "chordProgressionV2": chordsPlayedV2,
             "tempo": tempo,
             "key": key_info['key'],

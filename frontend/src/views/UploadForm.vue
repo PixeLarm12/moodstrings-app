@@ -27,9 +27,14 @@
         <span v-else :class="success">{{ message }}</span>
       </p>
 
-      <div v-if="chordProgression" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
+      <div v-if="chordProgression.length > 0" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
         <p><span class="font-semibold text-blue-400">Tom:</span> {{ key }}</p>
-        <p><span class="font-semibold text-blue-400">Progressão:</span> {{ chordProgression }}</p>
+        <p><span class="font-semibold text-blue-400">Progressão:</span> 
+          <span v-for="(ch, index) in chordProgression" :key="index">
+            {{ ch.chord }} - ({{ ch.notes.join(', ') }}, {{ ch.name }})
+            <span v-if="index < chordProgression.length - 1">, </span>
+          </span>
+        </p>  
         <p><span class="font-semibold text-blue-400">Andamento (BPM):</span> {{ tempo }}</p>
         <p><span class="font-semibold text-blue-400">Tônica:</span> {{ tonic }}</p>
         <p><span class="font-semibold text-blue-400">Modo:</span> {{ mode }}</p>
@@ -50,7 +55,7 @@ export default {
       file: null,
       loading: false,
       message: "",
-      chordProgression: "",
+      chordProgression: [],
       key: "",
       tempo: "",
       tonic: "",
@@ -82,11 +87,12 @@ export default {
         const response = await axios.post(`${this.API_URL}/upload-file`, formData, {
           headers: { "Content-Type": "multipart/form-data" }
         })
-        
+
         if(!response.data.error) {
           this.loading = false
           this.message = 'Veja as informações extraídas:'
-          this.chordProgression = response.data.chordProgression || ""
+
+          this.chordProgression = response.data.chordProgression || []
           this.key = response.data.key || ""
           this.tempo = response.data.tempo || ""
           this.tonic = response.data.tonic || ""
@@ -103,7 +109,7 @@ export default {
     },
     cleanFields() {
       this.message = ''
-      this.chordProgression = ''
+      this.chordProgression = []
       this.key = ''
       this.tempo = ''
       this.tonic = ''
