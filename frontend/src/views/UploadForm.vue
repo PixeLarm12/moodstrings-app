@@ -23,7 +23,8 @@
       </form>
 
       <p v-if="message" class="mt-4 font-medium">
-        <span v-if="loading" class="text-blue-700 italic">{{ message }}</span>
+        <loading v-if="loading"></loading>
+         
         <span v-else :class="success">{{ message }}</span>
       </p>
 
@@ -47,6 +48,7 @@
 <script>
 import { ref } from "vue"
 import axios from "axios"
+import Loading  from "../components/utils/Loading.vue"
 
 export default {
   name: "UploadForm",
@@ -63,6 +65,9 @@ export default {
       API_URL: import.meta.env.VITE_API_URL
     }
   },
+  components: {
+    Loading
+  },  
   methods: {
     handleFileChange(event) {
       this.file = event.target.files[0]
@@ -81,7 +86,6 @@ export default {
       try {
         this.cleanFields()
 
-        this.message = 'Carregando...'
         this.loading = true
 
         const response = await axios.post(`${this.API_URL}/upload-file`, formData, {
