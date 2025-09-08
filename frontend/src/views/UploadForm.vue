@@ -5,6 +5,8 @@
 
       <h1 class="text-3xl font-bold">Upload de Arquivo</h1>
 
+      <ChordModal :show="showChordModal" :info="modalInfo" :chord-name="modalChordName" @close="showChordModal = false" />
+
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <input
           type="file"
@@ -24,15 +26,22 @@
 
       <p v-if="message" class="mt-4 font-medium">
         <loading v-if="loading"></loading>
-         
         <span v-else :class="success">{{ message }}</span>
       </p>
 
+      <!-- Progressão -->
       <div v-if="chordProgression.length > 0" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
         <p><span class="font-semibold text-blue-400">Tom:</span> {{ key }}</p>
-        <p><span class="font-semibold text-blue-400">Progressão:</span> 
-          <span v-for="(ch, index) in chordProgression" :key="index">
-            {{ ch.chord }} - ({{ ch.notes.join(', ') }}, {{ ch.name }})
+        <p>
+          <span class="font-semibold text-blue-400">Progressão: </span> 
+          <span v-for="(info, index) in chordProgression" :key="index">
+            <button 
+              type="button" 
+              class="hover:text-blue-400 hover:cursor-pointer"
+              @click="openChordModal(info)"
+            >
+            {{ info.chord }}
+            </button> 
             <span v-if="index < chordProgression.length - 1">, </span>
           </span>
         </p>  
@@ -46,18 +55,21 @@
 </template>
 
 <script>
-import { ref } from "vue"
 import axios from "axios"
-import Loading  from "../components/utils/Loading.vue"
+import Loading from "../components/utils/Loading.vue"
+import ChordModal from "../components/chord/ChordModal.vue"
 
 export default {
   name: "UploadForm",
   data() {
     return {
       file: null,
-      loading: false,
+      loading: true,
+      showChordModal: false,
+      modalInfo: [],
       message: "",
       chordProgression: [],
+      modalChordName: "",
       key: "",
       tempo: "",
       tonic: "",
@@ -66,7 +78,8 @@ export default {
     }
   },
   components: {
-    Loading
+    Loading,
+    ChordModal
   },  
   methods: {
     handleFileChange(event) {
@@ -85,16 +98,15 @@ export default {
 
       try {
         this.cleanFields()
-
         this.loading = true
 
         const response = await axios.post(`${this.API_URL}/upload-file`, formData, {
           headers: { "Content-Type": "multipart/form-data" }
         })
 
-        if(!response.data.error) {
+        if (!response.data.error) {
           this.loading = false
-          this.message = 'Veja as informações extraídas:'
+          this.message = "Veja as informações extraídas:"
 
           this.chordProgression = response.data.chordProgression || []
           this.key = response.data.key || ""
@@ -112,17 +124,22 @@ export default {
       }
     },
     cleanFields() {
-      this.message = ''
+      this.message = ""
       this.chordProgression = []
-      this.key = ''
-      this.tempo = ''
-      this.tonic = ''
-      this.mode = ''
+      this.key = ""
+      this.tempo = ""
+      this.tonic = ""
+      this.mode = ""
+    },
+    openChordModal(info) {
+      this.modalInfo = info
+      this.showChordModal = true
+      this.modalChordName = info.chord
     }
   },
   computed: {
     success() {
-      return this.chordProgression ? 'text-green-600' : 'text-red-500';
+      return this.chordProgression.length > 0 ? "text-green-600" : "text-red-500"
     }
   }
 }
