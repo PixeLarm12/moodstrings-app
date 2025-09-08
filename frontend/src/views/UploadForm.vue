@@ -24,12 +24,11 @@
         </button>
       </form>
 
-      <p v-if="message" class="mt-4 font-medium">
-        <loading v-if="loading"></loading>
-        <span v-else :class="success">{{ message }}</span>
+      <Loading v-if="loading"></Loading>
+      <p v-else-if="message" class="mt-4 font-medium">
+        <span :class="success">{{ message }}</span>
       </p>
 
-      <!-- Progressão -->
       <div v-if="chordProgression.length > 0" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
         <p><span class="font-semibold text-blue-400">Tom:</span> {{ key }}</p>
         <p>
@@ -64,7 +63,7 @@ export default {
   data() {
     return {
       file: null,
-      loading: true,
+      loading: false,
       showChordModal: false,
       modalNotes: [],
       message: "",
