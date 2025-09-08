@@ -1,7 +1,7 @@
 import pretty_midi
 import tempfile
 from music21 import chord, converter, tempo
-from src.utils.StringUtil import simplify_chord_name
+from src.utils.StringUtil import simplify_chord_name, sanitize_chord_name, get_chord_note_names
 from io import BytesIO
 
 class MidiService:
@@ -46,48 +46,31 @@ class MidiService:
         for raw in raw_chords:
             note_names = raw.split("+")
             objChord = chord.Chord(note_names)
+            # user isChord to check if is chord of isNote/isRest
             sc = simplify_chord_name(objChord.pitchedCommonName)
             if sc and sc != prev:
                 named_chords.append(sc)
                 prev = sc
 
-        return ' - '.join(named_chords)
+        named_chords_dict = {}
+        prev = None
 
-    # Used to created dataset. Probably, use primeFormString to define some chord is better than that name.
-    # def notes_to_chord_name(self, pitches: list[int]):
-    #     if not pitches or len(pitches) < 2:
-    #         return ""
+        for raw in raw_chords:
+            note_names = raw.split("+")
+            objChord = chord.Chord(note_names)
+            
+            sc = sanitize_chord_name(simplify_chord_name(objChord.pitchedCommonName), 'tab')
+            
+            if sc and sc != prev:
+                # sc = ChordName
+                named_chords_dict[sc] = [
+                    get_chord_note_names(list(dict.fromkeys(objChord.pitchNames))), # notes
+                    # objChord.pitchedCommonName, # name
+                    sanitize_chord_name(objChord.pitchedCommonName) # name
+                ]
+                prev = sc
 
-    #     try:
-    #         normalized_pitches = []
-    #         for p in pitches:
-    #             p_name = pretty_midi.note_number_to_name(p)[:-1]  
-    #             normalized_pitches.append(p_name)
-
-    #         c = chord.Chord(normalized_pitches)
-    #         return c.root()
-    #     except Exception:
-    #         return '+'.join([pretty_midi.note_number_to_name(p) for p in pitches])
-        
-
-    # This function is not correct, but stuffs here could be used in future, as chordify to find correctly chords
-    # def extract_chords_new(self):
-    #     with tempfile.NamedTemporaryFile(suffix=".mid", delete=False) as tmp_midi:
-    #         self._midi_data.write(tmp_midi.name)
-    #         midi_path = tmp_midi.name
-
-    #     score = converter.parse(midi_path)
-    #     chords = score.chordify()
-
-    #     named_chords = []
-    #     prev = None
-    #     for c in chords.recurse().getElementsByClass('Chord'):
-    #         sc = simplify_chord_name(c.pitchedCommonName)
-    #         if sc and sc != prev:
-    #             named_chords.append(sc)
-    #             prev = sc
-
-    #     return " - ".join(named_chords)
+        return named_chords_dict
 
     def create_midi_converter(self):
         with tempfile.NamedTemporaryFile(suffix=".mid", delete=False) as tmp_midi:
