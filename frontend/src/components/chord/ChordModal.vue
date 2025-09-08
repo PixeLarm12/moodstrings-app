@@ -6,9 +6,9 @@
       <h3 class="text-xl mb-4">Notas que o compõe: </h3>
 
       <p class="list-disc space-y-1">
-        <span v-for="(note, index) in info.notes" :key="index" class="inline-block mr-2">
-          {{ note }}
-        </span>
+        <ul v-for="(note, index) in notes" :key="index" class="mr-2 list-none">
+          <li>{{ note }}</li>
+        </ul>
       </p>
 
       <button
@@ -24,8 +24,8 @@
 <script>
 export default {
   props: {
-    info: {
-      type: Object,
+    notes: {
+      type: Array,
       default: () => []
     },
     chordName: {

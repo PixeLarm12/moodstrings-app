@@ -5,6 +5,7 @@ from src.services.AudioService import AudioService
 from fastapi.responses import StreamingResponse
 from src.services.AudioService import AudioService
 from src.utils import FileUtil
+from src.utils.StringUtil import sanitize_chord_name, get_mode_name, classify_tempo
 import io
 
 def test_audio(file):
@@ -27,7 +28,7 @@ def test_audio(file):
         chordsPlayedV1 = midi_service.extract_chords()
         # chordsPlayedV2 = midi_service.extract_chords_new()
         key_info = midi_service.find_estimate_key()
-        tempo = midi_service.find_tempo()
+        bpm, tempo_name = classify_tempo(midi_service.find_tempo())
 
         if not chordsPlayedV1:
             return {"error": "Unable to extract harmonic progression"}
@@ -35,9 +36,8 @@ def test_audio(file):
         chord_list = [
             {
                 "chord": k,
-                "notes": [v[0]],  # ou v[0].split(',') se tiver várias notas separadas por vírgula
+                "notes": v[0],
                 "name": v[1],
-                "name_translated": v[2]
             }
             for k, v in chordsPlayedV1.items()
         ]
@@ -45,12 +45,12 @@ def test_audio(file):
         return {
             # "emotion": emotion,
             # "genre": genre, will be implemented in the future
-            "chordProgression": chord_list,
-            # "chordProgressionV2": chordsPlayedV2,
-            "tempo": tempo,
-            "key": key_info['key'],
-            "mode": key_info['mode'],
-            "tonic": key_info['tonic']
+            "chord_progression": chord_list,
+            "tempo": bpm,
+            "tempo_name": tempo_name,
+            "key": f"{sanitize_chord_name(key_info['key'], 'tab')} ({sanitize_chord_name(key_info['key'])})",
+            "mode": get_mode_name(key_info['mode']),
+            "tonic": f"{sanitize_chord_name(key_info['tonic'], 'tab')} ({sanitize_chord_name(key_info['tonic'])})",
         }
 
         # midi_io = io.BytesIO()

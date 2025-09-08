@@ -5,7 +5,7 @@
 
       <h1 class="text-3xl font-bold">Upload de Arquivo</h1>
 
-      <ChordModal :show="showChordModal" :info="modalInfo" :chord-name="modalChordName" @close="showChordModal = false" />
+      <ChordModal :show="showChordModal" :notes="modalNotes" :chord-name="modalChordName" @close="showChordModal = false" />
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <input
@@ -45,7 +45,7 @@
             <span v-if="index < chordProgression.length - 1">, </span>
           </span>
         </p>  
-        <p><span class="font-semibold text-blue-400">Andamento (BPM):</span> {{ tempo }}</p>
+        <p><span class="font-semibold text-blue-400">Andamento:</span> {{ tempo }} BPM (<i>{{ tempoName }}</i>)</p>
         <p><span class="font-semibold text-blue-400">Tônica:</span> {{ tonic }}</p>
         <p><span class="font-semibold text-blue-400">Modo:</span> {{ mode }}</p>
       </div>
@@ -66,11 +66,12 @@ export default {
       file: null,
       loading: true,
       showChordModal: false,
-      modalInfo: [],
+      modalNotes: [],
       message: "",
       chordProgression: [],
       modalChordName: "",
       key: "",
+      tempoName: "",
       tempo: "",
       tonic: "",
       mode: "",
@@ -108,8 +109,9 @@ export default {
           this.loading = false
           this.message = "Veja as informações extraídas:"
 
-          this.chordProgression = response.data.chordProgression || []
+          this.chordProgression = response.data.chord_progression || []
           this.key = response.data.key || ""
+          this.tempoName = response.data.tempo_name || ""
           this.tempo = response.data.tempo || ""
           this.tonic = response.data.tonic || ""
           this.mode = response.data.mode || ""
@@ -132,9 +134,9 @@ export default {
       this.mode = ""
     },
     openChordModal(info) {
-      this.modalInfo = info
       this.showChordModal = true
-      this.modalChordName = `${info.chord} (${info.name_translated})`
+      this.modalNotes = info.notes
+      this.modalChordName = `${info.chord} (${info.name})`
     }
   },
   computed: {
