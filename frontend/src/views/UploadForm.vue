@@ -134,7 +134,7 @@ export default {
     openChordModal(info) {
       this.modalInfo = info
       this.showChordModal = true
-      this.modalChordName = info.chord
+      this.modalChordName = `${info.chord} (${info.name_translated})`
     }
   },
   computed: {

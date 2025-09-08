@@ -36,7 +36,8 @@ def test_audio(file):
             {
                 "chord": k,
                 "notes": [v[0]],  # ou v[0].split(',') se tiver várias notas separadas por vírgula
-                "name": v[1]
+                "name": v[1],
+                "name_translated": v[2]
             }
             for k, v in chordsPlayedV1.items()
         ]

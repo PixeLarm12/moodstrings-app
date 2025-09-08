@@ -1,7 +1,7 @@
 import pretty_midi
 import tempfile
 from music21 import chord, converter, tempo
-from src.utils.StringUtil import simplify_chord_name
+from src.utils.StringUtil import simplify_chord_name, get_chord_name_simple
 from io import BytesIO
 
 class MidiService:
@@ -58,16 +58,13 @@ class MidiService:
             note_names = raw.split("+")
             objChord = chord.Chord(note_names)
             
-            # Supondo que simplify_chord_name retorna a cifra simplificada
             sc = simplify_chord_name(objChord.pitchedCommonName)
             
             if sc and sc != prev:
-                # Cria um valor com notas e descrição
-                named_chords_dict[sc] = [objChord.pitchedCommonName, objChord.commonName]
+                named_chords_dict[sc] = [objChord.pitchedCommonName, objChord.commonName, get_chord_name_simple(objChord.pitchedCommonName)]
                 prev = sc
 
         return named_chords_dict
-        # return ' - '.join(named_chords)
 
     def create_midi_converter(self):
         with tempfile.NamedTemporaryFile(suffix=".mid", delete=False) as tmp_midi:
