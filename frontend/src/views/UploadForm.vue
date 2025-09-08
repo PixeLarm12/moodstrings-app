@@ -5,6 +5,8 @@
 
       <h1 class="text-3xl font-bold">Upload de Arquivo</h1>
 
+      <ChordModal :show="showChordModal" :notes="modalNotes" :chord-name="modalChordName" @close="showChordModal = false" />
+
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <input
           type="file"
@@ -22,15 +24,27 @@
         </button>
       </form>
 
-      <p v-if="message" class="mt-4 font-medium">
-        <span v-if="loading" class="text-blue-700 italic">{{ message }}</span>
-        <span v-else :class="success">{{ message }}</span>
+      <Loading v-if="loading"></Loading>
+      <p v-else-if="message" class="mt-4 font-medium">
+        <span :class="success">{{ message }}</span>
       </p>
 
-      <div v-if="chordProgression" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
+      <div v-if="chordProgression.length > 0" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
         <p><span class="font-semibold text-blue-400">Tom:</span> {{ key }}</p>
-        <p><span class="font-semibold text-blue-400">Progressão:</span> {{ chordProgression }}</p>
-        <p><span class="font-semibold text-blue-400">Andamento (BPM):</span> {{ tempo }}</p>
+        <p>
+          <span class="font-semibold text-blue-400">Progressão: </span> 
+          <span v-for="(info, index) in chordProgression" :key="index">
+            <button 
+              type="button" 
+              class="hover:text-blue-400 hover:cursor-pointer"
+              @click="openChordModal(info)"
+            >
+            {{ info.chord }}
+            </button> 
+            <span v-if="index < chordProgression.length - 1">, </span>
+          </span>
+        </p>  
+        <p><span class="font-semibold text-blue-400">Andamento:</span> {{ tempo }} BPM (<i>{{ tempoName }}</i>)</p>
         <p><span class="font-semibold text-blue-400">Tônica:</span> {{ tonic }}</p>
         <p><span class="font-semibold text-blue-400">Modo:</span> {{ mode }}</p>
       </div>
@@ -40,8 +54,9 @@
 </template>
 
 <script>
-import { ref } from "vue"
 import axios from "axios"
+import Loading from "../components/utils/Loading.vue"
+import ChordModal from "../components/chord/ChordModal.vue"
 
 export default {
   name: "UploadForm",
@@ -49,15 +64,23 @@ export default {
     return {
       file: null,
       loading: false,
+      showChordModal: false,
+      modalNotes: [],
       message: "",
-      chordProgression: "",
+      chordProgression: [],
+      modalChordName: "",
       key: "",
+      tempoName: "",
       tempo: "",
       tonic: "",
       mode: "",
       API_URL: import.meta.env.VITE_API_URL
     }
   },
+  components: {
+    Loading,
+    ChordModal
+  },  
   methods: {
     handleFileChange(event) {
       this.file = event.target.files[0]
@@ -75,19 +98,19 @@ export default {
 
       try {
         this.cleanFields()
-
-        this.message = 'Carregando...'
         this.loading = true
 
         const response = await axios.post(`${this.API_URL}/upload-file`, formData, {
           headers: { "Content-Type": "multipart/form-data" }
         })
-        
-        if(!response.data.error) {
+
+        if (!response.data.error) {
           this.loading = false
-          this.message = 'Veja as informações extraídas:'
-          this.chordProgression = response.data.chordProgression || ""
+          this.message = "Veja as informações extraídas:"
+
+          this.chordProgression = response.data.chord_progression || []
           this.key = response.data.key || ""
+          this.tempoName = response.data.tempo_name || ""
           this.tempo = response.data.tempo || ""
           this.tonic = response.data.tonic || ""
           this.mode = response.data.mode || ""
@@ -102,17 +125,22 @@ export default {
       }
     },
     cleanFields() {
-      this.message = ''
-      this.chordProgression = ''
-      this.key = ''
-      this.tempo = ''
-      this.tonic = ''
-      this.mode = ''
+      this.message = ""
+      this.chordProgression = []
+      this.key = ""
+      this.tempo = ""
+      this.tonic = ""
+      this.mode = ""
+    },
+    openChordModal(info) {
+      this.showChordModal = true
+      this.modalNotes = info.notes
+      this.modalChordName = `${info.chord} (${info.name})`
     }
   },
   computed: {
     success() {
-      return this.chordProgression ? 'text-green-600' : 'text-red-500';
+      return this.chordProgression.length > 0 ? "text-green-600" : "text-red-500"
     }
   }
 }
