@@ -1,7 +1,7 @@
 import pretty_midi
 import tempfile
 from music21 import chord, converter, tempo
-from src.utils.StringUtil import simplify_chord_name, get_chord_name_simple
+from src.utils.StringUtil import simplify_chord_name, sanitize_chord_name, get_chord_note_names
 from io import BytesIO
 
 class MidiService:
@@ -46,6 +46,7 @@ class MidiService:
         for raw in raw_chords:
             note_names = raw.split("+")
             objChord = chord.Chord(note_names)
+            # user isChord to check if is chord of isNote/isRest
             sc = simplify_chord_name(objChord.pitchedCommonName)
             if sc and sc != prev:
                 named_chords.append(sc)
@@ -58,10 +59,15 @@ class MidiService:
             note_names = raw.split("+")
             objChord = chord.Chord(note_names)
             
-            sc = simplify_chord_name(objChord.pitchedCommonName)
+            sc = sanitize_chord_name(simplify_chord_name(objChord.pitchedCommonName), 'tab')
             
             if sc and sc != prev:
-                named_chords_dict[sc] = [objChord.pitchedCommonName, objChord.commonName, get_chord_name_simple(objChord.pitchedCommonName)]
+                # sc = ChordName
+                named_chords_dict[sc] = [
+                    get_chord_note_names(list(dict.fromkeys(objChord.pitchNames))), # notes
+                    # objChord.pitchedCommonName, # name
+                    sanitize_chord_name(objChord.pitchedCommonName) # name
+                ]
                 prev = sc
 
         return named_chords_dict
