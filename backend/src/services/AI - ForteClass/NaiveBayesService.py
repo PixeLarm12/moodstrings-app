@@ -2,17 +2,18 @@ import os
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.pipeline import Pipeline
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report, accuracy_score
 from typing import Tuple
 import joblib
 import time
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TRAIN_DATASET_PATH = os.path.join(BASE_DIR, '..', 'dataset', 'forteclass_train_test', 'train_dataset.csv')
-TEST_DATASET_PATH = os.path.join(BASE_DIR, '..', 'dataset', 'forteclass_train_test', 'test_dataset.csv')
+TRAIN_DATASET_PATH = os.path.join(BASE_DIR, '..', '..', 'dataset', 'forteclass_train_test', 'train_dataset.csv')
+TEST_DATASET_PATH = os.path.join(BASE_DIR, '..', '..', 'dataset', 'forteclass_train_test', 'test_dataset.csv')
+MODELS_DIR = os.path.join(BASE_DIR, '..', '..', 'AIModels')
 
-class ForteClassIAService:
+class NaiveBayesService:
     def __init__(self, train_path: str = TRAIN_DATASET_PATH, test_path: str = TEST_DATASET_PATH):
         self.train_path = os.path.abspath(train_path)
         self.test_path = os.path.abspath(test_path)
@@ -21,7 +22,7 @@ class ForteClassIAService:
         self.train_models()
     
     def train_models(self):
-        """Treina o modelo Random Forest para emoções"""
+        """Treina o modelo Naive Bayes para emoções"""
         # Carregar dataset de treino
         if not os.path.exists(self.train_path):
             raise FileNotFoundError(f"Dataset de treino não encontrado: {self.train_path}")
@@ -44,17 +45,17 @@ class ForteClassIAService:
         print(f"Treinando com {len(X_train)} amostras")
         print(f"Emoções únicas: {sorted(y_emotion_train.unique())}")
         
-        # Criar pipeline do modelo
+        # Criar pipeline do modelo Naive Bayes
         self._emotion_model = Pipeline([
             ("vect", CountVectorizer(token_pattern=r'[^,]+', lowercase=False)),
-            ("clf", RandomForestClassifier(n_estimators=100, random_state=42))
+            ("clf", MultinomialNB(alpha=1.0))
         ])
 
         print("Vocabulário sendo criado...")
-        print("Treinando modelo de emoção...")
+        print("Treinando modelo de emoção com Naive Bayes...")
         start_time = time.time()
         self._emotion_model.fit(X_train, y_emotion_train)
-        print(f"Modelo de emoção treinado em {time.time() - start_time:.2f} segundos")
+        print(f"Modelo Naive Bayes de emoção treinado em {time.time() - start_time:.2f} segundos")
         
         # Salvar modelo automaticamente
         self.save_model()
@@ -81,7 +82,7 @@ class ForteClassIAService:
         
         # Métricas de emoção
         emotion_accuracy = accuracy_score(y_emotion_test, emotion_pred)
-        print(f"\n=== AVALIAÇÃO MODELO DE EMOÇÃO ===")
+        print(f"\n=== AVALIAÇÃO MODELO NAIVE BAYES DE EMOÇÃO ===")
         print(f"Acurácia: {emotion_accuracy:.4f}")
         print("\nRelatório detalhado:")
         print(classification_report(y_emotion_test, emotion_pred))
@@ -103,20 +104,42 @@ class ForteClassIAService:
         
         return pred_emotion
     
-    def save_model(self, model_path: str = "emotion_forteclass_model.pkl"):
-        """Salva o modelo treinado"""
-        joblib.dump(self._emotion_model, model_path)
-        print(f"Modelo salvo em: {model_path}")
+    def predict_proba(self, forteclass_sequence: str) -> dict:
+        """Retorna as probabilidades de cada emoção"""
+        if not forteclass_sequence or len(forteclass_sequence.strip()) == 0:
+            raise ValueError("Sequência de forte classes é nula ou inválida")
+        
+        if self._emotion_model is None:
+            raise ValueError("Modelo não foi treinado")
+        
+        probabilities = self._emotion_model.predict_proba([forteclass_sequence])[0]
+        classes = self._emotion_model.classes_
+        
+        return dict(zip(classes, probabilities))
     
-    def load_model(self, model_path: str = "emotion_forteclass_model.pkl"):
+    def save_model(self, model_path: str = None):
+        """Salva o modelo treinado"""
+        if model_path is None:
+            model_path = os.path.join(MODELS_DIR, "emotion_naivebayes_model.pkl")
+        
+        # Criar diretório se não existir
+        os.makedirs(os.path.dirname(model_path), exist_ok=True)
+        
+        joblib.dump(self._emotion_model, model_path)
+        print(f"Modelo Naive Bayes salvo em: {model_path}")
+
+    def load_model(self, model_path: str = None):
         """Carrega modelo previamente salvo"""
+        if model_path is None:
+            model_path = os.path.join(MODELS_DIR, "emotion_naivebayes_model.pkl")
+        
         self._emotion_model = joblib.load(model_path)
-        print("Modelo carregado com sucesso!")
+        print("Modelo Naive Bayes carregado com sucesso!")
 
 # Exemplo de uso
 if __name__ == "__main__":
     # Treinar e avaliar
-    service = ForteClassIAService()
+    service = NaiveBayesService()
     
     # Avaliar performance
     results = service.evaluate_model()
@@ -125,8 +148,13 @@ if __name__ == "__main__":
     test_sequence = "3-3,3-4,3-5,4-14,3-2"
     try:
         emotion = service.predict(test_sequence)
-        print(f"\n=== TESTE DE PREDIÇÃO ===")
+        probabilities = service.predict_proba(test_sequence)
+        
+        print(f"\n=== TESTE DE PREDIÇÃO NAIVE BAYES ===")
         print(f"Sequência: {test_sequence}")
         print(f"Emoção predita: {emotion}")
+        print(f"Probabilidades:")
+        for emotion_class, prob in probabilities.items():
+            print(f"  {emotion_class}: {prob:.4f}")
     except Exception as e:
         print(f"Erro na predição: {e}")
