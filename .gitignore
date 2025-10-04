@@ -35,12 +35,13 @@ backend/dataset_forteclass_*.csv
 **/dataset/
 
 # MODELOS TREINADOS
-*.pkl
+backend/src/AIModels/genre_forteclass_model.pkl
+# *.pkl
 *.joblib
-*.model
-*_model.*
-emotion_forteclass_model.pkl
-genre_forteclass_model.pkl
+# *.model
+# *_model.*
+# emotion_forteclass_model.pkl
+# genre_forteclass_model.pkl
 
 # ARQUIVOS MIDI
 *.midi
