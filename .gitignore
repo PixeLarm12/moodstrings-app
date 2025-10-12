@@ -36,6 +36,7 @@ backend/dataset_forteclass_*.csv
 
 # MODELOS TREINADOS
 backend/src/AIModels/genre_forteclass_model.pkl
+backend/src/AIModels/*.pkl
 # *.pkl
 *.joblib
 # *.model
