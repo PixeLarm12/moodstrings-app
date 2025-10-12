@@ -19,3 +19,79 @@ frontend/.vscode
 # ROOT
 .env
 .vscode
+
+# DATASETS - Ignorar arquivos CSV grandes, manter apenas os comprimidos (.gz)
+dataset_forteclass_FULL.csv
+backend/dataset_forteclass_FULL.csv
+backend/src/dataset/
+backend/midi_raw_files/
+*_dataset.csv
+dataset_*.csv
+# PROTEÇÃO EXTRA - CSVs em qualquer lugar do backend
+backend/**/*.csv
+backend/dataset_forteclass_*.csv
+**/*_dataset.*
+**/forteclass_train_test/
+**/dataset/
+
+# MODELOS TREINADOS
+backend/src/AIModels/genre_forteclass_model.pkl
+# *.pkl
+*.joblib
+# *.model
+# *_model.*
+# emotion_forteclass_model.pkl
+# genre_forteclass_model.pkl
+
+# ARQUIVOS MIDI
+*.midi
+*.mid
+
+# ARQUIVOS GRANDES EM GERAL
+*.zip
+*.rar
+*.7z
+*.tar.gz
+*.tgz
+
+# PYTHON CACHE E BUILDS
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# JUPYTER NOTEBOOKS
+.ipynb_checkpoints
+
+# LOGS
+*.log
+logs/
+
+# SISTEMA OPERACIONAL
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# DOCKER
+docker-compose.override.yml
+
+utils
