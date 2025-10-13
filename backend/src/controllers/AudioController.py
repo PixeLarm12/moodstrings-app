@@ -27,28 +27,16 @@ def test_audio(file):
         chordsPlayed = midi_service.extract_chords()
         chordsForteClass = midi_service.extract_chords_forteclass()
         
-        svm_emotion = ai_service.svm_predict(chordsForteClass)
-        rf_emotion = ai_service.rf_predict(chordsForteClass)
-        knn_emotion = ai_service.knn_predict(chordsForteClass)
-        nb_emotion = ai_service.nb_predict(chordsForteClass)
+        svm_results = ai_service.svm_predict(chordsForteClass)
+        rf_results = ai_service.rf_predict(chordsForteClass)
+        knn_results = ai_service.knn_predict(chordsForteClass)
+        nb_results = ai_service.nb_predict(chordsForteClass)
 
         emotions = [
-            {
-                "model_name": "Random Forest",
-                "result": rf_emotion,
-            },
-            {
-                "model_name": "SVM",
-                "result": svm_emotion,
-            },
-            {
-                "model_name": "KNN",
-                "result": knn_emotion,
-            },
-            {
-                "model_name": "Naive Bayles",
-                "result": nb_emotion,
-            },
+            svm_results,
+            rf_results,
+            knn_results,
+            nb_results,
         ]
 
         # chordsPlayedV2 = midi_service.extract_chords_new()

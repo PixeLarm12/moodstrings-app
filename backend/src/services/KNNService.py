@@ -118,13 +118,39 @@ class KNNService:
         """Load a previously saved model"""
         self._emotion_model = joblib.load(self.model_path)
         print(f"✅ KNN model successfully loaded from: {self.model_path}")
+        
+    def evaluate(self) -> dict:
+            """
+            Evaluates the trained KNN model on the test dataset.
+            Returns a dictionary with accuracy, number of test samples, and unique emotions.
+            """
+            if not os.path.exists(self.test_path):
+                raise FileNotFoundError(f"Test dataset not found: {self.test_path}")
 
+            print(f"📗 Loading test dataset: {self.test_path}")
+            test_df = pd.read_csv(self.test_path)
 
-if __name__ == "__main__":
-    service = KNNService()
-    results = service.evaluate_model()
+            # Clean dataset
+            test_df = test_df.dropna(subset=['forteclass_sequence'])
+            test_df = test_df[test_df['forteclass_sequence'].str.len() > 0]
 
-    test_seq = "3-3,3-4,3-5,4-14,3-2"
-    print(f"\n=== TEST PREDICTION ===")
-    print(f"Sequence: {test_seq}")
-    print(f"Predicted emotion: {service.predict(test_seq)}")
+            X_test = test_df['forteclass_sequence']
+            y_test = test_df['emotion']
+
+            print(f"🧪 Evaluating with {len(X_test)} samples...")
+
+            y_pred = self._emotion_model.predict(X_test)
+
+            accuracy = accuracy_score(y_test, y_pred)
+
+            print(f"\n=== KNN EMOTION MODEL EVALUATION ===")
+            print(f"Accuracy: {accuracy:.4f}")
+            print("\nDetailed classification report:")
+            print(classification_report(y_test, y_pred))
+
+            # Return metrics
+            return {
+                "accuracy": round(accuracy * 100, 2),
+                "samples": len(X_test),
+                # "unique_emotions": sorted(y_test.unique())
+            }

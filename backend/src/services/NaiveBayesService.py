@@ -127,3 +127,39 @@ class NaiveBayesService:
         path = model_path or self.model_path
         self._emotion_model = joblib.load(path)
         print("✅ Naive Bayes model loaded successfully!")
+
+    def evaluate(self) -> dict:
+        """
+        Evaluates the trained Naive Bayes model on the test dataset.
+        Returns a dictionary with accuracy, number of test samples, and unique emotions.
+        """
+        if not os.path.exists(self.test_path):
+            raise FileNotFoundError(f"Test dataset not found: {self.test_path}")
+
+        print(f"📗 Loading test dataset: {self.test_path}")
+        test_df = pd.read_csv(self.test_path)
+
+        # Clean dataset
+        test_df = test_df.dropna(subset=['forteclass_sequence'])
+        test_df = test_df[test_df['forteclass_sequence'].str.len() > 0]
+
+        X_test = test_df['forteclass_sequence']
+        y_test = test_df['emotion']
+
+        print(f"🧪 Evaluating with {len(X_test)} samples...")
+
+        y_pred = self._emotion_model.predict(X_test)
+
+        accuracy = accuracy_score(y_test, y_pred)
+
+        print(f"\n=== NAIVE BAYES EMOTION MODEL EVALUATION ===")
+        print(f"Accuracy: {accuracy:.4f}")
+        print("\nDetailed classification report:")
+        print(classification_report(y_test, y_pred))
+
+        # Return metrics
+        return {
+            "accuracy": round(accuracy * 100, 2),
+            "samples": len(X_test),
+            # "unique_emotions": sorted(y_test.unique())
+        }
