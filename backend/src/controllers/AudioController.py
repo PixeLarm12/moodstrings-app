@@ -3,7 +3,6 @@ from src.services.MidiService import MidiService
 from src.services.AIService import AIService
 from src.services.AudioService import AudioService
 from fastapi.responses import StreamingResponse
-from src.services.AudioService import AudioService
 from src.utils import FileUtil
 from src.utils.StringUtil import sanitize_chord_name, get_mode_name, classify_tempo
 import io
@@ -28,7 +27,7 @@ def test_audio(file):
         chordsPlayed = midi_service.extract_chords()
         chordsForteClass = midi_service.extract_chords_forteclass()
         
-        emotion = ai_service.predict_emotion_from_forteclass(chordsForteClass)
+        emotion = ai_service.nb_predict(chordsForteClass)
         # chordsPlayedV2 = midi_service.extract_chords_new()
         key_info = midi_service.find_estimate_key()
         bpm, tempo_name = classify_tempo(midi_service.find_tempo())

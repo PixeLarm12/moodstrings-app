@@ -27,7 +27,7 @@ class RandomForestService:
 
         # check if current saved model exists
         if os.path.exists(self.model_path):
-            print(f"🔹 Existent model find in: {self.model_path}")
+            print(f"🔹 Existent model found in: {self.model_path}")
             self.load_model()
         else:
             print("⚠️ Model didn't find. Initializing new training...")

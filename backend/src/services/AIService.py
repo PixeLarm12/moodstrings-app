@@ -1,11 +1,16 @@
+from src.services.NaiveBayesService import NaiveBayesService
 from src.services.RandomForestService import RandomForestService
 from src.utils.StringUtil import get_emotion_portuguese
 
 class AIService:
-    def __init__(self):
-        self.rf_service = RandomForestService() 
+    def rf_predict(self, forte_sequence: str) -> str:
+        rf_service = RandomForestService() 
+        emotion = rf_service.predict(forte_sequence)
 
-    def predict_emotion_from_forteclass(self, forte_sequence: str) -> str:
-        emotion = self.rf_service.predict(forte_sequence)
+        return get_emotion_portuguese(emotion)
+    
+    def nb_predict(self, forte_sequence: str) -> str:
+        nb_service = NaiveBayesService()
+        emotion = nb_service.predict(forte_sequence)
 
         return get_emotion_portuguese(emotion)
