@@ -71,6 +71,51 @@ class MidiService:
                 prev = sc
 
         return named_chords_dict
+    
+    def extract_chords_forteclass(self, chord_threshold=2):
+        """
+        Extrai progressão de acordes em formato Forte Class
+        Retorna string com forte classes separadas por ' - '
+        """
+        raw_chords = []
+        forte_classes = []
+
+        # 1. Agrupar notas por tempo (mesma lógica do extract_chords)
+        for instrument in self._midi_data.instruments:
+            if not instrument.is_drum:
+                notes_by_time = {}
+
+                bucket_size = 0.25
+                for note in instrument.notes:
+                    bucket = round(note.start / bucket_size) * bucket_size
+                    notes_by_time.setdefault(bucket, []).append(note.pitch)
+
+                previous_chord = None
+                for time in sorted(notes_by_time.keys()):
+                    pitches = notes_by_time[time]
+                    if len(pitches) >= chord_threshold:
+                        item = '+'.join(sorted(pretty_midi.note_number_to_name(p) for p in pitches))
+                        if item != previous_chord:
+                            raw_chords.append(item)
+                            previous_chord = item
+
+        # 2. Converter para Forte Classes
+        prev_forte = None
+        for raw in raw_chords:
+            note_names = raw.split("+")
+            try:
+                objChord = chord.Chord(note_names)
+                forte_class = objChord.forteClassTn
+                
+                # Só adiciona se forteClass não for None e não for repetido
+                if forte_class is not None and forte_class != prev_forte:
+                    forte_classes.append(str(forte_class))
+                    prev_forte = forte_class
+            except Exception:
+                # Se der erro ao criar o acorde, ignora
+                continue
+
+        return ' - '.join(forte_classes)
 
     def create_midi_converter(self):
         with tempfile.NamedTemporaryFile(suffix=".mid", delete=False) as tmp_midi:

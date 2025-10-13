@@ -155,4 +155,30 @@ def classify_tempo(tempo: str) -> str:
 
     return bpm, nome
 
+def get_emotion_portuguese(emotion: str) -> str:
+    translated = emotion
 
+    if emotion == "angry":
+        translated = 'Irritado'
+    if emotion == "exciting":
+        translated = 'Empolgante/Excitante'
+    if emotion == "fear":
+        translated = 'Medo/Assustador'
+    if emotion == "funny":
+        translated = 'Engraçado/Divertido'
+    if emotion == "happy":
+        translated = 'Feliz/Alegre'
+    if emotion == "lazy":
+        translated = 'Preguiçoso/Relaxado'
+    if emotion == "magnificent":
+        translated = 'Magnífico/Grandioso'
+    if emotion == "quiet":
+        translated = 'Calmo/Silencioso/Sereno'
+    if emotion == "romantic":
+        translated = 'Romântico/Apaixonado'
+    if emotion == "sad":
+        translated = 'Triste/Melancólico'
+    if emotion == "warm":
+        translated = 'Aconchegante/Caloroso'
+
+    return translated
