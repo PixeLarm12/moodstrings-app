@@ -27,7 +27,7 @@ def test_audio(file):
         chordsPlayed = midi_service.extract_chords()
         chordsForteClass = midi_service.extract_chords_forteclass()
         
-        emotion = ai_service.nb_predict(chordsForteClass)
+        emotion = ai_service.knn_predict(chordsForteClass)
         # chordsPlayedV2 = midi_service.extract_chords_new()
         key_info = midi_service.find_estimate_key()
         bpm, tempo_name = classify_tempo(midi_service.find_tempo())
