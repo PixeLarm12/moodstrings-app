@@ -1,0 +1,83 @@
+import os
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, accuracy_score
+from typing import Tuple
+from pathlib import Path
+import joblib
+import time
+
+BASE_DIR = Path(__file__).resolve().parent                    # /app/src/services
+MODELS_DIR = (BASE_DIR / '..' / 'AIModels').resolve()        # /app/src/AIModels
+DATASET_DIR = (BASE_DIR / '..' / 'dataset').resolve()        # /app/src/dataset
+MODEL_PATH = MODELS_DIR / 'emotion_randomforest_model.pkl'
+
+TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'train_dataset.csv')
+TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'test_dataset.csv')
+MODEL_PATH = os.path.join(MODELS_DIR, 'emotion_randomforest_model.pkl')
+
+
+class RandomForestService:
+    def __init__(self):
+        self._emotion_model = None
+        self.model_path = os.path.abspath(MODEL_PATH)
+        print(f"MODEL PATHSS {MODEL_PATH} e {self.model_path}")
+
+        # check if current saved model exists
+        if os.path.exists(self.model_path):
+            print(f"🔹 Existent model find in: {self.model_path}")
+            self.load_model()
+        else:
+            print("⚠️ Model didn't find. Initializing new training...")
+            self.train_models()
+
+    def train_models(self):
+        if not os.path.exists(TRAIN_DATASET_PATH):
+            raise FileNotFoundError(f"Train dataset not found: {TRAIN_DATASET_PATH}")
+
+        train_df = pd.read_csv(TRAIN_DATASET_PATH)
+
+        required_columns = ["forteclass_sequence", "emotion"]
+        if not all(col in train_df.columns for col in required_columns):
+            raise ValueError(f"Dataset needs more columns: {required_columns}")
+
+        train_df = train_df.dropna(subset=['forteclass_sequence'])
+        train_df = train_df[train_df['forteclass_sequence'].str.len() > 0]
+
+        X_train = train_df['forteclass_sequence']
+        y_train = train_df['emotion']
+
+        print(f"Training with {len(X_train)} samples...")
+
+        self._emotion_model = Pipeline([
+            ("vect", CountVectorizer(token_pattern=r'[^,]+', lowercase=False)),
+            ("clf", RandomForestClassifier(n_estimators=100, random_state=42))
+        ])
+
+        start = time.time()
+        self._emotion_model.fit(X_train, y_train)
+        print(f"✅ Trained model found in {time.time() - start:.2f}s")
+
+        self.save_model()
+        print("📦 Successfully saved model!")
+
+    def load_model(self):
+        self._emotion_model = joblib.load(self.model_path)
+        print(f"✅ Model loaded from: {self.model_path}")
+
+    def save_model(self):
+        os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
+        joblib.dump(self._emotion_model, self.model_path)
+        print(f"💾 Model saved in: {self.model_path}")
+
+    def predict(self, forteclass_sequence: str) -> str:
+        if not forteclass_sequence or len(forteclass_sequence.strip()) == 0:
+            raise ValueError("Forteclasses sequence is null or invalid")
+
+        if self._emotion_model is None:
+            raise ValueError("Model not loaded")
+
+        pred = self._emotion_model.predict([forteclass_sequence])[0]
+        return pred
