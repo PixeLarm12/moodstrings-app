@@ -23,7 +23,6 @@ class RandomForestService:
     def __init__(self):
         self._emotion_model = None
         self.model_path = os.path.abspath(MODEL_PATH)
-        print(f"MODEL PATHSS {MODEL_PATH} e {self.model_path}")
 
         # check if current saved model exists
         if os.path.exists(self.model_path):
@@ -81,3 +80,31 @@ class RandomForestService:
 
         pred = self._emotion_model.predict([forteclass_sequence])[0]
         return pred
+
+    def evaluate(self) -> dict:
+            if not os.path.exists(TEST_DATASET_PATH):
+                raise FileNotFoundError(f"Test dataset not found: {TEST_DATASET_PATH}")
+
+            test_df = pd.read_csv(TEST_DATASET_PATH)
+            test_df = test_df.dropna(subset=['forteclass_sequence'])
+            test_df = test_df[test_df['forteclass_sequence'].str.len() > 0]
+
+            X_test = test_df['forteclass_sequence']
+            y_test = test_df['emotion']
+
+            print(f"\n🔍 Evaluating with {len(X_test)} samples...")
+
+            y_pred = self._emotion_model.predict(X_test)
+
+            accuracy = accuracy_score(y_test, y_pred)
+            print(f"\n=== RANDOM FOREST EMOTION MODEL EVALUATION ===")
+            print(f"Accuracy: {accuracy:.4f}")
+            print("\nDetailed classification report:")
+            print(classification_report(y_test, y_pred))
+
+            # Return metrics
+            return {
+                "accuracy": round(accuracy * 100, 2),
+                "samples": len(X_test),
+                # "unique_emotions": sorted(y_test.unique())
+            }
