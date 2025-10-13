@@ -6,6 +6,7 @@
       <h1 class="text-3xl font-bold">Upload de Arquivo</h1>
 
       <ChordModal :show="showChordModal" :notes="modalNotes" :chord-name="modalChordName" @close="showChordModal = false" />
+      <AIModelModal :show="showAIModal" :evaluation="modalEvaluation" :model-name="modalModelName" @close="showAIModal = false" />
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <input
@@ -31,11 +32,23 @@
 
       <div v-if="chordProgression.length > 0" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
         <p><span class="font-semibold text-blue-400">Tom:</span> {{ key }}</p>
-        <p><span class="font-semibold text-blue-400">Emoção:</span>
+        <p>
+          <span class="font-semibold text-blue-400">Emoção: </span> 
           <ul v-for="(emotion, index) in emotions" :key="index">
-            <li>{{ emotion.model_name }}: <b>{{ emotion.result }}</b></li>
+            <li class="list-none">
+              <button 
+                type="button" 
+                v-if="emotion.model_used != 'KNN'"
+                class="hover:text-blue-400 hover:cursor-pointer"
+                @click="openAIModelModal(emotion)"
+              >
+              {{ ++index }} - {{ emotion.content }} ({{ emotion.model_used }})
+              </button> 
+              <span v-else>{{ ++index }} - {{ emotion.content }} ({{ emotion.model_used }})</span>
+              <span v-if="index < chordProgression.length - 1">, </span>
+            </li>
           </ul>
-        </p>
+        </p>  
         <p>
           <span class="font-semibold text-blue-400">Progressão: </span> 
           <span v-for="(info, index) in chordProgression" :key="index">
@@ -62,6 +75,7 @@
 import axios from "axios"
 import Loading from "../components/utils/Loading.vue"
 import ChordModal from "../components/chord/ChordModal.vue"
+import AIModelModal from "../components/ai/AIModelModal.vue"
 
 export default {
   name: "UploadForm",
@@ -70,11 +84,14 @@ export default {
       file: null,
       loading: false,
       showChordModal: false,
+      showAIModal: false,
       modalNotes: [],
-      message: "",
+      modalEvaluation: [],
       chordProgression: [],
       emotions: [],
+      message: "",
       modalChordName: "",
+      modalModelName: "",
       key: "",
       tempoName: "",
       tempo: "",
@@ -85,7 +102,8 @@ export default {
   },
   components: {
     Loading,
-    ChordModal
+    ChordModal,
+    AIModelModal
   },  
   methods: {
     handleFileChange(event) {
@@ -143,6 +161,11 @@ export default {
       this.showChordModal = true
       this.modalNotes = info.notes
       this.modalChordName = `${info.chord} (${info.name})`
+    },
+    openAIModelModal(emotion) {
+      this.showAIModal = true
+      this.modalEvaluation = emotion.evaluation
+      this.modalModelName = emotion.model_used
     }
   },
   computed: {
