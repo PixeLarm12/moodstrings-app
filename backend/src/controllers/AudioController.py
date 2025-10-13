@@ -1,9 +1,8 @@
 from src.validators import FileValidator
 from src.services.MidiService import MidiService
-from src.services.IAService import IAService
+from src.services.AIService import AIService
 from src.services.AudioService import AudioService
 from fastapi.responses import StreamingResponse
-from src.services.AudioService import AudioService
 from src.utils import FileUtil
 from src.utils.StringUtil import sanitize_chord_name, get_mode_name, classify_tempo
 import io
@@ -23,14 +22,40 @@ def test_audio(file):
         else:
             midi_service = MidiService(file=file)
 
-        # ia_service = IAService()
+        ai_service = AIService()
 
-        chordsPlayedV1 = midi_service.extract_chords()
+        chordsPlayed = midi_service.extract_chords()
+        chordsForteClass = midi_service.extract_chords_forteclass()
+        
+        svm_emotion = ai_service.svm_predict(chordsForteClass)
+        rf_emotion = ai_service.rf_predict(chordsForteClass)
+        knn_emotion = ai_service.knn_predict(chordsForteClass)
+        nb_emotion = ai_service.nb_predict(chordsForteClass)
+
+        emotions = [
+            {
+                "model_name": "Random Forest",
+                "result": rf_emotion,
+            },
+            {
+                "model_name": "SVM",
+                "result": svm_emotion,
+            },
+            {
+                "model_name": "KNN",
+                "result": knn_emotion,
+            },
+            {
+                "model_name": "Naive Bayles",
+                "result": nb_emotion,
+            },
+        ]
+
         # chordsPlayedV2 = midi_service.extract_chords_new()
         key_info = midi_service.find_estimate_key()
         bpm, tempo_name = classify_tempo(midi_service.find_tempo())
 
-        if not chordsPlayedV1:
+        if not chordsPlayed:
             return {"error": "Unable to extract harmonic progression"}
 
         chord_list = [
@@ -39,13 +64,13 @@ def test_audio(file):
                 "notes": v[0],
                 "name": v[1],
             }
-            for k, v in chordsPlayedV1.items()
+            for k, v in chordsPlayed.items()
         ]
 
         return {
-            # "emotion": emotion,
             # "genre": genre, will be implemented in the future
             "chord_progression": chord_list,
+            "emotions": emotions,
             "tempo": bpm,
             "tempo_name": tempo_name,
             "key": f"{sanitize_chord_name(key_info['key'], 'tab')} ({sanitize_chord_name(key_info['key'])})",
