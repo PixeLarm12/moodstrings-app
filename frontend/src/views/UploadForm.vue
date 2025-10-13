@@ -31,7 +31,11 @@
 
       <div v-if="chordProgression.length > 0" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
         <p><span class="font-semibold text-blue-400">Tom:</span> {{ key }}</p>
-        <p><span class="font-semibold text-blue-400">Emoção:</span> {{ emotion }}</p>
+        <p><span class="font-semibold text-blue-400">Emoção:</span>
+          <ul v-for="(emotion, index) in emotions" :key="index">
+            <li>{{ emotion.model_name }}: <b>{{ emotion.result }}</b></li>
+          </ul>
+        </p>
         <p>
           <span class="font-semibold text-blue-400">Progressão: </span> 
           <span v-for="(info, index) in chordProgression" :key="index">
@@ -69,9 +73,9 @@ export default {
       modalNotes: [],
       message: "",
       chordProgression: [],
+      emotions: [],
       modalChordName: "",
       key: "",
-      emotion: "",
       tempoName: "",
       tempo: "",
       tonic: "",
@@ -112,7 +116,7 @@ export default {
 
           this.chordProgression = response.data.chord_progression || []
           this.key = response.data.key || ""
-          this.emotion = response.data.emotion || ""
+          this.emotions = response.data.emotions || ""
           this.tempoName = response.data.tempo_name || ""
           this.tempo = response.data.tempo || ""
           this.tonic = response.data.tonic || ""

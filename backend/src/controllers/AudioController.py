@@ -27,7 +27,30 @@ def test_audio(file):
         chordsPlayed = midi_service.extract_chords()
         chordsForteClass = midi_service.extract_chords_forteclass()
         
-        emotion = ai_service.svm_predict(chordsForteClass)
+        svm_emotion = ai_service.svm_predict(chordsForteClass)
+        rf_emotion = ai_service.rf_predict(chordsForteClass)
+        knn_emotion = ai_service.knn_predict(chordsForteClass)
+        nb_emotion = ai_service.nb_predict(chordsForteClass)
+
+        emotions = [
+            {
+                "model_name": "Random Forest",
+                "result": rf_emotion,
+            },
+            {
+                "model_name": "SVM",
+                "result": svm_emotion,
+            },
+            {
+                "model_name": "KNN",
+                "result": knn_emotion,
+            },
+            {
+                "model_name": "Naive Bayles",
+                "result": nb_emotion,
+            },
+        ]
+
         # chordsPlayedV2 = midi_service.extract_chords_new()
         key_info = midi_service.find_estimate_key()
         bpm, tempo_name = classify_tempo(midi_service.find_tempo())
@@ -47,7 +70,7 @@ def test_audio(file):
         return {
             # "genre": genre, will be implemented in the future
             "chord_progression": chord_list,
-            "emotion": emotion,
+            "emotions": emotions,
             "tempo": bpm,
             "tempo_name": tempo_name,
             "key": f"{sanitize_chord_name(key_info['key'], 'tab')} ({sanitize_chord_name(key_info['key'])})",
