@@ -124,11 +124,14 @@ def get_mode_name(mode: str) -> str:
     else:
         return raw
     
-def classify_tempo(tempo: str) -> str:
-    try:
-        bpm = int(''.join(filter(str.isdigit, tempo)))
-    except ValueError:
-        return None, None 
+def classify_tempo(tempo) -> tuple[int, str]:
+    if isinstance(tempo, (float, int)):
+        bpm = int(tempo)
+    else:
+        try:
+            bpm = int(''.join(filter(str.isdigit, tempo)))
+        except ValueError:
+            return None, None 
 
     if bpm < 24:
         nome = "Larghissimo"
