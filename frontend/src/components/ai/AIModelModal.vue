@@ -1,12 +1,13 @@
 <template>
   <DefaultModal :show="show" @close="$emit('close')">
     <template #header>
-      Acorde: <b>{{ chordName }}</b>
+      Modelo usado: <b>{{ modelName }}</b>
     </template>
 
-    <h3 class="text-xl mb-4">Notas que o compõem:</h3>
+    <h3 class="text-xl mb-4">Informações:</h3>
     <ul class="list-disc pl-5">
-      <li v-for="(note, index) in notes" :key="index" class="list-none">{{ note }}</li>
+      <li class="list-none">Acurácia: <b>{{ evaluation.accuracy }}</b></li>
+      <li class="list-none">Número de amostras: <b>{{ evaluation.samples }}</b></li>
     </ul>
   </DefaultModal>
 </template>
@@ -17,11 +18,11 @@ import DefaultModal from '../templates/DefaultModal.vue';
 export default {
   components: { DefaultModal },
   props: {
-    notes: {
+    evaluation: {
       type: Array,
       default: () => []
     },
-    chordName: {
+    modelName: {
       type: String,
       default: ""
     },
