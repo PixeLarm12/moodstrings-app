@@ -15,10 +15,9 @@ def test_audio(file):
 
         if redirect_action == 'transcribe':
             audio_service = AudioService(file)
-
             midi_file = audio_service.create_midi_file()
-            
-            midi_service = MidiService(midi_data=midi_file)
+            midi_service = MidiService(midi_data=midi_file, wav_path=audio_service.get_wav_path())
+            audio_service.cleanup()
         else:
             midi_service = MidiService(file=file)
 
@@ -39,7 +38,6 @@ def test_audio(file):
             nb_results,
         ]
 
-        # chordsPlayedV2 = midi_service.extract_chords_new()
         key_info = midi_service.find_estimate_key()
         bpm, tempo_name = classify_tempo(midi_service.find_tempo())
 
