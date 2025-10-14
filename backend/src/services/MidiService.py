@@ -1,17 +1,23 @@
-import pretty_midi
 import tempfile
-from music21 import chord, converter, tempo
-from src.utils.StringUtil import simplify_chord_name, sanitize_chord_name, get_chord_note_names
 from io import BytesIO
+import pretty_midi
+from music21 import chord, converter, tempo, analysis, harmony
+import soundfile as sf
+import librosa
+from src.utils.StringUtil import simplify_chord_name, sanitize_chord_name, get_chord_note_names
+import os
 
 class MidiService:
-    def __init__(self, file=None, midi_data=None):
+    def __init__(self, file=None, midi_data=None, wav_path=None):
         if midi_data:
             self._midi_data = midi_data
         elif file:
             self._midi_data = pretty_midi.PrettyMIDI(BytesIO(file.file.read()))
         else:
             raise ValueError("You must provide either a file or midi_data.")
+
+        self._wav_tmp_file = wav_path
+        self.adjust_bpm()  
 
     @property
     def midi_data(self):
@@ -20,6 +26,22 @@ class MidiService:
     @midi_data.setter
     def midi_data(self, value):
         self._midi_data = pretty_midi.PrettyMIDI(BytesIO(value.file.read()))
+
+    def adjust_bpm(self):
+        """Estimativa de BPM a partir do MIDI"""
+        if self._wav_tmp_file is None or not os.path.exists(self._wav_tmp_file):
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_wav:
+                self._wav_tmp_file = tmp_wav.name
+                self._midi_data.write(tmp_wav.name)
+
+        samples, sr = sf.read(self._wav_tmp_file, dtype='float32')
+        onset_env = librosa.onset.onset_strength(y=samples, sr=sr)
+        tempo_est = librosa.beat.tempo(onset_envelope=onset_env, sr=sr)
+        self._estimated_bpm = float(tempo_est[0]) if len(tempo_est) > 0 else 120.0
+
+
+    def get_estimated_bpm(self):
+        return getattr(self, "_estimated_bpm", 120.0)
 
     def extract_chords(self, chord_threshold=2):
         raw_chords = []
@@ -71,16 +93,11 @@ class MidiService:
                 prev = sc
 
         return named_chords_dict
-    
+
     def extract_chords_forteclass(self, chord_threshold=2):
-        """
-        Extrai progressão de acordes em formato Forte Class
-        Retorna string com forte classes separadas por ' - '
-        """
         raw_chords = []
         forte_classes = []
 
-        # 1. Agrupar notas por tempo (mesma lógica do extract_chords)
         for instrument in self._midi_data.instruments:
             if not instrument.is_drum:
                 notes_by_time = {}
@@ -99,7 +116,6 @@ class MidiService:
                             raw_chords.append(item)
                             previous_chord = item
 
-        # 2. Converter para Forte Classes
         prev_forte = None
         for raw in raw_chords:
             note_names = raw.split("+")
@@ -107,12 +123,10 @@ class MidiService:
                 objChord = chord.Chord(note_names)
                 forte_class = objChord.forteClassTn
                 
-                # Só adiciona se forteClass não for None e não for repetido
                 if forte_class is not None and forte_class != prev_forte:
                     forte_classes.append(str(forte_class))
                     prev_forte = forte_class
             except Exception:
-                # Se der erro ao criar o acorde, ignora
                 continue
 
         return ' - '.join(forte_classes)
@@ -120,33 +134,17 @@ class MidiService:
     def create_midi_converter(self):
         with tempfile.NamedTemporaryFile(suffix=".mid", delete=False) as tmp_midi:
             self._midi_data.write(tmp_midi.name)
-            midi_path = tmp_midi.name
+            return converter.parse(tmp_midi.name)
 
-        return converter.parse(midi_path)
-
-    def find_tempo(self):
-        midi_file = self.create_midi_converter()
-
-        tempos = midi_file.recurse().getElementsByClass(tempo.MetronomeMark)
-
-        response = [];
-
-        if tempos:
-            for t in tempos:
-                response.append(f"{ t.number } BPM");
-        else:
-            print("There's no expressive tempo mark into midi file.")
-
-        return " - ".join(response)
-    
     def find_estimate_key(self):
         midi_file = self.create_midi_converter()
-
-        key = midi_file.analyze('key')
-
+        key = midi_file.analyze("key")
         return {
-            'key': str(key),
-            'mode': key.mode,
-            'tonic': str(key.tonic),
+            "key": str(key),
+            "mode": key.mode,
+            "tonic": str(key.tonic),
         }
+    
+    def find_tempo(self):
+        return self.get_estimated_bpm()
 

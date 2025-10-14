@@ -1,14 +1,19 @@
 import io
+import os
 import tempfile
-from pydub import AudioSegment
+import subprocess
+from pathlib import Path
 from basic_pitch.inference import predict
-from pedalboard import Pedalboard, Compressor, HighpassFilter, LowpassFilter, Gain
 import soundfile as sf
 import noisereduce as nr
+import librosa
 
 class AudioService:
+    TMP_DIR = Path("/app/tmp_audio")
+    TMP_DIR.mkdir(exist_ok=True)
+
     def __init__(self, uploaded_file):
-        self.uploaded_file = uploaded_file 
+        self.uploaded_file = uploaded_file
         self._midi_data = None
         self._wav_path = None
 
@@ -25,39 +30,53 @@ class AudioService:
         self._wav_path = wav_path
 
     def prepare_wav_file(self):
-        mp3_bytes = self.uploaded_file.file.read()
+        ext = Path(self.uploaded_file.filename).suffix
+        tmp_input = self.TMP_DIR / f"{next(tempfile._get_candidate_names())}{ext}"
+        with open(tmp_input, "wb") as f:
+            f.write(self.uploaded_file.file.read())
 
-        mp3_audio = AudioSegment.from_file(io.BytesIO(mp3_bytes), format="mp3")
-        mp3_audio = mp3_audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+        tmp_wav = self.TMP_DIR / f"{next(tempfile._get_candidate_names())}.wav"
 
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_wav:
-            mp3_audio.export(tmp_wav.name, format="wav")
+        subprocess.run([
+            "ffmpeg",
+            "-y",  
+            "-i", str(tmp_input),
+            "-ac", "1",       
+            "-ar", "16000",    
+            "-c:a", "pcm_s16le",
+            str(tmp_wav)
+        ], check=True)
 
-            self.set_wav_path(tmp_wav.name)
-    
+        tmp_input.unlink()
+        self.set_wav_path(str(tmp_wav))
+        return str(tmp_wav)
+
     def apply_filters(self):
-        samples, sr = sf.read(self.get_wav_path())
-
+        samples, sr = sf.read(self.get_wav_path(), dtype='float32')
         samples = nr.reduce_noise(y=samples, sr=sr, prop_decrease=0.7)
-
-        # board = Pedalboard([
-        #     # HighpassFilter(cutoff_frequency_hz=40.0),   
-        #     # LowpassFilter(cutoff_frequency_hz=16000.0), 
-        #     Gain(gain_db=3.0),                         
-        #     Compressor(threshold_db=-25, ratio=2.0),   
-        # ])
-
-        # samples = board(samples, sr)
-
         sf.write(self.get_wav_path(), samples, sr)
-    
+
     def create_midi_file(self):
         self.prepare_wav_file()
-
         self.apply_filters()
-
-        model_output, midi_data, note_events = predict(self.get_wav_path())
-
+        _, midi_data, _ = predict(self.get_wav_path())
         self.set_midi_data(midi_data)
-
         return self.get_midi_data()
+
+
+    def adjust_bpm(self):
+        if not self._wav_tmp_file:
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_wav:
+                self._wav_tmp_file = tmp_wav.name
+                self._midi_data.write(tmp_wav.name)
+
+        samples, sr = sf.read(self._wav_tmp_file, dtype='float32')
+
+        onset_env = librosa.onset.onset_strength(y=samples, sr=sr)
+        tempo_est = librosa.beat.tempo(onset_envelope=onset_env, sr=sr)
+        self._estimated_bpm = float(tempo_est[0]) if len(tempo_est) > 0 else 120.0
+
+    def cleanup(self):
+        if self._wav_path and os.path.exists(self._wav_path):
+            os.remove(self._wav_path)
+
