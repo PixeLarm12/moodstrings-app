@@ -14,7 +14,7 @@
       <AIModelModal :show="showAIModal" :evaluation="modalEvaluation" :model-name="modalModelName" @close="showAIModal = false" />      
 
       <!-- INFO CONTENT -->
-      <div v-if="chordProgression.length > 0" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
+      <div v-if="chordProgression.length > 0 && !showUploadForm" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
         <h2 class="text-2xl font-bold mb-2">Principais informações</h2>
 
         <span class="font-semibold text-blue-400">Sequência tocada: </span> 
@@ -62,24 +62,32 @@
 
         <div class="flex justify-between my-4">
           <button
-            type="submit"
-            class="py-2 w-[40%] bg-blue-600 rounded-lg font-semibold hover:bg-blue-700"
+            type="button"
+            class="py-2 mx-2 w-1/3 bg-blue-600 rounded-lg font-semibold hover:bg-blue-700"
           >
             Ver escalas relativas
           </button>
 
           <button
-            type="submit"
-            class="py-2 w-[40%] bg-blue-600 rounded-lg font-semibold hover:bg-blue-700"
+            type="button"
+            class="py-2 mx-2 w-1/3 bg-blue-600 rounded-lg font-semibold hover:bg-blue-700"
           >
             Download arquivo midi
+          </button>  
+          
+          <button
+            type="button"
+            class="py-2 mx-2 w-1/3 bg-gray-700 rounded-lg font-semibold hover:bg-gray-600"
+            @click="showAndCleanForm()"
+          >
+            Enviar outro arquivo
           </button>  
         </div>
       </div>
       <!-- END INFO CONTENT -->
       
       <!-- FORM -->
-      <form @submit.prevent="handleSubmit" class="space-y-4">
+      <form v-if="showUploadForm" @submit.prevent="handleSubmit" class="space-y-4">
         <input
           type="file"
           @change="handleFileChange"
@@ -113,6 +121,7 @@ export default {
     return {
       file: null,
       loading: false,
+      showUploadForm: true,
       showChordModal: false,
       showAIModal: false,
       modalNotes: [],
@@ -153,6 +162,7 @@ export default {
       try {
         this.cleanFields()
         this.loading = true
+        this.showUploadForm = false
 
         const response = await axios.post(`${this.API_URL}/upload-file`, formData, {
           headers: { "Content-Type": "multipart/form-data" }
@@ -160,6 +170,7 @@ export default {
 
         if (!response.data.error) {
           this.loading = false
+          this.showUploadForm = false
           this.message = "Veja as informações extraídas:"
 
           this.chordProgression = response.data.chord_progression || []
@@ -172,11 +183,13 @@ export default {
         } else {
           this.loading = false
           this.message = `Error: ${response.data.error}`
+          this.showUploadForm = true
         }
         
       } catch (error) {
         this.loading = false
         this.message = `Error: ${error.message}`
+        this.showUploadForm = true
       }
     },
     cleanFields() {
@@ -196,6 +209,10 @@ export default {
       this.showAIModal = true
       this.modalEvaluation = emotion.evaluation
       this.modalModelName = emotion.model_used
+    },
+    showAndCleanForm() {
+      this.cleanFields()
+      this.showUploadForm = true
     }
   },
   computed: {
