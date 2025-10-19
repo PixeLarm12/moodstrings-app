@@ -15,7 +15,11 @@ app.add_middleware(
 
 @app.post("/upload-file")
 async def transcribe(uploaded_file: UploadFile):
-    return audio_controller.test_audio(uploaded_file)
+    return audio_controller.transcribe(uploaded_file)
+
+@app.post("/download-midi")
+async def download_midi(uploaded_file: UploadFile):
+    return await audio_controller.get_midi_to_download(uploaded_file)
 
 # @app.get("/create-dataset")
 # def create_dataset():

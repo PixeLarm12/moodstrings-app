@@ -79,6 +79,7 @@
           <button
             type="button"
             class="py-2 mx-2 w-1/3 bg-blue-600 rounded-lg font-semibold hover:bg-blue-700"
+            @click="downloadMidi"
           >
             Download arquivo midi
           </button>  
@@ -229,6 +230,28 @@ export default {
     showAndCleanForm() {
       this.cleanFields()
       this.showUploadForm = true
+    },
+    async downloadMidi() {
+      if (!this.file) {
+        alert("Selecione um arquivo primeiro!");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("uploaded_file", this.file);
+
+      const response = await axios.post(`${this.API_URL}/download-midi`, formData, {
+        responseType: "blob"
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      const date = new Date().toISOString().slice(0, 10).replace(/-/g, "_");
+      link.href = url;
+      link.setAttribute("download", `${date}_played_progression.mid`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     }
   },
   computed: {

@@ -2,12 +2,13 @@ from src.validators import FileValidator
 from src.services.MidiService import MidiService
 from src.services.AIService import AIService
 from src.services.AudioService import AudioService
+from datetime import date
 from fastapi.responses import StreamingResponse
 from src.utils import FileUtil
 from src.utils.StringUtil import sanitize_chord_name, get_mode_name, classify_tempo
 import io
 
-def test_audio(file):
+def transcribe(file):
     response = FileValidator.validate(file)
 
     if not response:
@@ -67,16 +68,30 @@ def test_audio(file):
             "relative_scales": [relative_scales]
         }
 
-        # midi_io = io.BytesIO()
-        # midi_service.midi_data.write(midi_io)
-        # midi_io.seek(0)
-
-        # return StreamingResponse(
-        #     midi_io,
-        #     media_type="audio/midi",
-        #     headers={"Content-Disposition": "attachment; filename=saida.mid"}
-        # )
-
     return response
+
+async def get_midi_to_download(file):
+    try:
+        midi_service = MidiService()
+
+        midi_data = midi_service.process(file)
+
+        midi_io = io.BytesIO()
+        midi_data.write(midi_io)
+        midi_io.seek(0)
+        today = date.today()
+        filename=f"{today}_played_progression.mid"
+
+        return StreamingResponse(
+            midi_io,
+            media_type="audio/midi",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+
+    except Exception as e:
+        return {"error": str(e)}
+
 
 
