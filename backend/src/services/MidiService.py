@@ -6,6 +6,7 @@ import soundfile as sf
 import librosa
 from src.utils.StringUtil import simplify_chord_name, sanitize_chord_name, get_chord_note_names
 import os
+from src.enums import MusicEnum
 
 class MidiService:
     def __init__(self, file=None, midi_data=None, wav_path=None):
@@ -17,7 +18,9 @@ class MidiService:
             raise ValueError("You must provide either a file or midi_data.")
 
         self._wav_tmp_file = wav_path
-        self.adjust_bpm()  
+        self.adjust_bpm()
+
+        self._tone_info = self.find_estimate_key()
 
     @property
     def midi_data(self):
@@ -39,57 +42,75 @@ class MidiService:
         tempo_est = librosa.beat.tempo(onset_envelope=onset_env, sr=sr)
         self._estimated_bpm = float(tempo_est[0]) if len(tempo_est) > 0 else 120.0
 
-
     def get_estimated_bpm(self):
         return getattr(self, "_estimated_bpm", 120.0)
 
+    def get_chord_function(self, root_note):
+        try:
+            tone = f"{self._tone_info['tonic']} {self._tone_info['mode']}"
+            tonic, mode = tone.split()
+        except Exception:
+            return "Out of scale"
+
+        scale_notes = (
+            MusicEnum.Scales.MAJOR.value.get(tonic)
+            if mode.lower() == "major"
+            else MusicEnum.Scales.MINOR.value.get(tonic)
+        )
+
+        if not scale_notes:
+            return "Out of scale"
+
+        if root_note not in scale_notes:
+            return "Out of scale"
+
+        index = scale_notes.index(root_note)
+        roman, name = MusicEnum.HarmonicFunctions.FUNCTIONS.value[index]
+
+        return f"{roman} ({name})"
+
     def extract_chords(self, chord_threshold=2):
         raw_chords = []
-        named_chords = [];
+        named_chords_dict = {}
 
         for instrument in self._midi_data.instruments:
-            if not instrument.is_drum:
-                notes_by_time = {}
+            if instrument.is_drum:
+                continue
 
-                bucket_size = 0.25
-                for note in instrument.notes:
-                    bucket = round(note.start / bucket_size) * bucket_size
-                    notes_by_time.setdefault(bucket, []).append(note.pitch)
+            notes_by_time = {}
+            bucket_size = 0.25
 
-                previous_chord = None
-                for time in sorted(notes_by_time.keys()):
-                    pitches = notes_by_time[time]
-                    if len(pitches) >= chord_threshold:
-                        item = '+'.join(sorted(pretty_midi.note_number_to_name(p) for p in pitches))
-                        if item != previous_chord:
-                            raw_chords.append(item)
+            for note in instrument.notes:
+                bucket = round(note.start / bucket_size) * bucket_size
+                notes_by_time.setdefault(bucket, []).append(note.pitch)
+
+            previous_chord = None
+            for time in sorted(notes_by_time.keys()):
+                pitches = notes_by_time[time]
+                if len(pitches) >= chord_threshold:
+                    item = '+'.join(sorted(pretty_midi.note_number_to_name(p) for p in pitches))
+                    if item != previous_chord:
+                        raw_chords.append(item)
+                        previous_chord = item
 
         prev = None
         for raw in raw_chords:
             note_names = raw.split("+")
             objChord = chord.Chord(note_names)
-            # user isChord to check if is chord of isNote/isRest
-            sc = simplify_chord_name(objChord.pitchedCommonName)
-            if sc and sc != prev:
-                named_chords.append(sc)
-                prev = sc
-
-        named_chords_dict = {}
-        prev = None
-
-        for raw in raw_chords:
-            note_names = raw.split("+")
-            objChord = chord.Chord(note_names)
-            
             sc = sanitize_chord_name(simplify_chord_name(objChord.pitchedCommonName), 'tab')
-            
+
             if sc and sc != prev:
-                # sc = ChordName
-                named_chords_dict[sc] = [
-                    get_chord_note_names(list(dict.fromkeys(objChord.pitchNames))), # notes
-                    # objChord.pitchedCommonName, # name
-                    sanitize_chord_name(objChord.pitchedCommonName) # name
-                ]
+                root_note = objChord.root().name
+                function = self.get_chord_function(root_note)
+                chordName = sanitize_chord_name(objChord.pitchedCommonName)
+
+                if not chordName == "[No Name]":
+                    named_chords_dict[sc] = [
+                        get_chord_note_names(list(dict.fromkeys(objChord.pitchNames))),  # notes
+                        chordName,                # name
+                        function                                                        # função harmônica
+                    ]
+
                 prev = sc
 
         return named_chords_dict
@@ -99,22 +120,24 @@ class MidiService:
         forte_classes = []
 
         for instrument in self._midi_data.instruments:
-            if not instrument.is_drum:
-                notes_by_time = {}
+            if instrument.is_drum:
+                continue
 
-                bucket_size = 0.25
-                for note in instrument.notes:
-                    bucket = round(note.start / bucket_size) * bucket_size
-                    notes_by_time.setdefault(bucket, []).append(note.pitch)
+            notes_by_time = {}
+            bucket_size = 0.25
 
-                previous_chord = None
-                for time in sorted(notes_by_time.keys()):
-                    pitches = notes_by_time[time]
-                    if len(pitches) >= chord_threshold:
-                        item = '+'.join(sorted(pretty_midi.note_number_to_name(p) for p in pitches))
-                        if item != previous_chord:
-                            raw_chords.append(item)
-                            previous_chord = item
+            for note in instrument.notes:
+                bucket = round(note.start / bucket_size) * bucket_size
+                notes_by_time.setdefault(bucket, []).append(note.pitch)
+
+            previous_chord = None
+            for time in sorted(notes_by_time.keys()):
+                pitches = notes_by_time[time]
+                if len(pitches) >= chord_threshold:
+                    item = '+'.join(sorted(pretty_midi.note_number_to_name(p) for p in pitches))
+                    if item != previous_chord:
+                        raw_chords.append(item)
+                        previous_chord = item
 
         prev_forte = None
         for raw in raw_chords:
@@ -122,7 +145,7 @@ class MidiService:
             try:
                 objChord = chord.Chord(note_names)
                 forte_class = objChord.forteClassTn
-                
+
                 if forte_class is not None and forte_class != prev_forte:
                     forte_classes.append(str(forte_class))
                     prev_forte = forte_class
@@ -144,7 +167,7 @@ class MidiService:
             "mode": key.mode,
             "tonic": str(key.tonic),
         }
-    
+
     def find_tempo(self):
         return self.get_estimated_bpm()
 
@@ -159,10 +182,10 @@ class MidiService:
 
         try:
             if mode == "major":
-                rel_minor = scale.MinorScale(tonic.transpose(-3))  # 3 semitons abaixo
+                rel_minor = scale.MinorScale(tonic.transpose(-3))
                 relatives["relative_minor"] = str(rel_minor.tonic.name + " minor")
             elif mode == "minor":
-                rel_major = scale.MajorScale(tonic.transpose(3))  # 3 semitons acima
+                rel_major = scale.MajorScale(tonic.transpose(3))
                 relatives["relative_major"] = str(rel_major.tonic.name + " major")
         except Exception:
             pass
@@ -179,5 +202,3 @@ class MidiService:
             pass
 
         return relatives
-
-

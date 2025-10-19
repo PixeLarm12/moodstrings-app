@@ -50,6 +50,7 @@ def test_audio(file):
                 "chord": k,
                 "notes": v[0],
                 "name": v[1],
+                "function": v[2],
             }
             for k, v in chordsPlayed.items()
         ]

@@ -10,7 +10,13 @@
         <span :class="success">{{ message }}</span>
       </p>
 
-      <ChordModal :show="showChordModal" :notes="modalNotes" :chord-name="modalChordName" @close="showChordModal = false" />
+      <ChordModal 
+        :show="showChordModal" 
+        :notes="modalNotes" 
+        :chord-name="modalChordName" 
+        :chord-function="modalChordFunction" 
+        @close="showChordModal = false" 
+      />
       <ScalesModal :show="showScalesModal" :relative-scales="relativeScales" @close="showScalesModal = false" />
       <AIModelModal :show="showAIModal" :evaluation="modalEvaluation" :model-name="modalModelName" @close="showAIModal = false" />      
 
@@ -136,6 +142,7 @@ export default {
       message: "",
       modalChordName: "",
       modalModelName: "",
+      modalChordFunction: "",
       key: "",
       tempoName: "",
       tempo: "",
@@ -212,6 +219,7 @@ export default {
       this.showChordModal = true
       this.modalNotes = info.notes
       this.modalChordName = `${info.chord} (${info.name})`
+      this.modalChordFunction = info.function
     },
     openAIModelModal(emotion) {
       this.showAIModal = true
