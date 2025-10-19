@@ -11,6 +11,7 @@
       </p>
 
       <ChordModal :show="showChordModal" :notes="modalNotes" :chord-name="modalChordName" @close="showChordModal = false" />
+      <ScalesModal :show="showScalesModal" :relative-scales="relativeScales" @close="showScalesModal = false" />
       <AIModelModal :show="showAIModal" :evaluation="modalEvaluation" :model-name="modalModelName" @close="showAIModal = false" />      
 
       <!-- INFO CONTENT -->
@@ -64,6 +65,7 @@
           <button
             type="button"
             class="py-2 mx-2 w-1/3 bg-blue-600 rounded-lg font-semibold hover:bg-blue-700"
+            @click="showScalesModal = true"
           >
             Ver escalas relativas
           </button>
@@ -112,7 +114,8 @@
 <script>
 import axios from "axios"
 import Loading from "../components/utils/Loading.vue"
-import ChordModal from "../components/chord/ChordModal.vue"
+import ChordModal from "../components/music/ChordModal.vue"
+import ScalesModal from "../components/music/ScalesModal.vue"
 import AIModelModal from "../components/ai/AIModelModal.vue"
 
 export default {
@@ -123,11 +126,13 @@ export default {
       loading: false,
       showUploadForm: true,
       showChordModal: false,
+      showScalesModal: false,
       showAIModal: false,
       modalNotes: [],
       modalEvaluation: [],
       chordProgression: [],
       emotions: [],
+      relativeScales: [],
       message: "",
       modalChordName: "",
       modalModelName: "",
@@ -142,6 +147,7 @@ export default {
   components: {
     Loading,
     ChordModal,
+    ScalesModal,
     AIModelModal
   },  
   methods: {
@@ -174,6 +180,7 @@ export default {
           this.message = "Veja as informações extraídas:"
 
           this.chordProgression = response.data.chord_progression || []
+          this.relativeScales = response.data.relative_scales || []
           this.key = response.data.key || ""
           this.emotions = response.data.emotions || ""
           this.tempoName = response.data.tempo_name || ""
@@ -195,6 +202,7 @@ export default {
     cleanFields() {
       this.message = ""
       this.chordProgression = []
+      this.relativeScales = []
       this.key = ""
       this.tempo = ""
       this.tonic = ""

@@ -1,7 +1,7 @@
 import tempfile
 from io import BytesIO
 import pretty_midi
-from music21 import chord, converter, tempo, analysis, harmony
+from music21 import chord, converter, tempo, analysis, harmony, scale
 import soundfile as sf
 import librosa
 from src.utils.StringUtil import simplify_chord_name, sanitize_chord_name, get_chord_note_names
@@ -147,4 +147,37 @@ class MidiService:
     
     def find_tempo(self):
         return self.get_estimated_bpm()
+
+    def find_relative_scales(self):
+        midi_file = self.create_midi_converter()
+        key = midi_file.analyze("key")
+
+        tonic = key.tonic
+        mode = key.mode.lower()
+
+        relatives = {}
+
+        try:
+            if mode == "major":
+                rel_minor = scale.MinorScale(tonic.transpose(-3))  # 3 semitons abaixo
+                relatives["relative_minor"] = str(rel_minor.tonic.name + " minor")
+            elif mode == "minor":
+                rel_major = scale.MajorScale(tonic.transpose(3))  # 3 semitons acima
+                relatives["relative_major"] = str(rel_major.tonic.name + " major")
+        except Exception:
+            pass
+
+        try:
+            major_scale = scale.MajorScale(tonic) if mode == "major" else scale.MajorScale(tonic.transpose(3))
+            degrees = ["Ionian", "Dorian", "Phrygian", "Lydian", "Mixolydian", "Aeolian", "Locrian"]
+            relatives["modes"] = []
+
+            for i, deg in enumerate(degrees):
+                new_tonic = major_scale.pitchFromDegree(i + 1)
+                relatives["modes"].append(f"{new_tonic.name} {deg}")
+        except Exception:
+            pass
+
+        return relatives
+
 

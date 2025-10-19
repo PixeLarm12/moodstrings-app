@@ -39,6 +39,7 @@ def test_audio(file):
         ]
 
         key_info = midi_service.find_estimate_key()
+        relative_scales = midi_service.find_relative_scales()
         bpm, tempo_name = classify_tempo(midi_service.find_tempo())
 
         if not chordsPlayed:
@@ -62,6 +63,7 @@ def test_audio(file):
             "key": f"{sanitize_chord_name(key_info['key'], 'tab')} ({sanitize_chord_name(key_info['key'])})",
             "mode": get_mode_name(key_info['mode']),
             "tonic": f"{sanitize_chord_name(key_info['tonic'], 'tab')} ({sanitize_chord_name(key_info['tonic'])})",
+            "relative_scales": [relative_scales]
         }
 
         # midi_io = io.BytesIO()
