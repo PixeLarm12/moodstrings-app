@@ -2,6 +2,7 @@ from src.validators import FileValidator
 from src.services.MidiService import MidiService
 from src.services.AIService import AIService
 from src.services.AudioService import AudioService
+from src.services.ChromaService import ChromaService
 from datetime import date
 from fastapi.responses import StreamingResponse
 from src.utils import FileUtil
@@ -92,6 +93,12 @@ async def get_midi_to_download(file):
 
     except Exception as e:
         return {"error": str(e)}
+    
+async def test_chroma(file):
+    chroma_service = ChromaService(file)
+    result = chroma_service.recognize_chords()
+    return result
+
 
 
 
