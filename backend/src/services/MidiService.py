@@ -1,5 +1,6 @@
 import tempfile
 from io import BytesIO
+from src.utils.StringUtil import simplify_chord_name, sanitize_chord_name
 import pretty_midi
 from music21 import chord, converter, tempo, analysis, harmony, scale
 import soundfile as sf
@@ -202,3 +203,70 @@ class MidiService:
             pass
 
         return relatives
+
+    def build_chord_timeline(self, bucket_size: float = 0.25) -> list[str]:
+        """
+        Build a chronological list of chord names detected in the MIDI file.
+        Returns a list like ['C:maj', 'G:maj', 'Am', 'F:maj', ...]
+        """
+        timeline = []
+        prev_chord = None
+
+        for instrument in self.midi_data.instruments:
+            if instrument.is_drum:
+                continue
+
+            notes_by_time = {}
+            for note in instrument.notes:
+                bucket = round(note.start / bucket_size) * bucket_size
+                notes_by_time.setdefault(bucket, []).append(note.pitch)
+
+            for time in sorted(notes_by_time.keys()):
+                pitches = notes_by_time[time]
+                if len(pitches) >= 2:
+                    note_names = [librosa.midi_to_note(p) for p in pitches]
+
+                    # 🧹 Normalize Unicode accidentals
+                    normalized = [n.replace("♯", "#").replace("♭", "b") for n in note_names]
+
+                    objChord = chord.Chord(normalized)
+                    sc = sanitize_chord_name(simplify_chord_name(objChord.pitchedCommonName), 'tab')
+
+                    if sc and sc != prev_chord:
+                        timeline.append(sc)
+                        prev_chord = sc
+
+        return timeline
+
+    def detect_repeated_chords(self, timeline: list[str]) -> list[tuple[int, str]]:
+        """
+        Detect repeated consecutive chords in a given timeline.
+        Returns a list of tuples like [(index, chord_name), ...]
+        """
+        repeats = []
+        for i in range(1, len(timeline)):
+            if timeline[i] == timeline[i - 1]:
+                repeats.append((i - 1, timeline[i]))
+        return repeats
+
+
+    def detect_progressions(self, timeline: list[str]) -> list[list[str]]:
+        """
+        Detect known common progressions like I–IV–V–I or C–G–Am–F.
+        Returns a list of matching chord sequences.
+        """
+        known_patterns = [
+            ["C", "G", "Am", "F"],
+            ["G", "D", "Em", "C"],
+            ["D", "G", "A"],
+            ["I", "IV", "V", "I"],
+            ["ii", "V", "I"]
+        ]
+
+        matches = []
+        for pat in known_patterns:
+            for i in range(len(timeline) - len(pat) + 1):
+                if timeline[i:i + len(pat)] == pat:
+                    matches.append(pat)
+        return matches
+

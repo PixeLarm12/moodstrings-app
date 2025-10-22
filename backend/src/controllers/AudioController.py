@@ -3,6 +3,7 @@ from src.services.MidiService import MidiService
 from src.services.AIService import AIService
 from src.services.AudioService import AudioService
 from src.services.ChromaService import ChromaService
+from src.services.FFTService import FFTService
 from datetime import date
 from fastapi.responses import StreamingResponse
 from src.utils import FileUtil
@@ -17,6 +18,9 @@ def transcribe(file):
 
         if redirect_action == 'transcribe':
             audio_service = AudioService(file)
+            audio_service.prepare_wav_file()  # mp3 -> wav
+            audio_service.apply_filters()      # denoise
+            audio_service.pitch_shift_wav(n_steps=12)  # shift 1 octave up
             midi_file = audio_service.create_midi_file()
             midi_service = MidiService(midi_data=midi_file, wav_path=audio_service.get_wav_path())
             audio_service.cleanup()
@@ -27,7 +31,11 @@ def transcribe(file):
 
         chordsPlayed = midi_service.extract_chords()
         chordsForteClass = midi_service.extract_chords_forteclass()
-        
+
+        timeline = midi_service.build_chord_timeline()
+        repeated_chords = midi_service.detect_repeated_chords(timeline)
+        progressions = midi_service.detect_progressions(timeline)
+
         svm_results = ai_service.svm_predict(chordsForteClass)
         rf_results = ai_service.rf_predict(chordsForteClass)
         knn_results = ai_service.knn_predict(chordsForteClass)
@@ -58,7 +66,6 @@ def transcribe(file):
         ]
 
         return {
-            # "genre": genre, will be implemented in the future
             "chord_progression": chord_list,
             "emotions": emotions,
             "tempo": bpm,
@@ -66,8 +73,12 @@ def transcribe(file):
             "key": f"{sanitize_chord_name(key_info['key'], 'tab')} ({sanitize_chord_name(key_info['key'])})",
             "mode": get_mode_name(key_info['mode']),
             "tonic": f"{sanitize_chord_name(key_info['tonic'], 'tab')} ({sanitize_chord_name(key_info['tonic'])})",
-            "relative_scales": [relative_scales]
+            "relative_scales": [relative_scales],
+            "timeline": timeline,
+            "repeated_chords": repeated_chords,
+            "progressions": progressions
         }
+
 
     return response
 
@@ -93,12 +104,5 @@ async def get_midi_to_download(file):
 
     except Exception as e:
         return {"error": str(e)}
-    
-async def test_chroma(file):
-    chroma_service = ChromaService(file)
-    result = chroma_service.recognize_chords()
-    return result
-
-
 
 
