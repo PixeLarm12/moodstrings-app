@@ -3,6 +3,7 @@ import os
 import tempfile
 import subprocess
 from pathlib import Path
+from pydub import AudioSegment
 from basic_pitch.inference import predict
 import soundfile as sf
 import noisereduce as nr
@@ -29,25 +30,29 @@ class AudioService:
     def set_wav_path(self, wav_path):
         self._wav_path = wav_path
 
+
     def prepare_wav_file(self):
-        ext = Path(self.uploaded_file.filename).suffix
+        ext = Path(self.uploaded_file.filename).suffix or ".mp3"
         tmp_input = self.TMP_DIR / f"{next(tempfile._get_candidate_names())}{ext}"
+
+        self.uploaded_file.file.seek(0)
+
         with open(tmp_input, "wb") as f:
-            f.write(self.uploaded_file.file.read())
+            content = self.uploaded_file.file.read()
+            if not content:
+                raise RuntimeError("Uploaded file is empty or unreadable.")
+            f.write(content)
 
         tmp_wav = self.TMP_DIR / f"{next(tempfile._get_candidate_names())}.wav"
 
-        subprocess.run([
-            "ffmpeg",
-            "-y",  
-            "-i", str(tmp_input),
-            "-ac", "1",       
-            "-ar", "16000",    
-            "-c:a", "pcm_s16le",
-            str(tmp_wav)
-        ], check=True)
+        try:
+            audio = AudioSegment.from_file(tmp_input, format="mp3")
+            audio = audio.set_channels(1).set_frame_rate(16000)
+            audio.export(tmp_wav, format="wav")
+        except Exception as e:
+            raise RuntimeError(f"Failed to convert MP3 to WAV: {e}")
 
-        tmp_input.unlink()
+        tmp_input.unlink(missing_ok=True)
         self.set_wav_path(str(tmp_wav))
         return str(tmp_wav)
 
@@ -63,6 +68,11 @@ class AudioService:
         self.set_midi_data(midi_data)
         return self.get_midi_data()
 
+    def pitch_shift_wav(self, n_steps=12):
+        wav_path = self.get_wav_path()
+        samples, sr = librosa.load(wav_path, sr=None)
+        shifted = librosa.effects.pitch_shift(y=samples, sr=sr, n_steps=n_steps)
+        sf.write(wav_path, shifted, sr)
 
     def adjust_bpm(self):
         if not self._wav_tmp_file:
