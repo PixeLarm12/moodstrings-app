@@ -62,8 +62,10 @@ class AudioService:
         sf.write(self.get_wav_path(), samples, sr)
 
     def create_midi_file(self):
-        self.prepare_wav_file()
-        self.apply_filters()
+        self.prepare_wav_file()  # mp3 -> wav
+        self.apply_filters()      # denoise
+        self.pitch_shift_wav(n_steps=12)  # shift 1 octave up
+
         _, midi_data, _ = predict(self.get_wav_path())
         self.set_midi_data(midi_data)
         return self.get_midi_data()
@@ -87,6 +89,13 @@ class AudioService:
         self._estimated_bpm = float(tempo_est[0]) if len(tempo_est) > 0 else 120.0
 
     def cleanup(self):
-        if self._wav_path and os.path.exists(self._wav_path):
-            os.remove(self._wav_path)
+        try:
+            if self._wav_path and os.path.exists(self._wav_path):
+                import gc
+                gc.collect()  # force release of lingering references
+                os.remove(self._wav_path)
+                print(f"Deleted temporary WAV file: {self._wav_path}")
+        except PermissionError:
+            print("File still in use, retrying cleanup...")
+
 

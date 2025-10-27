@@ -16,9 +16,6 @@ def transcribe(file):
 
         if redirect_action == 'transcribe':
             audio_service = AudioService(file)
-            audio_service.prepare_wav_file()  # mp3 -> wav
-            audio_service.apply_filters()      # denoise
-            audio_service.pitch_shift_wav(n_steps=12)  # shift 1 octave up
             midi_file = audio_service.create_midi_file()
             midi_service = MidiService(midi_data=midi_file, wav_path=audio_service.get_wav_path())
             audio_service.cleanup()
@@ -33,16 +30,10 @@ def transcribe(file):
         repeated_chords = midi_service.detect_repeated_chords(timeline)
         progressions = midi_service.detect_progressions(timeline)
 
-        svm_results = ai_service.svm_predict(chordsForteClass)
         rf_results = ai_service.rf_predict(chordsForteClass)
-        knn_results = ai_service.knn_predict(chordsForteClass)
-        nb_results = ai_service.nb_predict(chordsForteClass)
 
         emotions = [
-            svm_results,
-            rf_results,
-            knn_results,
-            nb_results,
+            rf_results
         ]
 
         key_info = midi_service.find_estimate_key()
