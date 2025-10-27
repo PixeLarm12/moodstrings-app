@@ -27,7 +27,6 @@ def transcribe(file):
         chordsForteClass = midi_service.extract_chords_forteclass()
 
         timeline = midi_service.build_chord_timeline()
-        progressions = midi_service.detect_progressions(timeline)
 
         rf_results = ai_service.rf_predict(chordsForteClass)
 
@@ -53,8 +52,7 @@ def transcribe(file):
             "key": f"{sanitize_chord_name(key_info['key'], 'tab')} ({sanitize_chord_name(key_info['key'])})",
             "mode": get_mode_name(key_info['mode']),
             "tonic": f"{sanitize_chord_name(key_info['tonic'], 'tab')} ({sanitize_chord_name(key_info['tonic'])})",
-            "relative_scales": [relative_scales],
-            "progressions": progressions
+            "relative_scales": [relative_scales]
         }
 
 

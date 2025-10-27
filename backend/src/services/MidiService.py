@@ -202,26 +202,6 @@ class MidiService:
 
         return timeline
 
-    def detect_progressions(self, timeline: list[str]) -> list[list[str]]:
-        """
-        Detect known common progressions like I–IV–V–I or C–G–Am–F.
-        Returns a list of matching chord sequences.
-        """
-        known_patterns = [
-            ["C", "G", "Am", "F"],
-            ["G", "D", "Em", "C"],
-            ["D", "G", "A"],
-            ["I", "IV", "V", "I"],
-            ["ii", "V", "I"]
-        ]
-
-        matches = []
-        for pat in known_patterns:
-            for i in range(len(timeline) - len(pat) + 1):
-                if timeline[i:i + len(pat)] == pat:
-                    matches.append(pat)
-        return matches
-
     def enrich_timeline(self, timeline: list[str]) -> list[dict]:
         enriched = []
 
