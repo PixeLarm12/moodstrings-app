@@ -170,10 +170,6 @@ class MidiService:
 
 
     def build_chord_timeline(self, bucket_size: float = 0.25) -> list[str]:
-        """
-        Build a chronological list of chord names detected in the MIDI file.
-        Returns a list like ['C:maj', 'G:maj', 'Am', 'F:maj', ...]
-        """
         timeline = []
         prev_chord = None
 
@@ -190,17 +186,18 @@ class MidiService:
                 pitches = notes_by_time[time]
                 if len(pitches) >= 2:
                     note_names = [librosa.midi_to_note(p) for p in pitches]
-
                     normalized = [n.replace("♯", "#").replace("♭", "b") for n in note_names]
 
                     objChord = m21Chord.Chord(normalized)
-                    sc = sanitize_chord_name(simplify_chord_name(objChord.pitchedCommonName), 'tab')
 
-                    if sc and sc != prev_chord:
-                        timeline.append(sc)
-                        prev_chord = sc
+                    chord_ui = simplify_chord_name(objChord.pitchedCommonName) 
+
+                    if chord_ui and chord_ui != prev_chord:
+                        timeline.append(chord_ui)
+                        prev_chord = chord_ui
 
         return timeline
+
 
     def enrich_timeline(self, timeline: list[str]) -> list[dict]:
         enriched = []
@@ -233,4 +230,51 @@ class MidiService:
                 })
 
         return enriched
+        
+    def extract_chord_progression(self, bucket_size: float = 0.25) -> list[dict]:
+        chord_progression = []
+        prev_chord = None
+
+        for instrument in self.midi_data.instruments:
+            if instrument.is_drum:
+                continue
+
+            notes_by_time = {}
+            for note in instrument.notes:
+                bucket = round(note.start / bucket_size) * bucket_size
+                notes_by_time.setdefault(bucket, []).append(note.pitch)
+
+            for time in sorted(notes_by_time.keys()):
+                pitches = notes_by_time[time]
+                if len(pitches) >= 2:
+                    note_names = [librosa.midi_to_note(p) for p in pitches]
+                    normalized = [n.replace("♯", "#").replace("♭", "b") for n in note_names]
+
+                    try:
+                        objChord = m21Chord.Chord(normalized)
+                    except Exception:
+                        continue 
+
+                    chord_name = sanitize_chord_name(simplify_chord_name(objChord.pitchedCommonName), 'tab')
+                    
+                    if not chord_name or chord_name == "[No Name]" or chord_name == prev_chord:
+                        continue
+                    prev_chord = chord_name
+
+                    chord_notes = [n.name for n in objChord.pitches]
+
+                    try:
+                        root_note = objChord.root().name
+                        function = self.get_chord_function(root_note)
+                    except Exception:
+                        function = "Unknown"
+
+                    chord_progression.append({
+                        "chord": chord_name,
+                        "name": sanitize_chord_name(chord_name),
+                        "notes": chord_notes,
+                        "function": function
+                    })
+
+        return chord_progression
 

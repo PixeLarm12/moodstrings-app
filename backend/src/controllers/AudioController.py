@@ -26,8 +26,6 @@ def transcribe(file):
 
         chordsForteClass = midi_service.extract_chords_forteclass()
 
-        timeline = midi_service.build_chord_timeline()
-
         rf_results = ai_service.rf_predict(chordsForteClass)
 
         emotions = [
@@ -38,14 +36,15 @@ def transcribe(file):
         relative_scales = midi_service.find_relative_scales()
         bpm, tempo_name = classify_tempo(midi_service.find_tempo())
         timeline = midi_service.build_chord_timeline()
+        progression = midi_service.extract_chord_progression()
 
-        if not timeline:
+        if not progression:
             return {"error": "Unable to extract harmonic progression"}
 
         chord_list = midi_service.enrich_timeline(timeline)
 
         return {
-            "chord_progression": chord_list,
+            "chord_progression": progression,
             "emotions": emotions,
             "tempo": bpm,
             "tempo_name": tempo_name,
