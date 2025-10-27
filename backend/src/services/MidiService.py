@@ -270,3 +270,35 @@ class MidiService:
                     matches.append(pat)
         return matches
 
+    def enrich_timeline(self, timeline: list[str]) -> list[dict]:
+        enriched = []
+
+        for chord_name in timeline:
+            try:
+                if chord_name != "[No Name]":
+                    objChord = chord.Chord(chord_name)
+
+                    note_names = [n.nameWithOctave[:-1] if len(n.nameWithOctave) > 1 else n.name for n in objChord.pitches]
+                    unique_notes = list(dict.fromkeys(note_names))
+
+                    root_note = objChord.root().name
+                    function = self.get_chord_function(root_note)
+
+                    sc = sanitize_chord_name(simplify_chord_name(objChord.pitchedCommonName), 'tab')
+
+                    if sc != "[No Name]": 
+                        enriched.append({
+                            "chord": sc or chord_name,
+                            "notes": unique_notes,
+                            "function": function,
+                        })
+            except Exception as e:
+                enriched.append({
+                    "chord": chord_name,
+                    "notes": [],
+                    "function": "Unknown",
+                    "error": str(e)
+                })
+
+        return enriched
+

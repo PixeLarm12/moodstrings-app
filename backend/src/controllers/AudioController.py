@@ -53,15 +53,8 @@ def transcribe(file):
         if not chordsPlayed:
             return {"error": "Unable to extract harmonic progression"}
 
-        chord_list = [
-            {
-                "chord": k,
-                "notes": v[0],
-                "name": v[1],
-                "function": v[2],
-            }
-            for k, v in chordsPlayed.items()
-        ]
+        timeline = midi_service.build_chord_timeline()
+        chord_list = midi_service.enrich_timeline(timeline)
 
         return {
             "chord_progression": chord_list,
@@ -72,7 +65,6 @@ def transcribe(file):
             "mode": get_mode_name(key_info['mode']),
             "tonic": f"{sanitize_chord_name(key_info['tonic'], 'tab')} ({sanitize_chord_name(key_info['tonic'])})",
             "relative_scales": [relative_scales],
-            "timeline": timeline,
             "repeated_chords": repeated_chords,
             "progressions": progressions
         }
