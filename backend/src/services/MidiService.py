@@ -1,11 +1,10 @@
 import tempfile
 from io import BytesIO
-from src.utils.StringUtil import simplify_chord_name, sanitize_chord_name
 import pretty_midi
-from music21 import chord, converter, tempo, analysis, harmony, scale
+from music21 import chord as m21Chord, converter as m21Converter, key as m21Key, harmony as m21Harmony
 import soundfile as sf
 import librosa
-from src.utils.StringUtil import simplify_chord_name, sanitize_chord_name, get_chord_note_names
+from src.utils.StringUtil import sanitize_chord_name, simplify_chord_name
 import os
 from src.enums import MusicEnum
 
@@ -98,7 +97,7 @@ class MidiService:
         for raw in raw_chords:
             note_names = raw.split("+")
             try:
-                objChord = chord.Chord(note_names)
+                objChord = m21Chord.Chord(note_names)
                 forte_class = objChord.forteClassTn
 
                 if forte_class is not None and forte_class != prev_forte:
@@ -112,7 +111,7 @@ class MidiService:
     def create_midi_converter(self):
         with tempfile.NamedTemporaryFile(suffix=".mid", delete=False) as tmp_midi:
             self._midi_data.write(tmp_midi.name)
-            return converter.parse(tmp_midi.name)
+            return m21Converter.parse(tmp_midi.name)
 
     def find_estimate_key(self):
         midi_file = self.create_midi_converter()
@@ -128,35 +127,47 @@ class MidiService:
 
     def find_relative_scales(self):
         midi_file = self.create_midi_converter()
-        key = midi_file.analyze("key")
+        detected_key: m21Key.Key = midi_file.analyze("key")
 
-        tonic = key.tonic
-        mode = key.mode.lower()
+        self._tone_info = {
+            "tonic": detected_key.tonic.name,
+            "mode": detected_key.mode.lower()
+        }
 
-        relatives = {}
+        tonic = self._tone_info["tonic"]
+        mode = self._tone_info["mode"]
 
-        try:
-            if mode == "major":
-                rel_minor = scale.MinorScale(tonic.transpose(-3))
-                relatives["relative_minor"] = str(rel_minor.tonic.name + " minor")
-            elif mode == "minor":
-                rel_major = scale.MajorScale(tonic.transpose(3))
-                relatives["relative_major"] = str(rel_major.tonic.name + " major")
-        except Exception:
-            pass
+        scale_notes = (
+            MusicEnum.Scales.MAJOR.value.get(tonic)
+            if mode == "major"
+            else MusicEnum.Scales.MINOR.value.get(tonic)
+        )
 
-        try:
-            major_scale = scale.MajorScale(tonic) if mode == "major" else scale.MajorScale(tonic.transpose(3))
-            degrees = ["Ionian", "Dorian", "Phrygian", "Lydian", "Mixolydian", "Aeolian", "Locrian"]
-            relatives["modes"] = []
+        if not scale_notes:
+            return {"error": "Scale not mapped in enum"}
 
-            for i, deg in enumerate(degrees):
-                new_tonic = major_scale.pitchFromDegree(i + 1)
-                relatives["modes"].append(f"{new_tonic.name} {deg}")
-        except Exception:
-            pass
+        if mode == "major":
+            triad_qualities = ["major", "minor", "minor", "major", "major", "minor", "diminished"]
+        else:
+            triad_qualities = ["minor", "diminished", "major", "minor", "minor", "major", "major"]
 
-        return relatives
+        harmonic_chords = []
+
+        for i, root in enumerate(scale_notes):
+            quality = triad_qualities[i]
+            chord_name = f"{root} {quality}"
+            chord_function = self.get_chord_function(root)
+
+            harmonic_chords.append({
+                "function": chord_function,
+                "chord": chord_name
+            })
+
+        return {
+            "key": f"{tonic} {mode}",
+            "chords": harmonic_chords
+        }
+
 
     def build_chord_timeline(self, bucket_size: float = 0.25) -> list[str]:
         """
@@ -180,10 +191,9 @@ class MidiService:
                 if len(pitches) >= 2:
                     note_names = [librosa.midi_to_note(p) for p in pitches]
 
-                    # 🧹 Normalize Unicode accidentals
                     normalized = [n.replace("♯", "#").replace("♭", "b") for n in note_names]
 
-                    objChord = chord.Chord(normalized)
+                    objChord = m21Chord.Chord(normalized)
                     sc = sanitize_chord_name(simplify_chord_name(objChord.pitchedCommonName), 'tab')
 
                     if sc and sc != prev_chord:
@@ -191,18 +201,6 @@ class MidiService:
                         prev_chord = sc
 
         return timeline
-
-    def detect_repeated_chords(self, timeline: list[str]) -> list[tuple[int, str]]:
-        """
-        Detect repeated consecutive chords in a given timeline.
-        Returns a list of tuples like [(index, chord_name), ...]
-        """
-        repeats = []
-        for i in range(1, len(timeline)):
-            if timeline[i] == timeline[i - 1]:
-                repeats.append((i - 1, timeline[i]))
-        return repeats
-
 
     def detect_progressions(self, timeline: list[str]) -> list[list[str]]:
         """
@@ -230,7 +228,7 @@ class MidiService:
         for chord_name in timeline:
             try:
                 if chord_name != "[No Name]":
-                    objChord = chord.Chord(chord_name)
+                    objChord = m21Chord.Chord(chord_name)
 
                     note_names = [n.nameWithOctave[:-1] if len(n.nameWithOctave) > 1 else n.name for n in objChord.pitches]
                     unique_notes = list(dict.fromkeys(note_names))

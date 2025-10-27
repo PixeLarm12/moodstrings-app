@@ -1,15 +1,3 @@
-def normalize_chord_name(chord: str) -> str:
-    chord = chord.replace("triad", "").strip()
-
-    if "-major" in chord:
-        note = chord.replace("-major", "").strip()
-        return note[0] 
-    elif "-minor" in chord:
-        note = chord.replace("-minor", "").strip()
-        return note[0] + "m"
-    else:
-        return chord.strip()
-
 def simplify_chord_name(chord_name: str) -> str:
     chord_name = chord_name.lower()
 
@@ -110,9 +98,6 @@ def sanitize_chord_name(chordName: str, type: str = None) -> str:
             response += ' com Sétima'
 
     return response
-
-def get_chord_note_names(notes):
-    return [f"{note} ({sanitize_chord_name(note)})" for note in notes]
 
 def get_mode_name(mode: str) -> str:
     raw = mode.lower()

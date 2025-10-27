@@ -6,10 +6,12 @@
 
     <p>
       <div v-for="(info, index) in relativeScales" :key="index">
-        <b v-if="info.relative_major">Relativa maior: {{ info.relative_major }}</b>
+        <h3 v-if="info.key" class="text-lg mb-4 font-semibold">Escala: {{ info.key }}</h3> 
 
         <ul class="list-disc pl-5">
-          <li v-for="(mode, modeIndex) in info.modes" :key="modeIndex" class="list-none">{{ mode }}</li>
+          <li v-for="(chord, modeIndex) in info.chords" :key="modeIndex" class="list-none">
+            {{ chord.chord }} <i>{{ chord.function }}</i>
+          </li>
         </ul>
       </div>
     </p>
