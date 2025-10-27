@@ -70,52 +70,6 @@ class MidiService:
 
         return f"{roman} ({name})"
 
-    def extract_chords(self, chord_threshold=2):
-        raw_chords = []
-        named_chords_dict = {}
-
-        for instrument in self._midi_data.instruments:
-            if instrument.is_drum:
-                continue
-
-            notes_by_time = {}
-            bucket_size = 0.25
-
-            for note in instrument.notes:
-                bucket = round(note.start / bucket_size) * bucket_size
-                notes_by_time.setdefault(bucket, []).append(note.pitch)
-
-            previous_chord = None
-            for time in sorted(notes_by_time.keys()):
-                pitches = notes_by_time[time]
-                if len(pitches) >= chord_threshold:
-                    item = '+'.join(sorted(pretty_midi.note_number_to_name(p) for p in pitches))
-                    if item != previous_chord:
-                        raw_chords.append(item)
-                        previous_chord = item
-
-        prev = None
-        for raw in raw_chords:
-            note_names = raw.split("+")
-            objChord = chord.Chord(note_names)
-            sc = sanitize_chord_name(simplify_chord_name(objChord.pitchedCommonName), 'tab')
-
-            if sc and sc != prev:
-                root_note = objChord.root().name
-                function = self.get_chord_function(root_note)
-                chordName = sanitize_chord_name(objChord.pitchedCommonName)
-
-                if not chordName == "[No Name]":
-                    named_chords_dict[sc] = [
-                        get_chord_note_names(list(dict.fromkeys(objChord.pitchNames))),  # notes
-                        chordName,                # name
-                        function                                                        # função harmônica
-                    ]
-
-                prev = sc
-
-        return named_chords_dict
-
     def extract_chords_forteclass(self, chord_threshold=2):
         raw_chords = []
         forte_classes = []

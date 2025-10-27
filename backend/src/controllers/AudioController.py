@@ -27,7 +27,6 @@ def transcribe(file):
 
         ai_service = AIService()
 
-        chordsPlayed = midi_service.extract_chords()
         chordsForteClass = midi_service.extract_chords_forteclass()
 
         timeline = midi_service.build_chord_timeline()
@@ -49,11 +48,11 @@ def transcribe(file):
         key_info = midi_service.find_estimate_key()
         relative_scales = midi_service.find_relative_scales()
         bpm, tempo_name = classify_tempo(midi_service.find_tempo())
+        timeline = midi_service.build_chord_timeline()
 
-        if not chordsPlayed:
+        if not timeline:
             return {"error": "Unable to extract harmonic progression"}
 
-        timeline = midi_service.build_chord_timeline()
         chord_list = midi_service.enrich_timeline(timeline)
 
         return {
