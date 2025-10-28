@@ -22,8 +22,27 @@
 
       <!-- INFO CONTENT -->
       <div v-if="chordProgression.length > 0 && !showUploadForm" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
-        <h2 class="text-2xl font-bold mb-2">Principais informações</h2>
 
+        <div class="flex justify-between">
+          <h2 class="text-2xl font-bold mb-2">Principais informações</h2>
+        
+          <button
+            type="button"
+            class="py-2 px-2 1/2 bg-cyan-700 rounded-lg font-semibold hover:bg-cyan-900"
+            @click="downloadMidi"
+          >
+            Download arquivo midi
+          </button>  
+          
+          <button
+            type="button"
+            class="py-2 px-2 1/2 bg-cyan-700 rounded-lg font-semibold hover:bg-cyan-900"
+            @click="downloadMusicalSheet"
+          >
+            Download partitura
+          </button>
+        </div>
+         
         <span class="font-semibold text-blue-400">Sequência tocada: </span> 
         
         <p>
@@ -67,10 +86,10 @@
         <p><span class="font-semibold text-blue-400">Tônica:</span> {{ tonic }}</p>
         <p><span class="font-semibold text-blue-400">Modo:</span> {{ mode }}</p>
 
-        <div class="flex justify-between my-4">
+        <div class="flex justify-around my-4">
           <button
             type="button"
-            class="py-2 mx-2 w-1/3 bg-blue-600 rounded-lg font-semibold hover:bg-blue-700"
+            class="py-2 px-12 bg-blue-600 rounded-lg font-semibold hover:bg-blue-700"
             @click="showScalesModal = true"
           >
             Ver escalas relativas
@@ -78,15 +97,7 @@
 
           <button
             type="button"
-            class="py-2 mx-2 w-1/3 bg-blue-600 rounded-lg font-semibold hover:bg-blue-700"
-            @click="downloadMidi"
-          >
-            Download arquivo midi
-          </button>  
-          
-          <button
-            type="button"
-            class="py-2 mx-2 w-1/3 bg-gray-700 rounded-lg font-semibold hover:bg-gray-600"
+            class="py-2 px-12 bg-gray-700 rounded-lg font-semibold hover:bg-gray-600"
             @click="showAndCleanForm()"
           >
             Enviar outro arquivo
@@ -233,7 +244,7 @@ export default {
     },
     async downloadMidi() {
       if (!this.file) {
-        alert("Selecione um arquivo primeiro!");
+        alert("Select a file first!");
         return;
       }
 
@@ -249,6 +260,28 @@ export default {
       const date = new Date().toISOString().slice(0, 10).replace(/-/g, "_");
       link.href = url;
       link.setAttribute("download", `${date}_played_progression.mid`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    },
+    async downloadMusicalSheet() {
+      if (!this.file) {
+        alert("Select a file first!");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("uploaded_file", this.file);
+
+      const response = await axios.post(`${this.API_URL}/download-sheet`, formData, {
+        responseType: "blob"
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      const date = new Date().toISOString().slice(0, 10).replace(/-/g, "_");
+      link.href = url;
+      link.setAttribute("download", `${date}_musical_sheet.xml`);
       document.body.appendChild(link);
       link.click();
       link.remove();

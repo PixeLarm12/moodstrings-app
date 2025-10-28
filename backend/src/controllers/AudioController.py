@@ -79,5 +79,30 @@ async def get_midi_to_download(file):
 
     except Exception as e:
         return {"error": str(e)}
+    
+async def get_musical_sheet_to_download(file):
+    try:
+        midi_service = MidiService(file=file)
+
+        xml_content = midi_service.export_musicxml()
+
+        sheet_io = io.BytesIO(xml_content.encode("utf-8"))
+        sheet_io.seek(0)
+
+        today = date.today()
+        filename = f"{today}_musical_sheet.musicxml"
+
+        return StreamingResponse(
+            sheet_io,
+            media_type="application/vnd.recordare.musicxml+xml",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+
+    except Exception as e:
+        return {"error": str(e)}
+
+
 
 

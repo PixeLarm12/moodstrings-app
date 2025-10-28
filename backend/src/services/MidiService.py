@@ -277,4 +277,19 @@ class MidiService:
                     })
 
         return chord_progression
+    
+    def export_musicxml(self):
+        midi_score = self.create_midi_converter()
+
+        with tempfile.NamedTemporaryFile(suffix=".musicxml", delete=False, mode="w", encoding="utf-8") as tmp_xml:
+            midi_score.write('musicxml', fp=tmp_xml.name)
+
+        # Read the content back to memory
+        with open(tmp_xml.name, "r", encoding="utf-8") as f:
+            xml_content = f.read()
+
+        return xml_content
+
+
+
 

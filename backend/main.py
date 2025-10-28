@@ -21,6 +21,10 @@ async def transcribe(uploaded_file: UploadFile):
 async def download_midi(uploaded_file: UploadFile):
     return await audio_controller.get_midi_to_download(uploaded_file)
 
+@app.post("/download-sheet")
+async def download_sheet(uploaded_file: UploadFile):
+    return await audio_controller.get_musical_sheet_to_download(uploaded_file)
+
 
 # @app.get("/create-dataset")
 # def create_dataset():
