@@ -60,12 +60,6 @@
           <EmotionsComponent :emotion="emotion"></EmotionsComponent>
         </div>
 
-        <h2 class="text-2xl font-bold mt-8 mb-2">Secundárias</h2>
-
-        <p><span class="font-semibold text-sky-400">Tom:</span> {{ key }}</p>
-        <p><span class="font-semibold text-sky-400">Andamento:</span> {{ tempo.time }} BPM (<i>{{ tempo.name }}</i>)</p>
-        <p><span class="font-semibold text-sky-400">Tônica:</span> {{ tonic }}</p>
-
         <div class="flex justify-around my-4">
           <button
             type="button"
