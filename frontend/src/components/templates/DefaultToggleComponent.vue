@@ -2,7 +2,7 @@
   <div class="w-full">
     <div
       @click="toggle"
-      class="flex justify-between items-center px-4 py-3 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors border border-blue-500"
+      class="flex justify-between items-center px-4 py-3 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors border border-sky-500"
     >
       <h3 class="font-semibold">
         <slot name="header"></slot>

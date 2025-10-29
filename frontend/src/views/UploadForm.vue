@@ -16,29 +16,36 @@
       </p>
 
       <ScalesModal :show="showScalesModal" :relative-scales="relativeScales" @close="showScalesModal = false" />
-      <AIModelModal :show="showAIModal" :evaluation="modalEvaluation" :model-name="modalModelName" @close="showAIModal = false" />      
 
       <!-- INFO CONTENT -->
       <div v-if="(progression.chords.length > 0 || progression.notes.length > 0) && !showUploadForm" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
 
-        <div class="flex justify-between">
-          <h2 class="text-2xl font-bold mb-2">Principais informações</h2>
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
+          <div class="w-full md:col-span-7">
+            <div class="w-full flex flex-col gap-2">
+              <p><span class="font-semibold text-sky-400">Tom:</span> {{ key }}</p>
+              <p><span class="font-semibold text-sky-400">Andamento:</span> {{ tempo.time }} BPM (<i>{{ tempo.name }}</i>)</p>
+              <p><span class="font-semibold text-sky-400">Tônica:</span> {{ tonic }}</p>
+            </div>
+          </div>
 
-          <button
-            type="button"
-            class="py-2 px-2 1/2 bg-cyan-700 rounded-lg font-semibold hover:bg-cyan-900"
-            @click="downloadMidi"
-          >
-            Download arquivo midi
-          </button>  
-          
-          <button
-            type="button"
-            class="py-2 px-2 1/2 bg-cyan-700 rounded-lg font-semibold hover:bg-cyan-900"
-            @click="downloadMusicalSheet"
-          >
-            Download partitura
-          </button>
+          <div class="w-full md:col-span-5 flex flex-col justify-start gap-2 md:gap-4">
+            <button
+              type="button"
+              class="py-2 px-2 1/2 bg-sky-700 rounded-lg font-semibold hover:bg-sky-900"
+              @click="downloadMidi"
+            >
+              Download arquivo midi
+            </button>  
+            
+            <button
+              type="button"
+              class="py-2 px-2 1/2 bg-sky-700 rounded-lg font-semibold hover:bg-sky-900"
+              @click="downloadMusicalSheet"
+            >
+              Download partitura
+            </button>
+          </div>
         </div>
 
         <div v-if="progression.chords.length > 0" class="my-2">
@@ -49,37 +56,20 @@
           <NotesPlayedComponent :progression="progression.notes"></NotesPlayedComponent>
         </div>
 
-        <hr class="my-4">
-
-        <span class="font-semibold text-blue-400">Emoção relacionada ao trecho: </span> 
-        
-        <p>
-          <ul v-for="(emotion, index) in emotions" :key="index">
-            <li class="list-none">
-              <button 
-                type="button" 
-                v-if="emotion.model_used != 'KNN'"
-                class="hover:text-blue-400 hover:cursor-pointer"
-                @click="openAIModelModal(emotion)"
-              >
-              {{ ++index }} - {{ emotion.content }} ({{ emotion.model_used }})
-              </button> 
-              <span v-else>{{ ++index }} - {{ emotion.content }} ({{ emotion.model_used }})</span>
-              <span v-if="index < progression.chords.length - 1">, </span>
-            </li>
-          </ul>
-        </p>  
+        <div v-if="emotion" class="my-2">
+          <EmotionsComponent :emotion="emotion"></EmotionsComponent>
+        </div>
 
         <h2 class="text-2xl font-bold mt-8 mb-2">Secundárias</h2>
 
-        <p><span class="font-semibold text-blue-400">Tom:</span> {{ key }}</p>
-        <p><span class="font-semibold text-blue-400">Andamento:</span> {{ tempo.time }} BPM (<i>{{ tempo.name }}</i>)</p>
-        <p><span class="font-semibold text-blue-400">Tônica:</span> {{ tonic }}</p>
+        <p><span class="font-semibold text-sky-400">Tom:</span> {{ key }}</p>
+        <p><span class="font-semibold text-sky-400">Andamento:</span> {{ tempo.time }} BPM (<i>{{ tempo.name }}</i>)</p>
+        <p><span class="font-semibold text-sky-400">Tônica:</span> {{ tonic }}</p>
 
         <div class="flex justify-around my-4">
           <button
             type="button"
-            class="py-2 px-12 bg-blue-600 rounded-lg font-semibold hover:bg-blue-700"
+            class="py-2 px-12 bg-sky-600 rounded-lg font-semibold hover:bg-sky-700"
             @click="showScalesModal = true"
           >
             Ver escalas relativas
@@ -103,12 +93,12 @@
           @change="handleFileChange"
           class="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 
                  file:rounded-lg file:border-0 file:text-sm file:font-semibold 
-                 file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+                 file:bg-sky-600 file:text-white hover:file:bg-sky-700"
         />
 
         <button
           type="submit"
-          class="w-full py-2 bg-blue-600 rounded-lg font-semibold hover:bg-blue-700"
+          class="w-full py-2 bg-sky-600 rounded-lg font-semibold hover:bg-sky-700"
         >
           Enviar
         </button>
@@ -122,11 +112,10 @@
 <script>
 import axios from "axios"
 import Loading from "../components/utils/Loading.vue"
-import ChordModal from "../components/music/ChordModal.vue"
 import ScalesModal from "../components/music/ScalesModal.vue"
-import AIModelModal from "../components/ai/AIModelModal.vue"
 import ChordsPlayedComponent from "../components/music/ChordsPlayedComponent.vue"
 import NotesPlayedComponent from "../components/music/NotesPlayedComponent.vue"
+import EmotionsComponent from "../components/music/EmotionsComponent.vue"
 
 export default {
   name: "UploadForm",
@@ -136,16 +125,13 @@ export default {
       loading: false,
       showUploadForm: true,
       showScalesModal: false,
-      showAIModal: false,
-      modalEvaluation: [],
       progression: {
         chords: [],
         notes: [],
       },
-      emotions: [],
+      emotion: [],
       relativeScales: [],
       message: "",
-      modalModelName: "",
       key: "",
       tempo: [],
       tonic: "",
@@ -154,11 +140,10 @@ export default {
   },
   components: {
     Loading,
-    ChordModal,
     ScalesModal,
-    AIModelModal,
     ChordsPlayedComponent,
-    NotesPlayedComponent
+    NotesPlayedComponent,
+    EmotionsComponent
   },  
   methods: {
     handleFileChange(event) {
@@ -188,7 +173,7 @@ export default {
           this.showUploadForm = false
           this.message = "Veja as informações extraídas:"
 
-          this.emotions = response.data.emotions || []
+          this.emotion = response.data.emotion || []
           this.key = response.data.key || ""
           this.relativeScales = response.data.relative_scales || []
           this.tonic = response.data.tonic || ""
@@ -217,11 +202,6 @@ export default {
       this.tempo = []
       this.tonic = ""
       this.file = null
-    },
-    openAIModelModal(emotion) {
-      this.showAIModal = true
-      this.modalEvaluation = emotion.evaluation
-      this.modalModelName = emotion.model_used
     },
     showAndCleanForm() {
       this.cleanFields()

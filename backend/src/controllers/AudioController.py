@@ -23,11 +23,10 @@ def transcribe(file):
             midi_service = MidiService(file=file)
 
         ai_service = AIService()
-        emotions = []
 
         chordsForteClass = midi_service.extract_chords_forteclass()
 
-        emotions.append(ai_service.rf_predict(chordsForteClass))
+        emotion = ai_service.rf_predict(chordsForteClass)
 
         key_info = midi_service.find_estimate_key()
         relative_scales = midi_service.find_relative_scales()
@@ -39,7 +38,7 @@ def transcribe(file):
 
         return {
             "progression": progression,
-            "emotions": emotions,
+            "emotion": emotion,
             "relative_scales": [relative_scales],
             "tempo": {
                 "time": bpm,

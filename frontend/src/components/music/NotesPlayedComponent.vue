@@ -2,7 +2,7 @@
   <div class="mt-6">
     <DefaultToggleComponent>
       <template #header>
-        Check <b class="text-blue-400">notes sequence</b> that you played:
+        Check <b class="text-sky-400">notes sequence</b> that you played:
       </template>
 
       <span v-for="(note, index) in progression">

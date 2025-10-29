@@ -10,13 +10,13 @@
   <div class="mt-6">
     <DefaultToggleComponent>
       <template #header>
-        Check <b class="text-blue-400">chords sequence</b> that you played:
+        Check <b class="text-sky-400">chords sequence</b> that you played:
       </template>
 
       <span v-for="(item, index) in progression">
         <button 
           type="button" 
-          class="hover:text-blue-400 hover:cursor-pointer"
+          class="hover:text-sky-400 hover:cursor-pointer"
           @click="openChordModal(item)"
         >
           {{ item.chord }}

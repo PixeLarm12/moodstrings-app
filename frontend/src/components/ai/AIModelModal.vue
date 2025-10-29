@@ -19,8 +19,8 @@ export default {
   components: { DefaultModal },
   props: {
     evaluation: {
-      type: Array,
-      default: () => []
+      type: Object,
+      default: () => {}
     },
     modelName: {
       type: String,
