@@ -5,7 +5,12 @@
 
       <h1 class="text-3xl font-bold">Upload de Arquivo</h1>
 
-      <Loading v-if="loading"></Loading>
+      <h2 v-if="file && file.name && (chordProgression.length > 0 || notesProgression.length > 0)" class="text-lg font-semibold italic mb-2 text-gray-500">
+        Arquivo: {{ file.name }}
+      </h2>
+
+
+      <Loading v-if="loading" :file-name="file ? file.name : ''"></Loading>
       <p v-else-if="message" class="mt-4 font-medium">
         <span :class="success">{{ message }}</span>
       </p>
@@ -25,7 +30,7 @@
 
         <div class="flex justify-between">
           <h2 class="text-2xl font-bold mb-2">Principais informações</h2>
-        
+
           <button
             type="button"
             class="py-2 px-2 1/2 bg-cyan-700 rounded-lg font-semibold hover:bg-cyan-900"
@@ -200,7 +205,7 @@ export default {
       formData.append("uploaded_file", this.file)
 
       try {
-        this.cleanFields()
+        // this.cleanFields()
         this.loading = true
         this.showUploadForm = false
 
@@ -243,6 +248,7 @@ export default {
       this.tempo = ""
       this.tonic = ""
       this.mode = ""
+      this.file = null
     },
     openChordModal(info) {
       this.showChordModal = true
