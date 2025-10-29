@@ -168,69 +168,6 @@ class MidiService:
             "chords": harmonic_chords
         }
 
-
-    def build_chord_timeline(self, bucket_size: float = 0.25) -> list[str]:
-        timeline = []
-        prev_chord = None
-
-        for instrument in self.midi_data.instruments:
-            if instrument.is_drum:
-                continue
-
-            notes_by_time = {}
-            for note in instrument.notes:
-                bucket = round(note.start / bucket_size) * bucket_size
-                notes_by_time.setdefault(bucket, []).append(note.pitch)
-
-            for time in sorted(notes_by_time.keys()):
-                pitches = notes_by_time[time]
-                if len(pitches) >= 2:
-                    note_names = [librosa.midi_to_note(p) for p in pitches]
-                    normalized = [n.replace("♯", "#").replace("♭", "b") for n in note_names]
-
-                    objChord = m21Chord.Chord(normalized)
-
-                    chord_ui = simplify_chord_name(objChord.pitchedCommonName) 
-
-                    if chord_ui and chord_ui != prev_chord:
-                        timeline.append(chord_ui)
-                        prev_chord = chord_ui
-
-        return timeline
-
-
-    def enrich_timeline(self, timeline: list[str]) -> list[dict]:
-        enriched = []
-
-        for chord_name in timeline:
-            try:
-                if chord_name != "[No Name]":
-                    objChord = m21Chord.Chord(chord_name)
-
-                    note_names = [n.nameWithOctave[:-1] if len(n.nameWithOctave) > 1 else n.name for n in objChord.pitches]
-                    unique_notes = list(dict.fromkeys(note_names))
-
-                    root_note = objChord.root().name
-                    function = self.get_chord_function(root_note)
-
-                    sc = sanitize_chord_name(simplify_chord_name(objChord.pitchedCommonName), 'tab')
-
-                    if sc != "[No Name]": 
-                        enriched.append({
-                            "chord": sc or chord_name,
-                            "notes": unique_notes,
-                            "function": function,
-                        })
-            except Exception as e:
-                enriched.append({
-                    "chord": chord_name,
-                    "notes": [],
-                    "function": "Unknown",
-                    "error": str(e)
-                })
-
-        return enriched
-        
     def extract_chord_progression(self, bucket_size: float = 0.25) -> list[dict]:
         chord_progression = []
         prev_chord = None
@@ -324,14 +261,17 @@ class MidiService:
                 if last_note == note_name and (note.start - last_time) < 0.005:
                     continue
 
-                sequence.append(note_name)
+                sequence.append(note_name[:-1]) # remove last char (number, for example C5)
                 last_note = note_name
                 last_time = note.start
 
         return sequence
 
+    def extract_notes_and_chords(self) -> dict:
+        chords = self.extract_chord_progression()
+        notes = self.extract_note_sequence()
 
-
-
-
-
+        return {
+            "notes": notes,
+            "chords": chords
+        }

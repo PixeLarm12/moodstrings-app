@@ -99,16 +99,6 @@ def sanitize_chord_name(chordName: str, type: str = None) -> str:
 
     return response
 
-def get_mode_name(mode: str) -> str:
-    raw = mode.lower()
-
-    if raw == 'minor':
-        return "Menor"
-    elif raw == 'major':
-        return "Maior"
-    else:
-        return raw
-    
 def classify_tempo(tempo) -> tuple[int, str]:
     if isinstance(tempo, (float, int)):
         bpm = int(tempo)

@@ -5,7 +5,7 @@ from src.services.AudioService import AudioService
 from datetime import date
 from fastapi.responses import StreamingResponse
 from src.utils import FileUtil
-from src.utils.StringUtil import sanitize_chord_name, get_mode_name, classify_tempo
+from src.utils.StringUtil import sanitize_chord_name, classify_tempo
 import io
 
 def transcribe(file):
@@ -23,37 +23,30 @@ def transcribe(file):
             midi_service = MidiService(file=file)
 
         ai_service = AIService()
+        emotions = []
 
         chordsForteClass = midi_service.extract_chords_forteclass()
 
-        rf_results = ai_service.rf_predict(chordsForteClass)
-
-        emotions = [
-            rf_results
-        ]
+        emotions.append(ai_service.rf_predict(chordsForteClass))
 
         key_info = midi_service.find_estimate_key()
         relative_scales = midi_service.find_relative_scales()
         bpm, tempo_name = classify_tempo(midi_service.find_tempo())
-        timeline = midi_service.build_chord_timeline()
-        chords = midi_service.extract_chord_progression()
-        notes = midi_service.extract_note_sequence()
+        progression = midi_service.extract_notes_and_chords()
 
-        if not chords and not notes:
-            return {"error": "Something wen't wrong. We can't extract both Chords or Notes played."}
-
-        chord_list = midi_service.enrich_timeline(timeline)
+        if not progression.get("chords") and not progression.get("notes"):
+            return {"error": "Something went wrong. We couldn't extract either chords or notes."}
 
         return {
-            "chord_progression": chords,
-            "notes_progression": notes,
+            "progression": progression,
             "emotions": emotions,
-            "tempo": bpm,
-            "tempo_name": tempo_name,
+            "relative_scales": [relative_scales],
+            "tempo": {
+                "time": bpm,
+                "name": tempo_name,
+            },
             "key": f"{sanitize_chord_name(key_info['key'], 'tab')} ({sanitize_chord_name(key_info['key'])})",
-            "mode": get_mode_name(key_info['mode']),
             "tonic": f"{sanitize_chord_name(key_info['tonic'], 'tab')} ({sanitize_chord_name(key_info['tonic'])})",
-            "relative_scales": [relative_scales]
         }
 
 

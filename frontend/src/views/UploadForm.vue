@@ -5,7 +5,7 @@
 
       <h1 class="text-3xl font-bold">Upload de Arquivo</h1>
 
-      <h2 v-if="file && file.name && (chordProgression.length > 0 || notesProgression.length > 0)" class="text-lg font-semibold italic mb-2 text-gray-500">
+      <h2 v-if="file && file.name && (progression.chords.length > 0 || progression.notes.length > 0)" class="text-lg font-semibold italic mb-2 text-gray-500">
         Arquivo: {{ file.name }}
       </h2>
 
@@ -15,18 +15,11 @@
         <span :class="success">{{ message }}</span>
       </p>
 
-      <ChordModal 
-        :show="showChordModal" 
-        :notes="modalNotes" 
-        :chord-name="modalChordName" 
-        :chord-function="modalChordFunction" 
-        @close="showChordModal = false" 
-      />
       <ScalesModal :show="showScalesModal" :relative-scales="relativeScales" @close="showScalesModal = false" />
       <AIModelModal :show="showAIModal" :evaluation="modalEvaluation" :model-name="modalModelName" @close="showAIModal = false" />      
 
       <!-- INFO CONTENT -->
-      <div v-if="(chordProgression.length > 0 || notesProgression.length > 0) && !showUploadForm" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
+      <div v-if="(progression.chords.length > 0 || progression.notes.length > 0) && !showUploadForm" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
 
         <div class="flex justify-between">
           <h2 class="text-2xl font-bold mb-2">Principais informações</h2>
@@ -47,35 +40,14 @@
             Download partitura
           </button>
         </div>
-         
-        <span class="font-semibold text-blue-400">Acordes identificados: </span> 
-        
-        <p>
-          <span v-for="(info, index) in chordProgression" :key="index">
-            <button 
-              type="button" 
-              class="hover:text-blue-400 hover:cursor-pointer"
-              @click="openChordModal(info)"
-            >
-            {{ info.chord }}
-            </button> 
-            <span v-if="index < chordProgression.length - 1">, </span>
-          </span>
-        </p>
 
-        <span class="font-semibold text-blue-400">Notas identificadas: </span> 
-        
-        <p>
-          <span v-for="(note, index) in notesProgression" :key="index">
-            <button 
-              type="button" 
-              class="hover:text-blue-400 hover:cursor-pointer"
-            >
-            {{ note }}
-            </button> 
-            <span v-if="index < notesProgression.length - 1">, </span>
-          </span>
-        </p>
+        <div v-if="progression.chords.length > 0" class="my-2">
+          <ChordsPlayedComponent :progression="progression.chords"></ChordsPlayedComponent>
+        </div>
+
+        <div v-if="progression.notes.length > 0" class="my-2">
+          <NotesPlayedComponent :progression="progression.notes"></NotesPlayedComponent>
+        </div>
 
         <hr class="my-4">
 
@@ -93,7 +65,7 @@
               {{ ++index }} - {{ emotion.content }} ({{ emotion.model_used }})
               </button> 
               <span v-else>{{ ++index }} - {{ emotion.content }} ({{ emotion.model_used }})</span>
-              <span v-if="index < chordProgression.length - 1">, </span>
+              <span v-if="index < progression.chords.length - 1">, </span>
             </li>
           </ul>
         </p>  
@@ -101,9 +73,8 @@
         <h2 class="text-2xl font-bold mt-8 mb-2">Secundárias</h2>
 
         <p><span class="font-semibold text-blue-400">Tom:</span> {{ key }}</p>
-        <p><span class="font-semibold text-blue-400">Andamento:</span> {{ tempo }} BPM (<i>{{ tempoName }}</i>)</p>
+        <p><span class="font-semibold text-blue-400">Andamento:</span> {{ tempo.time }} BPM (<i>{{ tempo.name }}</i>)</p>
         <p><span class="font-semibold text-blue-400">Tônica:</span> {{ tonic }}</p>
-        <p><span class="font-semibold text-blue-400">Modo:</span> {{ mode }}</p>
 
         <div class="flex justify-around my-4">
           <button
@@ -154,6 +125,8 @@ import Loading from "../components/utils/Loading.vue"
 import ChordModal from "../components/music/ChordModal.vue"
 import ScalesModal from "../components/music/ScalesModal.vue"
 import AIModelModal from "../components/ai/AIModelModal.vue"
+import ChordsPlayedComponent from "../components/music/ChordsPlayedComponent.vue"
+import NotesPlayedComponent from "../components/music/NotesPlayedComponent.vue"
 
 export default {
   name: "UploadForm",
@@ -162,24 +135,20 @@ export default {
       file: null,
       loading: false,
       showUploadForm: true,
-      showChordModal: false,
       showScalesModal: false,
       showAIModal: false,
-      modalNotes: [],
       modalEvaluation: [],
-      chordProgression: [],
-      notesProgression: [],
+      progression: {
+        chords: [],
+        notes: [],
+      },
       emotions: [],
       relativeScales: [],
       message: "",
-      modalChordName: "",
       modalModelName: "",
-      modalChordFunction: "",
       key: "",
-      tempoName: "",
-      tempo: "",
+      tempo: [],
       tonic: "",
-      mode: "",
       API_URL: import.meta.env.VITE_API_URL
     }
   },
@@ -187,7 +156,9 @@ export default {
     Loading,
     ChordModal,
     ScalesModal,
-    AIModelModal
+    AIModelModal,
+    ChordsPlayedComponent,
+    NotesPlayedComponent
   },  
   methods: {
     handleFileChange(event) {
@@ -195,7 +166,7 @@ export default {
     },
     async handleSubmit() {
       if (!this.file) {
-        this.message = "Selecione um arquivo primeiro!"
+        this.message = "Select file first!"
         this.cleanFields()
         this.loading = false
         return
@@ -205,7 +176,6 @@ export default {
       formData.append("uploaded_file", this.file)
 
       try {
-        // this.cleanFields()
         this.loading = true
         this.showUploadForm = false
 
@@ -218,15 +188,12 @@ export default {
           this.showUploadForm = false
           this.message = "Veja as informações extraídas:"
 
-          this.chordProgression = response.data.chord_progression || []
-          this.notesProgression = response.data.notes_progression || []
-          this.relativeScales = response.data.relative_scales || []
+          this.emotions = response.data.emotions || []
           this.key = response.data.key || ""
-          this.emotions = response.data.emotions || ""
-          this.tempoName = response.data.tempo_name || ""
-          this.tempo = response.data.tempo || ""
+          this.relativeScales = response.data.relative_scales || []
           this.tonic = response.data.tonic || ""
-          this.mode = response.data.mode || ""
+          this.tempo = response.data.tempo || []
+          this.progression = response.data.progression || []
         } else {
           this.loading = false
           this.message = `Error: ${response.data.error}`
@@ -241,20 +208,15 @@ export default {
     },
     cleanFields() {
       this.message = ""
-      this.chordProgression = []
-      this.notesProgression = []
+      this.progression = {
+        chords: [],
+        notes: [],
+      },
       this.relativeScales = []
       this.key = ""
-      this.tempo = ""
+      this.tempo = []
       this.tonic = ""
-      this.mode = ""
       this.file = null
-    },
-    openChordModal(info) {
-      this.showChordModal = true
-      this.modalNotes = info.notes
-      this.modalChordName = `${info.chord} (${info.name})`
-      this.modalChordFunction = info.function
     },
     openAIModelModal(emotion) {
       this.showAIModal = true
@@ -314,7 +276,7 @@ export default {
     success() {
       let isSuccess = false;
 
-      if(this.chordProgression.length > 0 || this.notesProgression.length > 0){
+      if(this.progression.chords.length > 0 || this.progression.notes.length > 0){
         isSuccess = true;
       }
 
