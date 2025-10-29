@@ -21,7 +21,7 @@
       <AIModelModal :show="showAIModal" :evaluation="modalEvaluation" :model-name="modalModelName" @close="showAIModal = false" />      
 
       <!-- INFO CONTENT -->
-      <div v-if="chordProgression.length > 0 && !showUploadForm" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
+      <div v-if="(chordProgression.length > 0 || notesProgression.length > 0) && !showUploadForm" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
 
         <div class="flex justify-between">
           <h2 class="text-2xl font-bold mb-2">Principais informações</h2>
@@ -43,7 +43,7 @@
           </button>
         </div>
          
-        <span class="font-semibold text-blue-400">Sequência tocada: </span> 
+        <span class="font-semibold text-blue-400">Acordes identificados: </span> 
         
         <p>
           <span v-for="(info, index) in chordProgression" :key="index">
@@ -55,6 +55,20 @@
             {{ info.chord }}
             </button> 
             <span v-if="index < chordProgression.length - 1">, </span>
+          </span>
+        </p>
+
+        <span class="font-semibold text-blue-400">Notas identificadas: </span> 
+        
+        <p>
+          <span v-for="(note, index) in notesProgression" :key="index">
+            <button 
+              type="button" 
+              class="hover:text-blue-400 hover:cursor-pointer"
+            >
+            {{ note }}
+            </button> 
+            <span v-if="index < notesProgression.length - 1">, </span>
           </span>
         </p>
 
@@ -149,6 +163,7 @@ export default {
       modalNotes: [],
       modalEvaluation: [],
       chordProgression: [],
+      notesProgression: [],
       emotions: [],
       relativeScales: [],
       message: "",
@@ -199,6 +214,7 @@ export default {
           this.message = "Veja as informações extraídas:"
 
           this.chordProgression = response.data.chord_progression || []
+          this.notesProgression = response.data.notes_progression || []
           this.relativeScales = response.data.relative_scales || []
           this.key = response.data.key || ""
           this.emotions = response.data.emotions || ""
@@ -221,6 +237,7 @@ export default {
     cleanFields() {
       this.message = ""
       this.chordProgression = []
+      this.notesProgression = []
       this.relativeScales = []
       this.key = ""
       this.tempo = ""
@@ -289,7 +306,13 @@ export default {
   },
   computed: {
     success() {
-      return this.chordProgression.length > 0 ? "text-green-600" : "text-red-500"
+      let isSuccess = false;
+
+      if(this.chordProgression.length > 0 || this.notesProgression.length > 0){
+        isSuccess = true;
+      }
+
+      return isSuccess ? "text-green-600" : "text-red-500"
     }
   }
 }

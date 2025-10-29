@@ -36,15 +36,17 @@ def transcribe(file):
         relative_scales = midi_service.find_relative_scales()
         bpm, tempo_name = classify_tempo(midi_service.find_tempo())
         timeline = midi_service.build_chord_timeline()
-        progression = midi_service.extract_chord_progression()
+        chords = midi_service.extract_chord_progression()
+        notes = midi_service.extract_note_sequence()
 
-        if not progression:
-            return {"error": "Unable to extract harmonic progression"}
+        if not chords and not notes:
+            return {"error": "Something wen't wrong. We can't extract both Chords or Notes played."}
 
         chord_list = midi_service.enrich_timeline(timeline)
 
         return {
-            "chord_progression": progression,
+            "chord_progression": chords,
+            "notes_progression": notes,
             "emotions": emotions,
             "tempo": bpm,
             "tempo_name": tempo_name,

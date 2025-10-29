@@ -1,7 +1,7 @@
 import tempfile
 from io import BytesIO
 import pretty_midi
-from music21 import chord as m21Chord, converter as m21Converter, key as m21Key, harmony as m21Harmony
+from music21 import chord as m21Chord, converter as m21Converter, key as m21Key, harmony as m21Harmony, pitch as m21Pitch
 import soundfile as sf
 import librosa
 from src.utils.StringUtil import sanitize_chord_name, simplify_chord_name
@@ -289,6 +289,48 @@ class MidiService:
             xml_content = f.read()
 
         return xml_content
+
+    def extract_note_sequence(self, bucket_size: float = 0.05, min_gap: float = 0.01, valid_range=("E2", "E6"), min_duration: float = 0.05) -> list[str]:
+        low_pitch = m21Pitch.Pitch(valid_range[0]).midi
+        high_pitch = m21Pitch.Pitch(valid_range[1]).midi
+
+        sequence = []
+        last_time = -1
+        last_note = None
+
+        for instrument in self._midi_data.instruments:
+            if instrument.is_drum:
+                continue
+
+            notes_sorted = sorted(instrument.notes, key=lambda n: n.start)
+
+            for note in notes_sorted:
+                note_name = librosa.midi_to_note(note.pitch).replace("♯", "#").replace("♭", "b")
+
+                # Filter by pitch range
+                try:
+                    midi_num = m21Pitch.Pitch(note_name).midi
+                    if not (low_pitch <= midi_num <= high_pitch):
+                        continue
+                except Exception:
+                    continue
+
+                # Filter very short notes
+                duration = note.end - note.start
+                if duration < min_duration:
+                    continue
+
+                # Preserve double/triple notes, only skip duplicates with almost zero gap
+                if last_note == note_name and (note.start - last_time) < 0.005:
+                    continue
+
+                sequence.append(note_name)
+                last_note = note_name
+                last_time = note.start
+
+        return sequence
+
+
 
 
 
