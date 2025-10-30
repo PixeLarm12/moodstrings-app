@@ -67,7 +67,7 @@
 
 <script>
 import axios from "axios"
-import ScalesModal from "../music/ScalesModal.vue"
+import ScalesModal from "../modal/ScalesModal.vue"
 import EmotionsComponent from "../music/EmotionsComponent.vue"
 import ChordsPlayedComponent from "../music/ChordsPlayedComponent.vue"
 import NotesPlayedComponent from "../music/NotesPlayedComponent.vue"

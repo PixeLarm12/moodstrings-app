@@ -29,7 +29,7 @@
 
 <script>
 import DefaultToggleComponent from "../templates/DefaultToggleComponent.vue";
-import ChordModal from "./ChordModal.vue";
+import ChordModal from "../modal/ChordModal.vue";
 
 export default {
   name: "ChordsPlayedComponent",

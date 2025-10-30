@@ -25,7 +25,7 @@
 
 <script>
 import DefaultToggleComponent from "../templates/DefaultToggleComponent.vue";
-import AIModelModal from "../ai/AIModelModal.vue";
+import AIModelModal from "../modal/AIModelModal.vue";
 
 export default {
   name: "EmotionsComponent",
