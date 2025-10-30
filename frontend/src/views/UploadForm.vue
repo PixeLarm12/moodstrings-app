@@ -3,7 +3,7 @@
     <div class="w-full max-w-md md:max-w-2xl text-center space-y-6">
       <img src="/logo.png" alt="Logo" class="w-24 h-24 mx-auto rounded-full shadow-lg" />
 
-      <h1 class="text-3xl font-bold">Upload de Arquivo</h1>
+      <h1 class="text-3xl font-bold">Chord and Emotion Recognizer</h1>
 
       <h2 v-if="file && file.name && (progression.chords.length > 0 || progression.notes.length > 0)" class="text-lg font-semibold italic mb-2 text-gray-500">
         Arquivo: {{ file.name }}
