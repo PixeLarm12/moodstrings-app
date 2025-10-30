@@ -7,19 +7,20 @@
       <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
           <div class="w-full md:col-span-7">
               <div class="w-full flex flex-col gap-2">
-                  <p><span class="font-semibold text-sky-400">Tom:</span> {{ keyName }}</p>
-                  <p><span class="font-semibold text-sky-400">Andamento:</span> {{ tempo.time }} BPM (<i>{{ tempo.name }}</i>)</p>
-                  <p><span class="font-semibold text-sky-400">Tônica:</span> {{ tonic }}</p>
+                  <p><span class="font-semibold text-sky-400">Key:</span> {{ keyName }}</p>
+                  <p><span class="font-semibold text-sky-400">Tempo:</span> {{ tempo.time }} BPM (<i>{{ tempo.name }}</i>)</p>
+                  <p><span class="font-semibold text-sky-400">Tonic:</span> {{ tonic }}</p>
               </div>
           </div>
 
               <div class="w-full md:col-span-5 flex flex-col justify-start gap-2 md:gap-4">
               <button
+                  v-if="(progression.chords.length > 0)"
                   type="button"
                   class="py-2 px-2 1/2 bg-sky-700 rounded-lg font-semibold hover:bg-sky-900"
                   @click="downloadMidi"
               >
-                  Download arquivo midi
+                  Download midi file
               </button>  
               
               <button
@@ -27,7 +28,7 @@
                   class="py-2 px-2 1/2 bg-sky-700 rounded-lg font-semibold hover:bg-sky-900"
                   @click="downloadMusicalSheet"
               >
-                  Download partitura
+                  Download music sheet
               </button>
               </div>
           </div>
@@ -46,19 +47,19 @@
 
           <div class="flex justify-around my-4">
               <button
-              type="button"
-              class="py-2 px-12 bg-sky-600 rounded-lg font-semibold hover:bg-sky-700"
-              @click="showScalesModal = true"
+                type="button"
+                class="py-2 px-12 bg-sky-600 rounded-lg font-semibold hover:bg-sky-700"
+                @click="showScalesModal = true"
               >
-              Ver escalas relativas
+              See relative scales
               </button>
 
               <button
-              type="button"
-              class="py-2 px-12 bg-gray-700 rounded-lg font-semibold hover:bg-gray-600"
-              @click="showAndCleanForm()"
+                type="button"
+                class="py-2 px-12 bg-gray-700 rounded-lg font-semibold hover:bg-gray-600"
+                @click="reset()"
               >
-              Enviar outro arquivo
+              Send new file
               </button>  
           </div>
       </div>
@@ -159,6 +160,9 @@ export default {
       document.body.appendChild(link);
       link.click();
       link.remove();
+    },
+    reset(){
+      this.$emit("reset");
     }
   },
 }

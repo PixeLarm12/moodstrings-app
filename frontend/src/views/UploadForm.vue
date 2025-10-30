@@ -10,6 +10,7 @@
       </h2>
 
       <button
+        v-show="!loading && !showProgressionInfo && !showValidationForm"
         @click="optionRecordMic = !optionRecordMic"
         class="px-4 py-2 rounded bg-teal-600 text-white hover:bg-sky-700"
       >
@@ -76,6 +77,7 @@
         :tempo="tempo" 
         :key-name="keyName" 
         :tonic="tonic"
+        @reset="handleFormReset"
       />
       <!-- END MUSIC INFORMATION -->
 
@@ -154,7 +156,6 @@ export default {
           this.loading = false
           this.showUploadForm = false
           this.showValidationForm = true
-          this.message = "Check your progression:"
 
           this.progression = response.data.progression || []
           this.tempo = response.data.tempo || []
@@ -186,10 +187,6 @@ export default {
       this.uploadedFileUrl = null
       this.isAudioRecorded = false
     },
-    showAndCleanForm() {
-      this.cleanFields()
-      this.showUploadForm = true
-    },
     async getProgressionInfo(progression){
       try {
         this.loading = true
@@ -210,7 +207,6 @@ export default {
           this.loading = false
           this.showUploadForm = false
           this.showProgressionInfo = true
-          this.message = "Check your informations:"
           
           this.emotion = response.data.emotion || []
           this.keyName = response.data.key_name || ""
@@ -262,6 +258,13 @@ export default {
       this.file = audioFile
       this.isAudioRecorded = true
       this.uploadedFileUrl = URL.createObjectURL(audioFile)
+    },
+    handleFormReset(){
+      this.cleanFields()
+      this.showUploadForm = true
+      this.optionRecordMic = false
+      this.showValidationForm = false
+      this.showProgressionInfo = false
     }
   },
   computed: {
@@ -276,6 +279,13 @@ export default {
     },
     submitReadOnlyChecker() {
       return this.file
+    }
+  },
+  watch: {
+    optionRecordMic(newVal, oldValue){
+      if(oldValue != newVal){  
+        this.cleanFields()
+      }
     }
   }
 }

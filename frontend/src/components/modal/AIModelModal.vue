@@ -1,13 +1,13 @@
 <template>
   <DefaultModal :show="show" @close="$emit('close')">
     <template #header>
-      Modelo usado: <b>{{ modelName }}</b>
+      Model used: <b>{{ modelName }}</b>
     </template>
 
-    <h3 class="text-xl mb-4">Informações:</h3>
+    <h3 class="text-xl mb-4">Infos:</h3>
     <ul class="list-disc pl-5">
-      <li class="list-none">Acurácia: <b>{{ evaluation.accuracy }}</b></li>
-      <li class="list-none">Número de amostras: <b>{{ evaluation.samples }}</b></li>
+      <li class="list-none">Accuracy: <b>{{ evaluation.accuracy }}</b></li>
+      <li class="list-none">Amount of samples: <b>{{ evaluation.samples }}</b></li>
     </ul>
   </DefaultModal>
 </template>

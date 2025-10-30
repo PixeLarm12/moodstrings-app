@@ -1,12 +1,12 @@
 <template>
   <DefaultModal :show="show" @close="$emit('close')">
     <template #header>
-      Vejas as escalas relativas:
+      See relative scale:
     </template>
 
     <p>
       <div v-for="(info, index) in relativeScales" :key="index">
-        <h3 v-if="info.key" class="text-lg mb-4 font-semibold">Escala: {{ info.key }}</h3> 
+        <h3 v-if="info.key" class="text-lg mb-4 font-semibold">Scale: {{ info.key }}</h3> 
 
         <ul class="list-disc pl-5">
           <li v-for="(chord, modeIndex) in info.chords" :key="modeIndex" class="list-none">

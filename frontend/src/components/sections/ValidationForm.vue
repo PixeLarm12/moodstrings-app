@@ -5,17 +5,17 @@
       
       <!-- Title -->
       <div class="text-center space-y-1">
-        <h2 class="text-2xl font-bold text-sky-400">🎶 Confirme a Progressão Detectada</h2>
-        <p class="text-gray-300">Verifique se a sequência abaixo corresponde ao que você tocou.</p>
-
-        <span class="text-sky-400">
+        <h2 class="text-2xl font-bold text-sky-400">Confirm progression played:</h2>
+        <p class="text-gray-300">Check if the sequences below corresponds that what you played.</p>
+        <p class="text-sm italic text-gray-300 my-2">Please, use Chord patterns as C (C major) or Cm (C minor). Avoid using non-existing chords to improve info extraction </p>
+        <span class="text-xl text-sky-400 mt-2">
           {{ tempo.time }}BPM <i>({{ tempo.name }})</i>
         </span>
       </div>
 
       <!-- Detected Chords -->
       <div v-if="progression.chords?.length" class="space-y-2">
-        <h3 class="text-lg font-semibold text-sky-300">Acordes Detectados:</h3>
+        <h3 class="text-lg font-semibold text-sky-300">Chords detected:</h3>
         <div class="flex flex-wrap gap-2">
           <span v-for="(ch, index) in progression.chords" :key="index"
                 class="px-3 py-2 bg-gray-700 rounded-xl border border-sky-600 text-sky-100 text-sm hover:bg-gray-600">
@@ -26,7 +26,7 @@
 
       <!-- Detected Notes -->
       <div v-if="progression.notes?.length" class="space-y-2">
-        <h3 class="text-lg font-semibold text-sky-300">Notas Detectadas:</h3>
+        <h3 class="text-lg font-semibold text-sky-300">Notes detected:</h3>
         <div class="flex flex-wrap gap-2">
           <span v-for="(n, index) in progression.notes" :key="index"
                 class="px-2 py-1 bg-gray-700 rounded-md border border-gray-600 text-gray-200 text-xs">
@@ -37,30 +37,32 @@
 
       <!-- Question -->
       <div class="text-center pt-4">
-        <p class="text-lg font-medium text-gray-200">Isso foi o que você tocou?</p>
+        <p class="text-lg font-medium text-gray-200">Is that what you played?</p>
 
         <div class="flex justify-center gap-6 mt-4">
           <button
             class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold"
             @click="$emit('confirm', progression)"
           >
-            ✅ Sim, está correto
+            Yes!
           </button>
 
           <button
             class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold"
             @click="toggleEditMode"
           >
-            ❌ Não, quero corrigir
+            No, needs corretion
           </button>
         </div>
       </div>
 
       <!-- Edit Mode -->
       <div v-if="editMode" class="mt-6 space-y-4 border-t border-gray-700 pt-4">
-        <h3 class="text-lg font-semibold text-sky-300">Corrigir Progressão</h3>
+        <h3 class="text-lg font-semibold text-sky-300">Progression rewrite</h3>
 
-        <label class="block text-sm text-gray-300 mb-1">Acordes (separados por espaço):</label>
+        <p class="text-sm italic text-gray-300 my-2">We will rewrite given progression by what you write, so use it carefully.</p>
+
+        <label class="block text-sm text-gray-300 mb-1">Chords (separated by spaces):</label>
         <input
           v-model="manualChords"
           type="text"
@@ -68,7 +70,7 @@
           class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500"
         />
 
-        <label class="block text-sm text-gray-300 mb-1">Notas (opcional, separadas por espaço):</label>
+        <label class="block text-sm text-gray-300 mb-1">Notes (separated by spaces):</label>
         <input
           v-model="manualNotes"
           type="text"
@@ -81,14 +83,14 @@
             class="bg-sky-700 hover:bg-sky-800 text-white px-6 py-2 rounded-lg font-semibold"
             @click="submitManualProgression"
           >
-            💾 Confirmar Correção
+            Confirm
           </button>
 
           <button
             class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-semibold"
             @click="toggleEditMode"
           >
-            Cancelar
+            Cancel
           </button>
         </div>
       </div>
