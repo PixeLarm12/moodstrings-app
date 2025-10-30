@@ -31,6 +31,13 @@
 
       <!-- UPLOAD FORM -->
       <form v-if="showUploadForm" @submit.prevent="handleSubmit" class="space-y-4">
+        <audio
+          v-if="uploadedFileUrl"
+          :src="uploadedFileUrl"
+          controls
+          class="mt-4 w-full"
+        ></audio>
+
         <input
           v-if="!optionRecordMic"
           type="file"
@@ -88,6 +95,7 @@ export default {
   data() {
     return {
       file: null,
+      uploadedFileUrl: null,
       isAudioRecorded: false,
       optionRecordMic: false,
       loading: false,
@@ -117,6 +125,10 @@ export default {
     handleFileChange(event) {
       this.file = event.target.files[0]
       this.isAudioRecorded = false
+
+      if (this.file) {
+        this.uploadedFileUrl = URL.createObjectURL(this.file)
+      }
     },
     async handleSubmit() {
       if (!this.file) {
@@ -171,6 +183,7 @@ export default {
       this.tempo = []
       this.tonic = ""
       this.file = null
+      this.uploadedFileUrl = null
       this.isAudioRecorded = false
     },
     showAndCleanForm() {
@@ -248,6 +261,7 @@ export default {
       const audioFile = new File([blob], "recording.webm", { type: "audio/webm" })
       this.file = audioFile
       this.isAudioRecorded = true
+      this.uploadedFileUrl = URL.createObjectURL(audioFile)
     }
   },
   computed: {
