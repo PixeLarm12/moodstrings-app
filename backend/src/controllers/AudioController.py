@@ -50,6 +50,8 @@ def progression_info(chordProgression, noteProgression, file):
         relative_scales = midi_service.find_relative_scales()
         bpm, tempo_name = classify_tempo(midi_service.find_tempo())
 
+        key_info = midi_service.correct_key_with_first_event(key_info, progression)
+
         return {
             "progression": progression,
             "emotion": emotion,

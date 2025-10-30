@@ -8,6 +8,8 @@ import librosa
 from src.utils.StringUtil import sanitize_chord_name, simplify_chord_name
 import os
 from src.enums import MusicEnum
+from collections import Counter
+from typing import Dict, Any
 
 class MidiService:
     def __init__(self, file=None, midi_data=None, wav_path=None):
@@ -29,6 +31,7 @@ class MidiService:
         self._wav_tmp_file = wav_path
         self.adjust_bpm()
         self._tone_info = self.find_estimate_key()
+        self._global_root_note = None
 
     @property
     def midi_data(self):
@@ -134,10 +137,68 @@ class MidiService:
             self._midi_data.write(tmp_midi.name)
             return m21Converter.parse(tmp_midi.name)
 
+    def correct_key_with_first_event(
+        self,
+        detected_key: Dict[str, Any],
+        progression: Dict[str, Any]
+    ) -> Dict[str, Any]:
+
+        detected_tonic = detected_key["tonic"]
+        detected_mode = detected_key["mode"]
+
+        first_event = None
+        if progression.get("chords") and len(progression["chords"]) > 0:
+            first_event = progression["chords"][0]["chord"]
+        elif progression.get("notes") and len(progression["notes"]) > 0:
+            first_event = progression["notes"][0]
+
+        if not first_event:
+            corrected_key = f"{corrected_tonic}{'' if corrected_mode == 'major' else 'm'}"
+
+            return {
+                "tonic": f"{sanitize_chord_name(str(corrected_tonic), 'tab')} ({sanitize_chord_name(str(corrected_tonic))})",
+                "key": f"{sanitize_chord_name(str(corrected_key), 'tab')} ({sanitize_chord_name(str(corrected_key))})"
+            }
+
+        first_root = self._global_root_note
+
+        relative = (
+            MusicEnum.Scales.RELATIVE_KEYS.value.get(detected_tonic) 
+            or MusicEnum.Scales.RELATIVE_KEYS_INV.value.get(detected_tonic)
+        )
+
+        if first_root == detected_tonic:
+            corrected_key = f"{corrected_tonic}{'' if corrected_mode == 'major' else 'm'}"
+
+            return {
+                "tonic": f"{sanitize_chord_name(str(corrected_tonic), 'tab')} ({sanitize_chord_name(str(corrected_tonic))})",
+                "key": f"{sanitize_chord_name(str(corrected_key), 'tab')} ({sanitize_chord_name(str(corrected_key))})"
+            }
+
+        if relative == first_root:
+            corrected_tonic = first_root
+            corrected_mode = "major" if detected_mode == "minor" else "minor"
+            corrected_key = f"{corrected_tonic}{'' if corrected_mode == 'major' else 'm'}"
+
+            return {
+                "tonic": f"{sanitize_chord_name(str(corrected_tonic), 'tab')} ({sanitize_chord_name(str(corrected_tonic))})",
+                "key": f"{sanitize_chord_name(str(corrected_key), 'tab')} ({sanitize_chord_name(str(corrected_key))})"
+            }
+
+        inferred_mode = "minor" if "m" in first_event and "maj" not in first_event else "major"
+
+        corrected_tonic = first_root
+        corrected_mode = inferred_mode
+        corrected_key = f"{corrected_tonic}{'' if corrected_mode == 'major' else 'm'}"
+        return {
+                "tonic": f"{sanitize_chord_name(str(corrected_tonic), 'tab')} ({sanitize_chord_name(str(corrected_tonic))})",
+                "key": f"{sanitize_chord_name(str(corrected_key), 'tab')} ({sanitize_chord_name(str(corrected_key))})"
+            }
+
+
     def find_estimate_key(self):
         midi_file = self.create_midi_converter()
         objKey = midi_file.analyze("key")
-        key = ""
 
         if objKey.mode is "major":
             key = objKey[:-1]
@@ -146,15 +207,11 @@ class MidiService:
         else:
             key = objKey
 
-        sanitized_tonic = f"{sanitize_chord_name(str(key.tonic), 'tab')} ({sanitize_chord_name(str(key.tonic))})"
-        sanitized_key = f"{sanitize_chord_name(str(key), 'tab')} ({sanitize_chord_name(str(key))})"
-
-        obj = {
-            "key": sanitized_key,
-            "tonic": sanitized_tonic,
+        return {
+            "key": str(objKey),
+            "tonic": str(objKey.tonic),
+            "mode": str(objKey.mode),
         }
-
-        return obj
 
     def find_tempo(self):
         return self.get_estimated_bpm()
@@ -305,7 +362,43 @@ class MidiService:
         chords = self.extract_chord_progression()
         notes = self.extract_note_sequence()
 
+        # Resolve global root note
+        if chords:
+            try:
+                # first chord's root is good heuristic
+                first_root = chords[0].get("notes", [])
+                if first_root:
+                    # get actual root via music21 chord
+                    chord_obj = m21Chord.Chord(first_root)
+                    self._global_root_note = chord_obj.root().name
+            except Exception:
+                self._global_root_note = None
+        else:
+            # fallback to note mode estimation
+            self._global_root_note = self._infer_root_from_notes(notes)
+
         return {
+            "root_note": self._global_root_note,
             "notes": notes,
             "chords": chords
         }
+
+    
+    def _infer_root_from_notes(self, notes: list[str]) -> str:
+        if not notes:
+            return None
+
+        pitch_classes = []
+        for n in notes:
+            try:
+                p = m21Pitch.Pitch(n)
+                pitch_classes.append(p.pitchClass)
+            except Exception:
+                continue
+
+        if not pitch_classes:
+            return None
+
+        most_common = Counter(pitch_classes).most_common(1)[0][0]
+        
+        return m21Pitch.Pitch(midi=most_common).name

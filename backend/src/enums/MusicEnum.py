@@ -19,6 +19,25 @@ class Scales(Enum):
         'C': ['C', 'D', 'Eb', 'F', 'G', 'Ab', 'Bb']
     }
 
+    RELATIVE_KEYS = {
+        "C": "A",
+        "G": "E",
+        "D": "B",
+        "A": "F#",
+        "E": "C#",
+        "B": "G#",
+        "F#": "D#",
+        "C#": "A#",
+        "F": "D",
+        "Bb": "G",
+        "Eb": "C",
+        "Ab": "F",
+        "Db": "Bb",
+        "Gb": "Eb",
+    }
+
+    RELATIVE_KEYS_INV = {v: k for k, v in RELATIVE_KEYS.items()}
+
 class HarmonicFunctions(Enum):
     FUNCTIONS = [
         ("I", "Tônica"),
