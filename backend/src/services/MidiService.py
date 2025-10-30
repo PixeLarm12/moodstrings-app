@@ -65,28 +65,8 @@ class MidiService:
             print(f"[WARN] Could not estimate BPM: {e}")
             self._estimated_bpm = 120.0
 
-
     def get_estimated_bpm(self):
-        print(self._estimated_bpm)
-        
-        if hasattr(self, "_estimated_bpm") and self._estimated_bpm is not None:
-            return float(self._estimated_bpm)
-
-        try:
-            tempo_times, tempo_values = self._midi_data.get_tempo_changes()
-            print(self._midi_data.get_tempo_changes())
-
-            if len(tempo_values) > 0:
-                bpm = float(tempo_values[0])
-            else:
-                bpm = 120.0
-        
-            self._estimated_bpm = bpm
-            return bpm
-
-        except Exception:
-            return 120.0
-
+        return getattr(self, "_estimated_bpm", 120.0)
 
     def get_chord_function(self, root_note):
         try:
