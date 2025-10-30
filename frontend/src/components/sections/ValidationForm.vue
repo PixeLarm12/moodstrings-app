@@ -25,7 +25,7 @@
       </div>
 
       <!-- Detected Notes -->
-      <div v-if="progression.notes?.length" class="space-y-2">
+      <div v-if="!progression.chords?.length && progression.notes?.length" class="space-y-2">
         <h3 class="text-lg font-semibold text-sky-300">Notes detected:</h3>
         <div class="flex flex-wrap gap-2">
           <span v-for="(n, index) in progression.notes" :key="index"
@@ -51,7 +51,7 @@
             class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold"
             @click="toggleEditMode"
           >
-            No, needs corretion
+            No, needs correction
           </button>
         </div>
       </div>
@@ -70,16 +70,18 @@
           class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500"
         />
 
-        <label class="block text-sm text-gray-300 mb-1">Chords (separated by spaces):</label>
+        <label v-if="progression.chords?.length || !(!progression.chords?.length && progression.notes?.length)" class="block text-sm text-gray-300 mb-1">Chords (separated by spaces):</label>
         <input
+          v-if="progression.chords?.length || !(!progression.chords?.length && progression.notes?.length)"
           v-model="manualChords"
           type="text"
           placeholder="Example: C G Am F"
           class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500"
         />
 
-        <label class="block text-sm text-gray-300 mb-1">Notes (separated by spaces):</label>
+        <label v-if="!progression.chords?.length && progression.notes?.length" class="block text-sm text-gray-300 mb-1">Notes (separated by spaces):</label>
         <input
+          v-if="!progression.chords?.length && progression.notes?.length"
           v-model="manualNotes"
           type="text"
           placeholder="Example: C E G A"

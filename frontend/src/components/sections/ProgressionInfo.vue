@@ -33,11 +33,11 @@
               </div>
           </div>
 
-          <div v-if="progression.chords.length > 0" class="my-2">
+          <div v-if="progression.chords.length > 0 && !(progression.chords.length <= 0 && progression.notes.length > 0)" class="my-2">
               <ChordsPlayedComponent :progression="progression.chords"></ChordsPlayedComponent>
           </div>
 
-          <div v-if="progression.notes.length > 0" class="my-2">
+          <div v-if="progression.chords.length <= 0 && progression.notes.length > 0" class="my-2">
               <NotesPlayedComponent :progression="progression.notes"></NotesPlayedComponent>
           </div>
 
