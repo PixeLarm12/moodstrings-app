@@ -42,9 +42,9 @@ def progression_info(chordProgression, noteProgression, file):
 
         ai_service = AIService()
 
-        # chordsForteClass = midi_service.extract_chords_forteclass()
+        chordsForteClass = midi_service.extract_chords_forteclass()
 
-        # emotion = ai_service.rf_predict(chordsForteClass)
+        emotion = ai_service.rf_predict(chordsForteClass)
 
         key_info = midi_service.find_estimate_key()
         relative_scales = midi_service.find_relative_scales()
@@ -52,7 +52,7 @@ def progression_info(chordProgression, noteProgression, file):
 
         return {
             "progression": progression,
-            # "emotion": emotion,
+            "emotion": emotion,
             "relative_scales": [relative_scales],
             "tempo": {
                 "time": bpm,

@@ -1,5 +1,6 @@
 import tempfile
 from io import BytesIO
+import pretty_midi
 from pretty_midi import PrettyMIDI
 from music21 import chord as m21Chord, converter as m21Converter, key as m21Key, harmony as m21Harmony, pitch as m21Pitch
 import soundfile as sf
