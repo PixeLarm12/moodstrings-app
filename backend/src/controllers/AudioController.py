@@ -58,8 +58,8 @@ def progression_info(chordProgression, noteProgression, file):
                 "time": bpm,
                 "name": tempo_name,
             },
-            "key": f"{sanitize_chord_name(key_info['key'], 'tab')} ({sanitize_chord_name(key_info['key'])})",
-            "tonic": f"{sanitize_chord_name(key_info['tonic'], 'tab')} ({sanitize_chord_name(key_info['tonic'])})",
+            "key_name": key_info['key'],
+            "tonic": key_info['tonic']
         }
 
 async def get_midi_to_download(file):

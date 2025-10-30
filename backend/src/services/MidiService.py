@@ -136,12 +136,25 @@ class MidiService:
 
     def find_estimate_key(self):
         midi_file = self.create_midi_converter()
-        key = midi_file.analyze("key")
-        return {
-            "key": str(key),
-            "mode": key.mode,
-            "tonic": str(key.tonic),
+        objKey = midi_file.analyze("key")
+        key = ""
+
+        if objKey.mode is "major":
+            key = objKey[:-1]
+        elif objKey.mode is "minor":
+            key = objKey[:-1] = "m"
+        else:
+            key = objKey
+
+        sanitized_tonic = f"{sanitize_chord_name(str(key.tonic), 'tab')} ({sanitize_chord_name(str(key.tonic))})"
+        sanitized_key = f"{sanitize_chord_name(str(key), 'tab')} ({sanitize_chord_name(str(key))})"
+
+        obj = {
+            "key": sanitized_key,
+            "tonic": sanitized_tonic,
         }
+
+        return obj
 
     def find_tempo(self):
         return self.get_estimated_bpm()

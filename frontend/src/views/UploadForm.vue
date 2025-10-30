@@ -66,7 +66,7 @@
         :emotion="emotion" 
         :relative-scale="relativeScales"
         :tempo="tempo" 
-        :key="key" 
+        :key-name="keyName" 
         :tonic="tonic"
       />
       <!-- END MUSIC INFORMATION -->
@@ -100,7 +100,7 @@ export default {
       emotion: [],
       relativeScales: [],
       message: "",
-      key: "",
+      keyName: "",
       tempo: [],
       tonic: "",
       API_URL: import.meta.env.VITE_API_URL
@@ -165,7 +165,7 @@ export default {
         notes: [],
       },
       this.relativeScales = []
-      this.key = ""
+      this.keyName = ""
       this.tempo = []
       this.tonic = ""
       this.file = null
@@ -197,7 +197,7 @@ export default {
           this.message = "Check your informations:"
           
           this.emotion = response.data.emotion || []
-          this.key = response.data.key || ""
+          this.keyName = response.data.key_name || ""
           this.relativeScales = response.data.relative_scales || []
           this.tonic = response.data.tonic || ""
           this.tempo = response.data.tempo || []

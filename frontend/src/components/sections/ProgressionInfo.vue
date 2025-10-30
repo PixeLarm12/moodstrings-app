@@ -1,68 +1,68 @@
 <template>
-    <div class="flex items-center justify-center">
-        <ScalesModal :show="showScalesModal" :relative-scales="relativeScales" @close="showScalesModal = false" />
+  <div class="flex items-center justify-center">
+      <ScalesModal :show="showScalesModal" :relative-scales="relativeScales" @close="showScalesModal = false" />
 
-        <div v-if="(progression.chords.length > 0 || progression.notes.length > 0) && !showUploadForm" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
+      <div v-if="(progression.chords.length > 0 || progression.notes.length > 0)" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
 
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
-            <div class="w-full md:col-span-7">
-                <div class="w-full flex flex-col gap-2">
-                    <p><span class="font-semibold text-sky-400">Tom:</span> {{ key }}</p>
-                    <p><span class="font-semibold text-sky-400">Andamento:</span> {{ tempo.time }} BPM (<i>{{ tempo.name }}</i>)</p>
-                    <p><span class="font-semibold text-sky-400">Tônica:</span> {{ tonic }}</p>
-                </div>
-            </div>
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
+          <div class="w-full md:col-span-7">
+              <div class="w-full flex flex-col gap-2">
+                  <p><span class="font-semibold text-sky-400">Tom:</span> {{ keyName }}</p>
+                  <p><span class="font-semibold text-sky-400">Andamento:</span> {{ tempo.time }} BPM (<i>{{ tempo.name }}</i>)</p>
+                  <p><span class="font-semibold text-sky-400">Tônica:</span> {{ tonic }}</p>
+              </div>
+          </div>
 
-                <div class="w-full md:col-span-5 flex flex-col justify-start gap-2 md:gap-4">
-                <button
-                    type="button"
-                    class="py-2 px-2 1/2 bg-sky-700 rounded-lg font-semibold hover:bg-sky-900"
-                    @click="downloadMidi"
-                >
-                    Download arquivo midi
-                </button>  
-                
-                <button
-                    type="button"
-                    class="py-2 px-2 1/2 bg-sky-700 rounded-lg font-semibold hover:bg-sky-900"
-                    @click="downloadMusicalSheet"
-                >
-                    Download partitura
-                </button>
-                </div>
-            </div>
+              <div class="w-full md:col-span-5 flex flex-col justify-start gap-2 md:gap-4">
+              <button
+                  type="button"
+                  class="py-2 px-2 1/2 bg-sky-700 rounded-lg font-semibold hover:bg-sky-900"
+                  @click="downloadMidi"
+              >
+                  Download arquivo midi
+              </button>  
+              
+              <button
+                  type="button"
+                  class="py-2 px-2 1/2 bg-sky-700 rounded-lg font-semibold hover:bg-sky-900"
+                  @click="downloadMusicalSheet"
+              >
+                  Download partitura
+              </button>
+              </div>
+          </div>
 
-            <div v-if="progression.chords.length > 0" class="my-2">
-                <ChordsPlayedComponent :progression="progression.chords"></ChordsPlayedComponent>
-            </div>
+          <div v-if="progression.chords.length > 0" class="my-2">
+              <ChordsPlayedComponent :progression="progression.chords"></ChordsPlayedComponent>
+          </div>
 
-            <div v-if="progression.notes.length > 0" class="my-2">
-                <NotesPlayedComponent :progression="progression.notes"></NotesPlayedComponent>
-            </div>
+          <div v-if="progression.notes.length > 0" class="my-2">
+              <NotesPlayedComponent :progression="progression.notes"></NotesPlayedComponent>
+          </div>
 
-            <div v-if="emotion" class="my-2">
-                <EmotionsComponent :emotion="emotion"></EmotionsComponent>
-            </div>
+          <div v-if="emotion" class="my-2">
+              <EmotionsComponent :emotion="emotion"></EmotionsComponent>
+          </div>
 
-            <div class="flex justify-around my-4">
-                <button
-                type="button"
-                class="py-2 px-12 bg-sky-600 rounded-lg font-semibold hover:bg-sky-700"
-                @click="showScalesModal = true"
-                >
-                Ver escalas relativas
-                </button>
+          <div class="flex justify-around my-4">
+              <button
+              type="button"
+              class="py-2 px-12 bg-sky-600 rounded-lg font-semibold hover:bg-sky-700"
+              @click="showScalesModal = true"
+              >
+              Ver escalas relativas
+              </button>
 
-                <button
-                type="button"
-                class="py-2 px-12 bg-gray-700 rounded-lg font-semibold hover:bg-gray-600"
-                @click="showAndCleanForm()"
-                >
-                Enviar outro arquivo
-                </button>  
-            </div>
-        </div>
-    </div>
+              <button
+              type="button"
+              class="py-2 px-12 bg-gray-700 rounded-lg font-semibold hover:bg-gray-600"
+              @click="showAndCleanForm()"
+              >
+              Enviar outro arquivo
+              </button>  
+          </div>
+      </div>
+  </div>
 </template>
 
 <script>
@@ -77,15 +77,6 @@ export default {
   data() {
     return {
       showScalesModal: false,
-    //   progression: {
-    //     chords: [],
-    //     notes: [],
-    //   },
-    //   emotion: [],
-    //   relativeScales: [],
-    //   key: "",
-    //   tempo: [],
-    //   tonic: "",
       API_URL: import.meta.env.VITE_API_URL
     }
   },
@@ -95,7 +86,7 @@ export default {
       default: () => {}
     },
     emotion: {
-      type: Array,
+      type: Object,
       default: () => []
     },
     relativeScales: {
@@ -103,10 +94,10 @@ export default {
       default: () => []
     },
     tempo: {
-      type: Array,
+      type: Object,
       default: () => []
     },
-    key: {
+    keyName: {
       type: String,
       default: ""
     },
