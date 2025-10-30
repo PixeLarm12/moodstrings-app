@@ -1,6 +1,6 @@
 import tempfile
 from io import BytesIO
-import pretty_midi
+from pretty_midi import PrettyMIDI
 from music21 import chord as m21Chord, converter as m21Converter, key as m21Key, harmony as m21Harmony, pitch as m21Pitch
 import soundfile as sf
 import librosa
@@ -11,15 +11,22 @@ from src.enums import MusicEnum
 class MidiService:
     def __init__(self, file=None, midi_data=None, wav_path=None):
         if midi_data:
-            self._midi_data = midi_data
+            if isinstance(midi_data, PrettyMIDI):
+                self._midi_data = midi_data
+            elif isinstance(midi_data, BytesIO):
+                midi_data.seek(0)
+                self._midi_data = PrettyMIDI(midi_data)
+            elif isinstance(midi_data, (bytes, bytearray)):
+                self._midi_data = PrettyMIDI(BytesIO(midi_data))
+            else:
+                raise TypeError("midi_data must be PrettyMIDI, BytesIO, or bytes")
         elif file:
-            self._midi_data = pretty_midi.PrettyMIDI(BytesIO(file.file.read()))
+            self._midi_data = PrettyMIDI(BytesIO(file.file.read()))
         else:
             raise ValueError("You must provide either a file or midi_data.")
 
         self._wav_tmp_file = wav_path
         self.adjust_bpm()
-
         self._tone_info = self.find_estimate_key()
 
     @property
@@ -30,17 +37,30 @@ class MidiService:
     def midi_data(self, value):
         self._midi_data = pretty_midi.PrettyMIDI(BytesIO(value.file.read()))
 
+    import numpy as np
+
     def adjust_bpm(self):
-        """Estimativa de BPM a partir do MIDI"""
-        if self._wav_tmp_file is None or not os.path.exists(self._wav_tmp_file):
+        """Estimativa de BPM a partir do MIDI ou WAV"""
+        if not self._wav_tmp_file or not os.path.exists(self._wav_tmp_file):
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_wav:
                 self._wav_tmp_file = tmp_wav.name
-                self._midi_data.write(tmp_wav.name)
+                try:
+                    audio = self._midi_data.fluidsynth()
+                    sf.write(tmp_wav.name, audio, 44100, subtype='PCM_16')
+                except Exception as e:
+                    print(f"[WARN] Could not synthesize MIDI: {e}")
+                    self._estimated_bpm = 120.0
+                    return
 
-        samples, sr = sf.read(self._wav_tmp_file, dtype='float32')
-        onset_env = librosa.onset.onset_strength(y=samples, sr=sr)
-        tempo_est = librosa.beat.tempo(onset_envelope=onset_env, sr=sr)
-        self._estimated_bpm = float(tempo_est[0]) if len(tempo_est) > 0 else 120.0
+        try:
+            samples, sr = sf.read(self._wav_tmp_file, dtype='float32')
+            onset_env = librosa.onset.onset_strength(y=samples, sr=sr)
+            tempo_est = librosa.beat.tempo(onset_envelope=onset_env, sr=sr)
+            self._estimated_bpm = float(tempo_est[0]) if len(tempo_est) > 0 else 120.0
+        except Exception as e:
+            print(f"[WARN] Could not estimate BPM: {e}")
+            self._estimated_bpm = 120.0
+
 
     def get_estimated_bpm(self):
         return getattr(self, "_estimated_bpm", 120.0)

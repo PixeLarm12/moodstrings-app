@@ -70,9 +70,7 @@ def sanitize_chord_name(chordName: str, type: str = None) -> str:
         else:
             response += ' Menor'
     else:
-        if type is 'tab':
-            response += 'maj'
-        else:
+        if type != 'tab':
             response += ' Maior'
 
     if raw.find('#') != -1 or raw.find('sus') != -1:

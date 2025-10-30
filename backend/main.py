@@ -1,4 +1,5 @@
-from fastapi import FastAPI, UploadFile
+import json
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from src.controllers import AudioController as audio_controller
 from src.controllers import AdminController as admin_controller
@@ -17,6 +18,14 @@ app.add_middleware(
 async def transcribe(uploaded_file: UploadFile):
     return audio_controller.transcribe(uploaded_file)
 
+@app.post("/get-progression-info")
+async def get_progression_info(
+    chordProgression: str = Form(...),
+    noteProgression: str = Form(...),
+    uploaded_file: UploadFile = File(...)
+):  
+    return audio_controller.progression_info(chordProgression, noteProgression, uploaded_file)
+
 @app.post("/download-midi")
 async def download_midi(uploaded_file: UploadFile):
     return await audio_controller.get_midi_to_download(uploaded_file)
@@ -24,12 +33,3 @@ async def download_midi(uploaded_file: UploadFile):
 @app.post("/download-sheet")
 async def download_sheet(uploaded_file: UploadFile):
     return await audio_controller.get_musical_sheet_to_download(uploaded_file)
-
-
-# @app.get("/create-dataset")
-# def create_dataset():
-#     return { "code": 200, "message": "success", "data": admin_controller.create_dataset() }
-
-# @app.get("/normalize-dataset")
-# def normalize_dataset():
-#     return { "code": 200, "message": "success", "data": admin_controller.normalize_dataset() }

@@ -9,78 +9,33 @@
         Arquivo: {{ file.name }}
       </h2>
 
-
       <Loading v-if="loading" :file-name="file ? file.name : ''"></Loading>
       <p v-else-if="message" class="mt-4 font-medium">
         <span :class="success">{{ message }}</span>
       </p>
 
-      <ScalesModal :show="showScalesModal" :relative-scales="relativeScales" @close="showScalesModal = false" />
+      <!-- VALIDATION FORM -->
+      <ValidationForm
+        v-if="showValidationForm"
+        :progression="progression"
+        @confirm="handleConfirmedProgression"
+        @edit="handleEditedProgression"
+      />
+      <!-- END VALIDATION FORM -->
 
-      <!-- INFO CONTENT -->
-      <div v-if="(progression.chords.length > 0 || progression.notes.length > 0) && !showUploadForm" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
-
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
-          <div class="w-full md:col-span-7">
-            <div class="w-full flex flex-col gap-2">
-              <p><span class="font-semibold text-sky-400">Tom:</span> {{ key }}</p>
-              <p><span class="font-semibold text-sky-400">Andamento:</span> {{ tempo.time }} BPM (<i>{{ tempo.name }}</i>)</p>
-              <p><span class="font-semibold text-sky-400">Tônica:</span> {{ tonic }}</p>
-            </div>
-          </div>
-
-          <div class="w-full md:col-span-5 flex flex-col justify-start gap-2 md:gap-4">
-            <button
-              type="button"
-              class="py-2 px-2 1/2 bg-sky-700 rounded-lg font-semibold hover:bg-sky-900"
-              @click="downloadMidi"
-            >
-              Download arquivo midi
-            </button>  
-            
-            <button
-              type="button"
-              class="py-2 px-2 1/2 bg-sky-700 rounded-lg font-semibold hover:bg-sky-900"
-              @click="downloadMusicalSheet"
-            >
-              Download partitura
-            </button>
-          </div>
-        </div>
-
-        <div v-if="progression.chords.length > 0" class="my-2">
-          <ChordsPlayedComponent :progression="progression.chords"></ChordsPlayedComponent>
-        </div>
-
-        <div v-if="progression.notes.length > 0" class="my-2">
-          <NotesPlayedComponent :progression="progression.notes"></NotesPlayedComponent>
-        </div>
-
-        <div v-if="emotion" class="my-2">
-          <EmotionsComponent :emotion="emotion"></EmotionsComponent>
-        </div>
-
-        <div class="flex justify-around my-4">
-          <button
-            type="button"
-            class="py-2 px-12 bg-sky-600 rounded-lg font-semibold hover:bg-sky-700"
-            @click="showScalesModal = true"
-          >
-            Ver escalas relativas
-          </button>
-
-          <button
-            type="button"
-            class="py-2 px-12 bg-gray-700 rounded-lg font-semibold hover:bg-gray-600"
-            @click="showAndCleanForm()"
-          >
-            Enviar outro arquivo
-          </button>  
-        </div>
-      </div>
-      <!-- END INFO CONTENT -->
+      <!-- MUSIC INFORMATION -->
+      <ProgressionInfo
+        v-if="showProgressionInfo"
+        :progression="progression"
+        :emotion="emotion" 
+        :relative-scale="relativeScales"
+        :tempo="tempo" 
+        :key="key" 
+        :tonic="tonic"
+      />
+      <!-- END MUSIC INFORMATION -->
       
-      <!-- FORM -->
+      <!-- UPLOAD FORM -->
       <form v-if="showUploadForm" @submit.prevent="handleSubmit" class="space-y-4">
         <input
           type="file"
@@ -97,7 +52,7 @@
           Enviar
         </button>
       </form>
-      <!-- END FORM -->
+      <!-- END UPLOAD FORM -->
 
     </div>
   </div>
@@ -106,10 +61,8 @@
 <script>
 import axios from "axios"
 import Loading from "../components/utils/Loading.vue"
-import ScalesModal from "../components/music/ScalesModal.vue"
-import ChordsPlayedComponent from "../components/music/ChordsPlayedComponent.vue"
-import NotesPlayedComponent from "../components/music/NotesPlayedComponent.vue"
-import EmotionsComponent from "../components/music/EmotionsComponent.vue"
+import ProgressionInfo from "../components/sections/ProgressionInfo.vue"
+import ValidationForm from "../components/sections/ValidationForm.vue"
 
 export default {
   name: "UploadForm",
@@ -118,7 +71,8 @@ export default {
       file: null,
       loading: false,
       showUploadForm: true,
-      showScalesModal: false,
+      showProgressionInfo: false,
+      showValidationForm: false,
       progression: {
         chords: [],
         notes: [],
@@ -134,10 +88,8 @@ export default {
   },
   components: {
     Loading,
-    ScalesModal,
-    ChordsPlayedComponent,
-    NotesPlayedComponent,
-    EmotionsComponent
+    ProgressionInfo,
+    ValidationForm
   },  
   methods: {
     handleFileChange(event) {
@@ -165,24 +117,22 @@ export default {
         if (!response.data.error) {
           this.loading = false
           this.showUploadForm = false
-          this.message = "Veja as informações extraídas:"
+          this.showValidationForm = true
+          this.message = "Check your progression:"
 
-          this.emotion = response.data.emotion || []
-          this.key = response.data.key || ""
-          this.relativeScales = response.data.relative_scales || []
-          this.tonic = response.data.tonic || ""
-          this.tempo = response.data.tempo || []
           this.progression = response.data.progression || []
         } else {
           this.loading = false
           this.message = `Error: ${response.data.error}`
           this.showUploadForm = true
+          this.showValidationForm = false
         }
         
       } catch (error) {
         this.loading = false
         this.message = `Error: ${error.message}`
         this.showUploadForm = true
+        this.showValidationForm = false
       }
     },
     cleanFields() {
@@ -201,49 +151,71 @@ export default {
       this.cleanFields()
       this.showUploadForm = true
     },
-    async downloadMidi() {
-      if (!this.file) {
-        alert("Select a file first!");
-        return;
+    async getProgressionInfo(progression){
+      try {
+        this.loading = true
+        this.showUploadForm = false
+        this.showValidationForm = false
+
+        const formData = new FormData()
+        formData.append("chordProgression", JSON.stringify(progression.chordProgression))
+        formData.append("noteProgression", JSON.stringify(progression.noteProgression))
+        formData.append("uploaded_file", this.file)
+
+        const response = await axios.post(`${this.API_URL}/get-progression-info`, formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        })
+
+        if (!response.data.error) {
+          this.loading = false
+          this.showUploadForm = false
+          this.showProgressionInfo = true
+          this.message = "Check your informations:"
+          
+          this.emotion = response.data.emotion || []
+          this.key = response.data.key || ""
+          this.relativeScales = response.data.relative_scales || []
+          this.tonic = response.data.tonic || ""
+          this.tempo = response.data.tempo || []
+          this.progression = response.data.progression || []
+        } else {
+          this.loading = false
+          this.message = `Error: ${response.data.error}`
+          this.showUploadForm = false
+          this.showValidationForm = true
+          this.showProgressionInfo = false
+        }
+        
+      } catch (error) {
+        this.loading = false
+        this.message = `Error: ${error.message}`
+        this.showUploadForm = false
+        this.showValidationForm = true
+        this.showProgressionInfo = false
       }
-
-      const formData = new FormData();
-      formData.append("uploaded_file", this.file);
-
-      const response = await axios.post(`${this.API_URL}/download-midi`, formData, {
-        responseType: "blob"
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      const date = new Date().toISOString().slice(0, 10).replace(/-/g, "_");
-      link.href = url;
-      link.setAttribute("download", `${date}_played_progression.mid`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
     },
-    async downloadMusicalSheet() {
-      if (!this.file) {
-        alert("Select a file first!");
-        return;
+    formatProgressionStrings(progression) {
+      if (!progression || typeof progression !== "object") {
+        return { noteProgression: "", chordProgression: "" };
       }
 
-      const formData = new FormData();
-      formData.append("uploaded_file", this.file);
+      const chordProgression = Array.isArray(progression.chords)
+        ? progression.chords.map(ch => ch.chord).join(" ")
+        : "";
 
-      const response = await axios.post(`${this.API_URL}/download-sheet`, formData, {
-        responseType: "blob"
-      });
+      const noteProgression = Array.isArray(progression.notes)
+        ? progression.notes.join(" ")
+        : "";
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      const date = new Date().toISOString().slice(0, 10).replace(/-/g, "_");
-      link.href = url;
-      link.setAttribute("download", `${date}_musical_sheet.xml`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      return { chordProgression, noteProgression };
+    },
+    handleConfirmedProgression(progression) {
+      const formatted = this.formatProgressionStrings(progression)
+      this.getProgressionInfo(formatted)
+    },
+    handleEditedProgression(progression) {
+      const formatted = this.formatProgressionStrings(progression)
+      this.getProgressionInfo(formatted)
     }
   },
   computed: {

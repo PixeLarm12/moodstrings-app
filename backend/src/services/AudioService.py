@@ -8,12 +8,13 @@ from basic_pitch.inference import predict
 import soundfile as sf
 import noisereduce as nr
 import librosa
+from music21 import stream, chord, note, tempo, midi, harmony
 
 class AudioService:
     TMP_DIR = Path("/app/tmp_audio")
     TMP_DIR.mkdir(exist_ok=True)
 
-    def __init__(self, uploaded_file):
+    def __init__(self, uploaded_file=None):
         self.uploaded_file = uploaded_file
         self._midi_data = None
         self._wav_path = None
@@ -29,7 +30,6 @@ class AudioService:
 
     def set_wav_path(self, wav_path):
         self._wav_path = wav_path
-
 
     def prepare_wav_file(self):
         ext = Path(self.uploaded_file.filename).suffix or ".mp3"
@@ -69,6 +69,40 @@ class AudioService:
         _, midi_data, _ = predict(self.get_wav_path())
         self.set_midi_data(midi_data)
         return self.get_midi_data()
+    
+    def create_midi_file_from_progression(self, chord_progression: str, bpm: int = 90, duration: float = 1.0):
+        if not chord_progression or not isinstance(chord_progression, str):
+            raise ValueError("Chord progression must be a non-empty string.")
+
+        chords_list = [ch.strip().replace('"', '') for ch in chord_progression.strip().split()]
+        if not chords_list:
+            raise ValueError("Chord progression must contain at least one chord.")
+
+        s = stream.Stream()
+        s.append(tempo.MetronomeMark(number=bpm))
+
+        for chord_symbol in chords_list:
+            try:
+                ch = harmony.ChordSymbol(chord_symbol)
+                c = chord.Chord(ch.pitches)
+            except Exception:
+                c = note.Note(chord_symbol)
+
+            c.duration.quarterLength = duration
+            s.append(c)
+
+        midi_io = io.BytesIO()
+        mf = midi.translate.streamToMidiFile(s)
+        mf.open('/tmp/temp.mid', 'wb')
+        mf.write()
+        mf.close()
+
+        with open('/tmp/temp.mid', 'rb') as f:
+            midi_io.write(f.read())
+        midi_io.seek(0)
+
+        self.set_midi_data(midi_io)
+        return midi_io
 
     def pitch_shift_wav(self, n_steps=12):
         wav_path = self.get_wav_path()

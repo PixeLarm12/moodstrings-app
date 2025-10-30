@@ -22,15 +22,6 @@ def transcribe(file):
         else:
             midi_service = MidiService(file=file)
 
-        ai_service = AIService()
-
-        chordsForteClass = midi_service.extract_chords_forteclass()
-
-        emotion = ai_service.rf_predict(chordsForteClass)
-
-        key_info = midi_service.find_estimate_key()
-        relative_scales = midi_service.find_relative_scales()
-        bpm, tempo_name = classify_tempo(midi_service.find_tempo())
         progression = midi_service.extract_notes_and_chords()
 
         if not progression.get("chords") and not progression.get("notes"):
@@ -38,7 +29,30 @@ def transcribe(file):
 
         return {
             "progression": progression,
-            "emotion": emotion,
+        }
+
+    return response
+
+def progression_info(chordProgression, noteProgression, file):
+    if chordProgression:
+        audio_service = AudioService(file)
+        midi_file = audio_service.create_midi_file_from_progression(chordProgression)
+        midi_service = MidiService(midi_data=midi_file)
+        progression = progression = midi_service.extract_notes_and_chords()
+
+        ai_service = AIService()
+
+        # chordsForteClass = midi_service.extract_chords_forteclass()
+
+        # emotion = ai_service.rf_predict(chordsForteClass)
+
+        key_info = midi_service.find_estimate_key()
+        relative_scales = midi_service.find_relative_scales()
+        bpm, tempo_name = classify_tempo(midi_service.find_tempo())
+
+        return {
+            "progression": progression,
+            # "emotion": emotion,
             "relative_scales": [relative_scales],
             "tempo": {
                 "time": bpm,
@@ -47,9 +61,6 @@ def transcribe(file):
             "key": f"{sanitize_chord_name(key_info['key'], 'tab')} ({sanitize_chord_name(key_info['key'])})",
             "tonic": f"{sanitize_chord_name(key_info['tonic'], 'tab')} ({sanitize_chord_name(key_info['tonic'])})",
         }
-
-
-    return response
 
 async def get_midi_to_download(file):
     try:
