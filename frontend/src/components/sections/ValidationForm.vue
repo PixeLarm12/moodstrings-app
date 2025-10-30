@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col items-center justify-center text-white bg-gray-900 py-8 px-4">
+  <div class="flex flex-col items-center justify-center text-white bg-gray-900 py-8 px-4">
     <div v-if="progression && (progression.chords?.length || progression.notes?.length)"
          class="w-full max-w-3xl bg-gray-800 rounded-xl p-6 shadow-lg space-y-6">
       

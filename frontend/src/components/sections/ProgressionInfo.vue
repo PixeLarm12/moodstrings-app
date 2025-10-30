@@ -1,5 +1,5 @@
 <template>
-    <div class="min-h-screen flex items-center justify-center">
+    <div class="flex items-center justify-center">
         <ScalesModal :show="showScalesModal" :relative-scales="relativeScales" @close="showScalesModal = false" />
 
         <div v-if="(progression.chords.length > 0 || progression.notes.length > 0) && !showUploadForm" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
