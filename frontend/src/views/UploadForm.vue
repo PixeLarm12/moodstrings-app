@@ -54,6 +54,7 @@
       <ValidationForm
         v-if="showValidationForm"
         :progression="progression"
+        :tempo="tempo"
         @confirm="handleConfirmedProgression"
         @edit="handleEditedProgression"
       />
@@ -144,6 +145,7 @@ export default {
           this.message = "Check your progression:"
 
           this.progression = response.data.progression || []
+          this.tempo = response.data.tempo || []
         } else {
           this.loading = false
           this.message = `Error: ${response.data.error}`
@@ -184,6 +186,7 @@ export default {
         const formData = new FormData()
         formData.append("chordProgression", JSON.stringify(progression.chordProgression))
         formData.append("noteProgression", JSON.stringify(progression.noteProgression))
+        formData.append("tempo", JSON.stringify(this.tempo.time))
         formData.append("uploaded_file", this.file)
 
         const response = await axios.post(`${this.API_URL}/get-progression-info`, formData, {

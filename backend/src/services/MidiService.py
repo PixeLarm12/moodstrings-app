@@ -12,7 +12,7 @@ from collections import Counter
 from typing import Dict, Any
 
 class MidiService:
-    def __init__(self, file=None, midi_data=None, wav_path=None):
+    def __init__(self, file=None, midi_data=None, wav_path=None, bpm=None):
         if midi_data:
             if isinstance(midi_data, PrettyMIDI):
                 self._midi_data = midi_data
@@ -29,7 +29,10 @@ class MidiService:
             raise ValueError("You must provide either a file or midi_data.")
 
         self._wav_tmp_file = wav_path
-        self.adjust_bpm()
+        if bpm:
+            self._estimated_bpm = bpm
+        else:
+            self.adjust_bpm()
         self._tone_info = self.find_estimate_key()
         self._global_root_note = None
 
@@ -41,10 +44,7 @@ class MidiService:
     def midi_data(self, value):
         self._midi_data = pretty_midi.PrettyMIDI(BytesIO(value.file.read()))
 
-    import numpy as np
-
     def adjust_bpm(self):
-        """Estimativa de BPM a partir do MIDI ou WAV"""
         if not self._wav_tmp_file or not os.path.exists(self._wav_tmp_file):
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_wav:
                 self._wav_tmp_file = tmp_wav.name
@@ -67,7 +67,26 @@ class MidiService:
 
 
     def get_estimated_bpm(self):
-        return getattr(self, "_estimated_bpm", 120.0)
+        print(self._estimated_bpm)
+        
+        if hasattr(self, "_estimated_bpm") and self._estimated_bpm is not None:
+            return float(self._estimated_bpm)
+
+        try:
+            tempo_times, tempo_values = self._midi_data.get_tempo_changes()
+            print(self._midi_data.get_tempo_changes())
+
+            if len(tempo_values) > 0:
+                bpm = float(tempo_values[0])
+            else:
+                bpm = 120.0
+        
+            self._estimated_bpm = bpm
+            return bpm
+
+        except Exception:
+            return 120.0
+
 
     def get_chord_function(self, root_note):
         try:

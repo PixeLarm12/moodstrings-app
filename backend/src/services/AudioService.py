@@ -72,6 +72,7 @@ class AudioService:
 
         _, midi_data, _ = predict(self.get_wav_path())
         self.set_midi_data(midi_data)
+
         return self.get_midi_data()
     
     def create_midi_file_from_progression(self, chord_progression: str, bpm: int = 90, duration: float = 1.0):
@@ -106,6 +107,7 @@ class AudioService:
         midi_io.seek(0)
 
         self.set_midi_data(midi_io)
+        
         return midi_io
 
     def pitch_shift_wav(self, n_steps=12):

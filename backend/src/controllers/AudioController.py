@@ -13,11 +13,16 @@ def transcribe(file, is_recorded):
 
     if not response:
         redirect_action = FileUtil.redirectByFileType(file)
+        bpm = 0
+        tempo_name = ""
 
         if redirect_action == 'transcribe':
             audio_service = AudioService(file, is_recorded=(is_recorded == 1))
             midi_file = audio_service.create_midi_file()
             midi_service = MidiService(midi_data=midi_file, wav_path=audio_service.get_wav_path())
+            
+            bpm, tempo_name = classify_tempo(midi_service.find_tempo())
+
             audio_service.cleanup()
         else:
             midi_service = MidiService(file=file)
@@ -29,16 +34,20 @@ def transcribe(file, is_recorded):
 
         return {
             "progression": progression,
+            "tempo": {
+                "time": bpm,
+                "name": tempo_name,
+            },
         }
 
     return response
 
-def progression_info(chordProgression, noteProgression, file):
+def progression_info(chordProgression, noteProgression, tempo, file):
     if chordProgression:
         audio_service = AudioService(file)
-        midi_file = audio_service.create_midi_file_from_progression(chordProgression)
-        midi_service = MidiService(midi_data=midi_file)
-        progression = progression = midi_service.extract_notes_and_chords()
+        midi_file = audio_service.create_midi_file_from_progression(chord_progression=chordProgression, bpm=int(tempo))
+        midi_service = MidiService(midi_data=midi_file, bpm=tempo)
+        progression = midi_service.extract_notes_and_chords()
 
         ai_service = AIService()
 

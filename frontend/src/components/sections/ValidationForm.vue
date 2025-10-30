@@ -7,6 +7,10 @@
       <div class="text-center space-y-1">
         <h2 class="text-2xl font-bold text-sky-400">🎶 Confirme a Progressão Detectada</h2>
         <p class="text-gray-300">Verifique se a sequência abaixo corresponde ao que você tocou.</p>
+
+        <span class="text-sky-400">
+          {{ tempo.time }}BPM <i>({{ tempo.name }})</i>
+        </span>
       </div>
 
       <!-- Detected Chords -->
@@ -98,6 +102,12 @@ export default {
   props: {
     progression: {
       type: Object,
+      default: () => {},
+      required: true
+    },
+    tempo: {
+      type: Object,
+      default: () => {},
       required: true
     }
   },

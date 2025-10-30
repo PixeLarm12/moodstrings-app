@@ -25,9 +25,10 @@ async def transcribe(
 async def get_progression_info(
     chordProgression: str = Form(...),
     noteProgression: str = Form(...),
+    tempo: str = Form(...),
     uploaded_file: UploadFile = File(...)
 ):  
-    return audio_controller.progression_info(chordProgression, noteProgression, uploaded_file)
+    return audio_controller.progression_info(chordProgression, noteProgression, tempo, uploaded_file)
 
 @app.post("/download-midi")
 async def download_midi(uploaded_file: UploadFile):
