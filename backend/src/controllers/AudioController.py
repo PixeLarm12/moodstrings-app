@@ -8,14 +8,14 @@ from src.utils import FileUtil
 from src.utils.StringUtil import sanitize_chord_name, classify_tempo
 import io
 
-def transcribe(file):
+def transcribe(file, is_recorded):
     response = FileValidator.validate(file)
 
     if not response:
         redirect_action = FileUtil.redirectByFileType(file)
 
         if redirect_action == 'transcribe':
-            audio_service = AudioService(file)
+            audio_service = AudioService(file, is_recorded=(is_recorded == 1))
             midi_file = audio_service.create_midi_file()
             midi_service = MidiService(midi_data=midi_file, wav_path=audio_service.get_wav_path())
             audio_service.cleanup()

@@ -1,7 +1,6 @@
 import io
 import os
 import tempfile
-import subprocess
 from pathlib import Path
 from pydub import AudioSegment
 from basic_pitch.inference import predict
@@ -14,8 +13,9 @@ class AudioService:
     TMP_DIR = Path("/app/tmp_audio")
     TMP_DIR.mkdir(exist_ok=True)
 
-    def __init__(self, uploaded_file=None):
+    def __init__(self, uploaded_file=None, is_recorded=False):
         self.uploaded_file = uploaded_file
+        self.is_recorded = is_recorded
         self._midi_data = None
         self._wav_path = None
 
@@ -32,29 +32,33 @@ class AudioService:
         self._wav_path = wav_path
 
     def prepare_wav_file(self):
-        ext = Path(self.uploaded_file.filename).suffix or ".mp3"
-        tmp_input = self.TMP_DIR / f"{next(tempfile._get_candidate_names())}{ext}"
+        filename = self.uploaded_file.filename
+        ext = Path(filename).suffix.lower()
+
+        if self.is_recorded:
+            input_format = "webm"
+        else:
+            input_format = ext.replace(".", "") or "mp3"  # mp3 or original ext
+
+        tmp_input = self.TMP_DIR / f"{next(tempfile._get_candidate_names())}.{input_format}"
 
         self.uploaded_file.file.seek(0)
-
         with open(tmp_input, "wb") as f:
-            content = self.uploaded_file.file.read()
-            if not content:
-                raise RuntimeError("Uploaded file is empty or unreadable.")
-            f.write(content)
+            f.write(self.uploaded_file.file.read())
 
         tmp_wav = self.TMP_DIR / f"{next(tempfile._get_candidate_names())}.wav"
 
         try:
-            audio = AudioSegment.from_file(tmp_input, format="mp3")
+            audio = AudioSegment.from_file(tmp_input, format=input_format)
             audio = audio.set_channels(1).set_frame_rate(16000)
             audio.export(tmp_wav, format="wav")
         except Exception as e:
-            raise RuntimeError(f"Failed to convert MP3 to WAV: {e}")
+            raise RuntimeError(f"Failed to convert {input_format} to WAV: {e}")
 
         tmp_input.unlink(missing_ok=True)
         self.set_wav_path(str(tmp_wav))
         return str(tmp_wav)
+
 
     def apply_filters(self):
         samples, sr = sf.read(self.get_wav_path(), dtype='float32')

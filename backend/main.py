@@ -15,8 +15,11 @@ app.add_middleware(
 )
 
 @app.post("/upload-file")
-async def transcribe(uploaded_file: UploadFile):
-    return audio_controller.transcribe(uploaded_file)
+async def transcribe(
+    uploaded_file: UploadFile = File(...),
+    is_recorded: int = Form(...)
+):
+    return audio_controller.transcribe(uploaded_file, is_recorded)
 
 @app.post("/get-progression-info")
 async def get_progression_info(

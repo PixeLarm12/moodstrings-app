@@ -9,7 +9,14 @@
         Arquivo: {{ file.name }}
       </h2>
 
+      <!-- MIC RECORDER -->
+      <MicRecorder 
+        @audio-recorded="handleRecordedAudio"
+      />
+      <!-- END MIC RECORDER -->
+
       <Loading v-if="loading" :file-name="file ? file.name : ''"></Loading>
+
       <p v-else-if="message" class="mt-4 font-medium">
         <span :class="success">{{ message }}</span>
       </p>
@@ -61,6 +68,7 @@
 <script>
 import axios from "axios"
 import Loading from "../components/utils/Loading.vue"
+import MicRecorder from "../components/utils/MicRecorder.vue"
 import ProgressionInfo from "../components/sections/ProgressionInfo.vue"
 import ValidationForm from "../components/sections/ValidationForm.vue"
 
@@ -69,6 +77,7 @@ export default {
   data() {
     return {
       file: null,
+      isAudioRecorded: false,
       loading: false,
       showUploadForm: true,
       showProgressionInfo: false,
@@ -88,12 +97,14 @@ export default {
   },
   components: {
     Loading,
+    MicRecorder,
     ProgressionInfo,
     ValidationForm
   },  
   methods: {
     handleFileChange(event) {
       this.file = event.target.files[0]
+      this.isAudioRecorded = false
     },
     async handleSubmit() {
       if (!this.file) {
@@ -105,6 +116,7 @@ export default {
 
       const formData = new FormData()
       formData.append("uploaded_file", this.file)
+      formData.append("is_recorded", this.isAudioRecorded ? 1 : 0)
 
       try {
         this.loading = true
@@ -146,6 +158,7 @@ export default {
       this.tempo = []
       this.tonic = ""
       this.file = null
+      this.isAudioRecorded = false
     },
     showAndCleanForm() {
       this.cleanFields()
@@ -216,6 +229,11 @@ export default {
     handleEditedProgression(progression) {
       const formatted = this.formatProgressionStrings(progression)
       this.getProgressionInfo(formatted)
+    },
+    handleRecordedAudio(blob) {
+      const audioFile = new File([blob], "recording.webm", { type: "audio/webm" })
+      this.file = audioFile
+      this.isAudioRecorded = true
     }
   },
   computed: {

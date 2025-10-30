@@ -12,7 +12,7 @@ def redirectByFileType(file):
     extension = getFileExtension(file)
     redirect = 'midi'
 
-    if extension == '.mp3':
+    if extension == '.mp3' or extension == '.webm':
         redirect = 'transcribe'
 
     return redirect
