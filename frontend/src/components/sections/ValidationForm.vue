@@ -42,7 +42,7 @@
         <div class="flex justify-center gap-6 mt-4">
           <button
             class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold"
-            @click="$emit('confirm', progression)"
+            @click="emitProgression('confirm', progression)"
           >
             Yes!
           </button>
@@ -62,11 +62,19 @@
 
         <p class="text-sm italic text-gray-300 my-2">We will rewrite given progression by what you write, so use it carefully.</p>
 
+        <label class="block text-sm text-gray-300 mb-1">Tempo (BPM):</label>
+        <input
+          v-model="manualBpm"
+          type="number"
+          placeholder="Example: 120"
+          class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500"
+        />
+
         <label class="block text-sm text-gray-300 mb-1">Chords (separated by spaces):</label>
         <input
           v-model="manualChords"
           type="text"
-          placeholder="Exemplo: C G Am F"
+          placeholder="Example: C G Am F"
           class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500"
         />
 
@@ -74,14 +82,14 @@
         <input
           v-model="manualNotes"
           type="text"
-          placeholder="Exemplo: C E G A"
+          placeholder="Example: C E G A"
           class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500"
         />
 
         <div class="flex justify-center gap-6 mt-4">
           <button
             class="bg-sky-700 hover:bg-sky-800 text-white px-6 py-2 rounded-lg font-semibold"
-            @click="submitManualProgression"
+            @click="emitProgression('edit', {})"
           >
             Confirm
           </button>
@@ -117,22 +125,37 @@ export default {
     return {
       editMode: false,
       manualChords: "",
-      manualNotes: ""
+      manualNotes: "",
+      manualBpm: null
     };
   },
   methods: {
     toggleEditMode() {
       this.editMode = !this.editMode;
     },
-    submitManualProgression() {
-      const cleaned = {
-        chords: this.manualChords
-          ? this.manualChords.trim().split(/\s+/).map(chord => ({ chord }))
-          : [],
-        notes: this.manualNotes ? this.manualNotes.trim().split(/\s+/) : []
-      };
-      this.$emit("edit", cleaned);
-      this.editMode = false;
+    emitProgression(emitType, progression){
+      if(emitType === 'confirm'){
+        const object = {
+          chords: this.progression.chords,
+          notes: this.progression.notes,
+          bpm: this.tempo.time
+        };
+
+        this.$emit('confirm', object)
+      }
+
+      if(emitType === 'edit'){
+        const object = {
+          chords: this.manualChords
+            ? this.manualChords.trim().split(/\s+/).map(chord => ({ chord }))
+            : [],
+          notes: this.manualNotes ? this.manualNotes.trim().split(/\s+/) : [],
+          bpm: this.manualBpm ? this.manualBpm : null
+        };
+
+        this.$emit('edit', object)
+        this.editMode = false;
+      }
     }
   }
 };

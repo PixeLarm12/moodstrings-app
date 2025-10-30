@@ -187,7 +187,7 @@ export default {
       this.uploadedFileUrl = null
       this.isAudioRecorded = false
     },
-    async getProgressionInfo(progression){
+    async getProgressionInfo(progression, bpm){
       try {
         this.loading = true
         this.showUploadForm = false
@@ -196,7 +196,7 @@ export default {
         const formData = new FormData()
         formData.append("chordProgression", JSON.stringify(progression.chordProgression))
         formData.append("noteProgression", JSON.stringify(progression.noteProgression))
-        formData.append("tempo", JSON.stringify(this.tempo.time))
+        formData.append("tempo", JSON.stringify(bpm))
         formData.append("uploaded_file", this.file)
 
         const response = await axios.post(`${this.API_URL}/get-progression-info`, formData, {
@@ -246,12 +246,16 @@ export default {
       return { chordProgression, noteProgression };
     },
     handleConfirmedProgression(progression) {
+      const bpm = progression.bpm
       const formatted = this.formatProgressionStrings(progression)
-      this.getProgressionInfo(formatted)
+      
+      this.getProgressionInfo(formatted, bpm)
     },
     handleEditedProgression(progression) {
+      const bpm = progression.bpm
       const formatted = this.formatProgressionStrings(progression)
-      this.getProgressionInfo(formatted)
+
+      this.getProgressionInfo(formatted, bpm)
     },
     handleRecordedAudio(blob) {
       const audioFile = new File([blob], "recording.webm", { type: "audio/webm" })
