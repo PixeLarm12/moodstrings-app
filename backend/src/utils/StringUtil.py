@@ -131,7 +131,7 @@ def classify_tempo(tempo) -> tuple[int, str]:
 
     return bpm, nome
 
-def get_emotion_portuguese(emotion: str) -> str:
+def get_emotion_pt(emotion: str) -> str:
     translated = emotion
 
     if emotion == "angry":
@@ -158,3 +158,69 @@ def get_emotion_portuguese(emotion: str) -> str:
         translated = 'Aconchegante/Caloroso'
 
     return translated
+
+def get_emotion_description_pt(emotion: str) -> str:
+    mapping = {
+        "angry": (
+            "Caracteriza-se por tensão rítmica, timbres agressivos e acentuação forte. "
+            "Frequentemente associado a gêneros como metal, punk e trap mais intenso. "
+            "Exemplos emblemáticos incluem bandas como Rage Against the Machine e Slipknot, "
+            "bem como produções cinematográficas de ação com elevada percussividade."
+        ),
+        "exciting": (
+            "Marcas de alta energia, andamento acelerado e progressões tonais ascendentes. "
+            "Comum em pop dançante, EDM, rock enérgico e trilhas esportivas. "
+            "Artistas como Avicii, Imagine Dragons e Dua Lipa exemplificam esta sensação "
+            "com grooves pulsantes e refrões expansivos."
+        ),
+        "fear": (
+            "Texturas atmosféricas, dissonâncias, dinâmica imprevisível e uso expressivo de silêncio. "
+            "Presente em trilhas de suspense e horror, música experimental e dark ambient. "
+            "Compositores como Bernard Herrmann e Trent Reznor são frequentemente associados "
+            "a sonoridades que evocam apreensão e inquietação."
+        ),
+        "funny": (
+            "Ambiente leve, andamento moderado e melodias lúdicas. "
+            "Comum em swing jazz, funk descontraído e trilhas de comédia. "
+            "Louis Jordan, Hermeto Pascoal e temas animados de desenhos animados "
+            "representam bem a sonoridade jovial e humorística."
+        ),
+        "happy": (
+            "Progressões tonais brilhantes, métricas claras e melodias ascendentes. "
+            "Comum em pop, samba, funk soul e folk otimista. "
+            "Stevie Wonder, Pharrell Williams e artistas brasileiros como Jorge Ben "
+            "trabalham essa atmosfera luminosa e positiva."
+        ),
+        "lazy": (
+            "Atmosfera relaxada, andamentos lentos e timbres suaves. "
+            "Associado a lo-fi hip hop, bossa nova e jazz chill. "
+            "Stan Getz, João Gilberto e playlists de lo-fi criam um ambiente sonoro introspectivo e confortável."
+        ),
+        "magnificent": (
+            "Toque majestoso, orquestrações amplas, harmonia rica e resoluções triunfantes. "
+            "Comum em música sinfônica, trilhas épicas e corais cinematográficos. "
+            "Hans Zimmer, John Williams e compositores românticos como Tchaikovsky representam esta estética monumental."
+        ),
+        "quiet": (
+            "Simplicidade melódica, dinâmica suave e texturas minimalistas. "
+            "Presente em ambient, neoclássico e bossa nova intimista. "
+            "Erik Satie, Ludovico Einaudi e Nils Frahm são referências de contemplação sonora e serenidade."
+        ),
+        "romantic": (
+            "Melodias expressivas, harmonia rica e timbres quentes. "
+            "Encontrado em R&B suave, boleros, baladas pop e repertório romântico erudito. "
+            "Adele, Sade e Chopin exploram essa dimensão emocional com lirismo."
+        ),
+        "sad": (
+            "Andamento lento, tonalidades menores e foco melódico melancólico. "
+            "Comum em blues, indie acústico e música erudita introspectiva. "
+            "Billie Holiday, Radiohead e Samuel Barber materializam este universo emotivo."
+        ),
+        "warm": (
+            "Sons acolhedores, textura orgânica e progressões suaves. "
+            "Encontrado em soul, folk acústico e MPB. "
+            "Norah Jones, Elis Regina e James Taylor exemplificam uma estética reconfortante e íntima."
+        ),
+    }
+
+    return mapping.get(emotion, "Nenhum perfil musical cadastrado para esta emoção.")

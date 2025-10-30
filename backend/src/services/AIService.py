@@ -2,7 +2,7 @@ from src.services.NaiveBayesService import NaiveBayesService
 from src.services.RandomForestService import RandomForestService
 from src.services.KNNService import KNNService
 from src.services.SVMService import SVMService
-from src.utils.StringUtil import get_emotion_portuguese
+from src.utils.StringUtil import get_emotion_pt, get_emotion_description_pt
 
 class AIService:
     def rf_predict(self, forte_sequence: str) -> str:
@@ -12,8 +12,9 @@ class AIService:
 
         return {
             "model_used": "Random Forest",
-            "content": get_emotion_portuguese(emotion),
-            "evaluation": evaluation
+            "content": get_emotion_pt(emotion),
+            "evaluation": evaluation,
+            "description": get_emotion_description_pt(emotion)
         }
     
     def nb_predict(self, forte_sequence: str) -> str:

@@ -19,6 +19,10 @@
         >
             {{ emotion.content }} ({{ emotion.model_used }})
         </button> 
+
+        <p class="break-keep text-gray-300 mt-2 italic">
+          "{{ emotion.description }}"
+        </p>
     </DefaultToggleComponent>
   </div>
 </template>
@@ -43,7 +47,7 @@ export default {
     return {
       showAIModal: false,
       modalEvaluation: [],
-      modalModelName: "",
+      modalModelName: ""
     }
   },
   methods: {
