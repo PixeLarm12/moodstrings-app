@@ -1,20 +1,66 @@
+from src.enums.MusicEnum import Chords
+
+def define_chord_name(input_chord: str = "") -> str:
+    chord_name = '[No Name]'
+    
+    print(f"input: {input_chord}")
+    if not input_chord:
+        return chord_name
+
+    isMajor = False
+    isMinor = False
+    isSeventh = False
+    isNinth = False
+
+    root = None
+
+    # enharmonic equivalent to major triad above Eb
+
+    # may be known chords, but played as non-conventional type
+    if input_chord.lower().find("enharmonic") != -1:
+        if input_chord.lower().find("major") != -1:
+            isMajor = True
+        elif input_chord.lower().find("minor") != -1:
+            isMinor = True
+        
+        if input_chord.lower().find("seventh") != -1:
+            isSeventh = True
+        if input_chord.lower().find("ninth") != -1:
+            isNinth = True
+
+        root = input_chord.split()[-1]
+
+        if not (root in Chords.KNOWN_CHORDS.value):
+            chord_name = '[No Name]'
+        else:
+            if isMinor:
+                chord_name = root + "m" 
+            else:
+                chord_name = root.upper() 
+
+    
+
 def simplify_chord_name(chord_name: str) -> str:
-    chord_name = chord_name.lower()
+    if not chord_name:
+        return None
 
-    if "major triad" in chord_name:
-        return chord_name.split("-")[0].strip().capitalize()
+    chord_name = chord_name.strip().lower()
 
-    if "minor triad" in chord_name:
-        return chord_name.split("-")[0].strip().capitalize() + "m"
+    # Remove unnecessary text like "major triad", "minor triad", "seventh chord", etc.
+    for keyword in ["major triad", "minor triad", "seventh chord", "major", "minor"]:
+        chord_name = chord_name.replace(keyword, "").strip()
 
-    if "seventh" in chord_name or "major" in chord_name:
-        return chord_name.split("-")[0].strip().capitalize()
+    # Extract root and modifiers
+    parts = chord_name.split("-")  # assuming your input uses "-" separator
+    root = parts[0].capitalize() if parts else None
+    modifier = "".join(parts[1:]).replace(" ", "") if len(parts) > 1 else ""
 
-    root = chord_name.split("-")[0].strip().capitalize()
-    if root in ["C", "D", "E", "F", "G", "A", "B"]:
-        return root
+    # Detect minor
+    if "m" in modifier or "min" in modifier:
+        return f"{root}m{modifier.replace('m','')}"  # keep extensions like 7, 9
 
-    return None
+    # Major or other
+    return f"{root}{modifier}"
 
 def sanitize_chord_name(chordName: str, type: str = None) -> str:
     if chordName is None:
@@ -64,8 +110,8 @@ def sanitize_chord_name(chordName: str, type: str = None) -> str:
 
     raw = chordName[1:]
 
-    if raw.find('min') != -1 or raw.find('minor') != -1:
-        if type is 'tab':
+    if raw.find('min') != -1 or raw.find('minor') != -1 or raw == 'm':
+        if type == 'tab':
             response += 'm'
         else:
             response += ' Menor'

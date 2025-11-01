@@ -10,6 +10,7 @@ import os
 from src.enums import MusicEnum
 from collections import Counter
 from typing import Dict, Any
+from collections import defaultdict
 
 class MidiService:
     def __init__(self, file=None, midi_data=None, wav_path=None, bpm=None):
@@ -258,52 +259,152 @@ class MidiService:
             "chords": harmonic_chords
         }
 
-    def extract_chord_progression(self, bucket_size: float = 0.25) -> list[dict]:
-        chord_progression = []
-        prev_chord = None
+    # def extract_chord_progression(self, bucket_size: float = 0.2) -> list[dict]:
+    #     chord_progression = []
+    #     prev_chord = None
 
-        for instrument in self.midi_data.instruments:
+    #     MIN_VELOCITY = 35       # soft notes could be noise
+    #     MIN_DURATION = 0.07
+
+    #     for instrument in self.midi_data.instruments:
+    #         if instrument.is_drum:
+    #             continue
+            
+    #         notes_by_time = {}
+
+    #         for note in instrument.notes:
+    #             duration = note.end - note.start
+    #             if note.velocity < MIN_VELOCITY or duration < MIN_DURATION:
+    #                 continue
+
+    #             bucket = round(note.start / bucket_size) * bucket_size
+    #             notes_by_time.setdefault(bucket, []).append(note.pitch)
+
+    #         for time in sorted(notes_by_time.keys()):
+    #             pitches = notes_by_time[time]
+
+    #             # min 2 notes to create chord
+    #             if len(pitches) >= 2:
+    #                 note_names = [librosa.midi_to_note(p) for p in pitches]
+
+    #                 normalized = [n.replace("♯", "#").replace("♭", "b") for n in note_names]
+
+    #                 try:
+    #                     objChord = m21Chord.Chord(normalized)
+    #                     print(f"note_names {note_names} and chord {m21Harmony.chordSymbolFigureFromChord(objChord)}")
+    #                 except Exception:
+    #                     continue
+
+    #                 # print(f"objChordSIMP: {objChord.pitchedCommonName}")
+    #                 # print(f"objChordHarmony: {m21Harmony.chordSymbolFigureFromChord(objChord)}")
+
+    #                 chord_name = sanitize_chord_name(simplify_chord_name(objChord.pitchedCommonName), 'tab')
+                    
+    #                 if not chord_name or chord_name == "[No Name]" or chord_name == prev_chord:
+    #                     continue
+
+    #                 prev_chord = chord_name
+    #                 chord_notes = [n.name for n in objChord.pitches]
+
+    #                 try:
+    #                     root_note = objChord.root().name
+    #                     function = self.get_chord_function(root_note)
+    #                 except Exception:
+    #                     function = "Unknown"
+
+    #                 chord_progression.append({
+    #                     "chord": chord_name,
+    #                     "name": sanitize_chord_name(chord_name),
+    #                     "notes": chord_notes,
+    #                     "function": function
+    #                 })
+
+    #     return chord_progression
+
+    def clean_notes(self, instruments, bucket_size=0.2, velocity_threshold=35, duration_threshold=0.07):
+        buckets = defaultdict(list)
+
+        for instrument in instruments:
             if instrument.is_drum:
                 continue
 
-            notes_by_time = {}
             for note in instrument.notes:
+                if note.velocity < velocity_threshold:
+                    continue
+
+                duration = note.end - note.start
+                if duration < duration_threshold:
+                    continue
+
                 bucket = round(note.start / bucket_size) * bucket_size
-                notes_by_time.setdefault(bucket, []).append(note.pitch)
+                buckets[bucket].append(note)
 
-            for time in sorted(notes_by_time.keys()):
-                pitches = notes_by_time[time]
-                if len(pitches) >= 2:
-                    note_names = [librosa.midi_to_note(p) for p in pitches]
-                    normalized = [n.replace("♯", "#").replace("♭", "b") for n in note_names]
+        cleaned_buckets = {}
 
-                    try:
-                        objChord = m21Chord.Chord(normalized)
-                    except Exception:
-                        continue 
+        for bucket_time, notes in buckets.items():
+            pitch_classes = [m21Pitch.Pitch(p) for p in {note.pitch % 12 for note in notes}]
+            
+            if len(pitch_classes) > 1:  # require at least two distinct notes
+                cleaned_buckets[bucket_time] = sorted(list(pitch_classes))
 
-                    chord_name = sanitize_chord_name(simplify_chord_name(objChord.pitchedCommonName), 'tab')
-                    
-                    if not chord_name or chord_name == "[No Name]" or chord_name == prev_chord:
-                        continue
-                    prev_chord = chord_name
+        return cleaned_buckets
 
-                    chord_notes = [n.name for n in objChord.pitches]
 
-                    try:
-                        root_note = objChord.root().name
-                        function = self.get_chord_function(root_note)
-                    except Exception:
-                        function = "Unknown"
+    def extract_chord_progression(self, bucket_size: float = 0.18) -> list[dict]:
+        chord_progression = []
+        prev_chord = None
 
-                    chord_progression.append({
-                        "chord": chord_name,
-                        "name": sanitize_chord_name(chord_name),
-                        "notes": chord_notes,
-                        "function": function
-                    })
+        # Step 1: clean notes first
+        cleaned_buckets = self.clean_notes(
+            self.midi_data.instruments,
+            bucket_size=bucket_size,
+            velocity_threshold=35,
+            duration_threshold=0.08,
+        )
+
+        PITCH_CLASS_MAP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+
+        # Step 2: process cleaned buckets
+        for time in sorted(cleaned_buckets.keys()):
+            pitch_classes = cleaned_buckets[time]
+
+            # Convert pitch classes back to note names (no octaves)
+            # normalized = [PITCH_CLASS_MAP[p] for p in pitch_classes]
+            try:
+                objChord = m21Chord.Chord(pitch_classes)
+            except Exception:
+                continue
+
+            # chord_name = sanitize_chord_name(
+            #     simplify_chord_name(objChord.pitchedCommonName), 'tab'
+            # )
+
+            quorde = m21Harmony.Harmony(objChord).figure
+            print(f"teste: {quorde.root}|{quorde.pitchedCommonName}|{quorde.isMajorTriad()}")
+
+            chord_name = m21Harmony.chordSymbolFigureFromChord(objChord)
+
+            if not chord_name or chord_name == "[No Name]" or chord_name == prev_chord:
+                continue
+            
+            prev_chord = chord_name
+            chord_notes = [n.name for n in objChord.pitches]
+
+            try:
+                root_note = objChord.root().name
+                function = self.get_chord_function(root_note)
+            except Exception:
+                function = "Unknown"
+
+            chord_progression.append({
+                "chord": chord_name,
+                "name": sanitize_chord_name(chord_name),
+                "notes": chord_notes,
+                "function": function
+            })
 
         return chord_progression
+
     
     def export_musicxml(self):
         midi_score = self.create_midi_converter()

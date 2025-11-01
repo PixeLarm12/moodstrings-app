@@ -48,3 +48,36 @@ class HarmonicFunctions(Enum):
         ("VI", "Submediante"),
         ("VII", "Sensível")
     ]
+
+class Chords(Enum):
+    KNOWN_CHORDS = [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "A#",
+        "B",
+        "B#",
+        "C#",
+        "D#",
+        "E#",
+        "F#",
+        "G#",
+        "Ab",
+        "Bb",
+        "Cb",
+        "Db",
+        "Eb",
+        "Fb",
+        "Gb",
+        "Am",
+        "Bm",
+        "Cm",
+        "Dm",
+        "Em",
+        "Fm",
+        "Gm"
+    ]
