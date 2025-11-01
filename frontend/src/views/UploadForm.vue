@@ -24,8 +24,11 @@
       />
       <!-- END MIC RECORDER -->
 
-      <p v-if="message" class="mt-4 font-medium">
-        <span :class="success">{{ message }}</span>
+      <p v-if="errors.length > 0" class="mt-4 font-medium">
+        <span class="text-xl text-red-500">{{ message }}</span>
+        <ul class="list-none text-red-300" v-for="(error, index) in errors">
+          <li>{{ (index+1) }}: {{ error.message }}</li>
+        </ul>
       </p>
 
       <Loading v-show="loading" :file-name="file ? file.name : ''"></Loading>
@@ -111,6 +114,7 @@ export default {
       emotion: [],
       relativeScales: [],
       message: "",
+      errors: [],
       keyName: "",
       tempo: [],
       tonic: "",
@@ -152,7 +156,7 @@ export default {
           headers: { "Content-Type": "multipart/form-data" }
         })
 
-        if (!response.data.error) {
+        if (!response.data.errors) {
           this.loading = false
           this.showUploadForm = false
           this.showValidationForm = true
@@ -161,20 +165,26 @@ export default {
           this.tempo = response.data.tempo || []
         } else {
           this.loading = false
-          this.message = `Error: ${response.data.error}`
+          this.message = "Error uploading file: "
+          this.errors = response.data.errors
           this.showUploadForm = true
           this.showValidationForm = false
+          this.file = null
+          this.uploadedFileUrl = ""
         }
-        
       } catch (error) {
         this.loading = false
-        this.message = `Error: ${error.message}`
+        this.message = "Something went wrong uploading file: "
+        this.errors = response.data.errors
         this.showUploadForm = true
         this.showValidationForm = false
+        this.file = null
+        this.uploadedFileUrl = ""
       }
     },
     cleanFields() {
       this.message = ""
+      this.errors = []
       this.progression = {
         chords: [],
         notes: [],
@@ -203,7 +213,7 @@ export default {
           headers: { "Content-Type": "multipart/form-data" }
         })
 
-        if (!response.data.error) {
+        if (!response.data.errors) {
           this.loading = false
           this.showUploadForm = false
           this.showProgressionInfo = true
@@ -216,7 +226,8 @@ export default {
           this.progression = response.data.progression || []
         } else {
           this.loading = false
-          this.message = `Error: ${response.data.error}`
+          this.message = "Something went wrong: "
+          this.errors = response.data.errors
           this.showUploadForm = false
           this.showValidationForm = true
           this.showProgressionInfo = false
@@ -224,7 +235,8 @@ export default {
         
       } catch (error) {
         this.loading = false
-        this.message = `Error: ${error.message}`
+        this.message = "Something went wrong: "
+        this.errors = response.data.errors
         this.showUploadForm = false
         this.showValidationForm = true
         this.showProgressionInfo = false

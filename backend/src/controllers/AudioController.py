@@ -9,9 +9,9 @@ from src.utils.StringUtil import sanitize_chord_name, classify_tempo
 import io
 
 def transcribe(file, is_recorded):
-    response = FileValidator.validate(file)
+    errors = FileValidator.validate(file)
 
-    if not response:
+    if len(errors) <= 0:
         redirect_action = FileUtil.redirectByFileType(file)
         bpm = 0
         tempo_name = ""
@@ -40,7 +40,9 @@ def transcribe(file, is_recorded):
             },
         }
 
-    return response
+    return {
+        "errors": errors
+    }
 
 def progression_info(chordProgression, noteProgression, tempo, file):
     if chordProgression:
