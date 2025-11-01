@@ -52,7 +52,9 @@ def progression_info(chordProgression, noteProgression, tempo, file):
     elif not chordProgression and not noteProgression:
         errors.append({"message": "Progression not informed."})
     elif tempo <= 0:
-        errors.append({"message": "BPM has incorrect value."})
+        errors.append({"message": "BPM can't be less or equal than 0."})
+    elif tempo > 320:
+        errors.append({"message": "BPM can't be higher than 320."})
 
     if len(errors) <= 0:
         audio_service = AudioService(file)
