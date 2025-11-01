@@ -79,7 +79,17 @@ class AudioService:
         if not chord_progression or not isinstance(chord_progression, str):
             raise ValueError("Chord progression must be a non-empty string.")
 
-        chords_list = [ch.strip().replace('"', '') for ch in chord_progression.strip().split()]
+        # Normalize input
+        cleaned = (chord_progression
+                .replace("–", "-")
+                .replace("—", "-")
+                .replace(" ", ""))
+
+        chords_list = [
+            ch.strip().replace('"', '')
+            for ch in cleaned.split("-")
+        ]
+
         if not chords_list:
             raise ValueError("Chord progression must contain at least one chord.")
 
@@ -107,7 +117,6 @@ class AudioService:
         midi_io.seek(0)
 
         self.set_midi_data(midi_io)
-        
         return midi_io
 
     def pitch_shift_wav(self, n_steps=12):

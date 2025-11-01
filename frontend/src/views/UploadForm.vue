@@ -251,11 +251,11 @@ export default {
       }
 
       const chordProgression = Array.isArray(progression.chords)
-        ? progression.chords.map(ch => ch.chord).join(" ")
+        ? progression.chords.map(ch => ch.chord.trim()).join("-") 
         : null;
 
       const noteProgression = Array.isArray(progression.notes)
-        ? progression.notes.join(" ")
+        ? progression.notes.map(n => n.trim()).join("-")          
         : null;
 
       return { chordProgression, noteProgression };

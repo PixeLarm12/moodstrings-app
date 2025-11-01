@@ -59,7 +59,7 @@
           class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500"
         />
 
-        <label v-if="progression.chords?.length || !(!progression.chords?.length && progression.notes?.length)" class="block text-sm text-gray-300 mb-1">Chords (separated by spaces):</label>
+        <label v-if="progression.chords?.length || !(!progression.chords?.length && progression.notes?.length)" class="block text-sm text-gray-300 mb-1">Chords (separated by hifen "-"):</label>
         <input
           v-if="progression.chords?.length || !(!progression.chords?.length && progression.notes?.length)"
           v-model="manualChords"
@@ -68,7 +68,7 @@
           class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500"
         />
 
-        <label v-if="!progression.chords?.length && progression.notes?.length" class="block text-sm text-gray-300 mb-1">Notes (separated by spaces):</label>
+        <label v-if="!progression.chords?.length && progression.notes?.length" class="block text-sm text-gray-300 mb-1">Notes (separated by hifen "-"):</label>
         <input
           v-if="!progression.chords?.length && progression.notes?.length"
           v-model="manualNotes"
@@ -145,11 +145,14 @@ export default {
       if(emitType === 'edit'){
         const object = {
           chords: this.manualChords
-            ? this.manualChords.trim().split(/\s+/).map(chord => ({ chord }))
+            ? this.manualChords.trim().split(/-/).map(chord => ({ chord }))
             : [],
-          notes: this.manualNotes ? this.manualNotes.trim().split(/\s+/) : [],
+          notes: this.manualNotes
+            ? this.manualNotes.trim().split(/-/)
+            : [],
           bpm: this.manualBpm ? this.manualBpm : null
         };
+
 
         this.$emit('edit', object)
         this.editMode = false;
