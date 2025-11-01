@@ -6,6 +6,7 @@
       <!-- Title -->
       <div class="text-center space-y-1">
         <h2 class="text-2xl font-bold text-sky-400">Confirm progression played:</h2>
+        
         <p class="text-gray-300">Check if the sequences below corresponds that what you played.</p>
         <p class="text-sm italic text-gray-300 my-2">Please, use Chord patterns as C (C major) or Cm (C minor). Avoid using non-existing chords to improve info extraction </p>
         <span class="text-xl text-sky-400 mt-2">
@@ -15,24 +16,12 @@
 
       <!-- Detected Chords -->
       <div v-if="progression.chords?.length" class="space-y-2">
-        <h3 class="text-lg font-semibold text-sky-300">Chords detected:</h3>
-        <div class="flex flex-wrap gap-2">
-          <span v-for="(ch, index) in progression.chords" :key="index"
-                class="px-3 py-2 bg-gray-700 rounded-xl border border-sky-600 text-sky-100 text-sm hover:bg-gray-600">
-            {{ ch.chord }} <span class="text-gray-400 text-xs">({{ ch.name }})</span>
-          </span>
-        </div>
+          <ChordsPlayedComponent :progression="progression.chords" :lock-chord-modal="true"></ChordsPlayedComponent>
       </div>
 
       <!-- Detected Notes -->
       <div v-if="!progression.chords?.length && progression.notes?.length" class="space-y-2">
-        <h3 class="text-lg font-semibold text-sky-300">Notes detected:</h3>
-        <div class="flex flex-wrap gap-2">
-          <span v-for="(n, index) in progression.notes" :key="index"
-                class="px-2 py-1 bg-gray-700 rounded-md border border-gray-600 text-gray-200 text-xs">
-            {{ n }}
-          </span>
-        </div>
+        <NotesPlayedComponent :progression="progression.notes"></NotesPlayedComponent>
       </div>
 
       <!-- Question -->
@@ -109,8 +98,15 @@
 </template>
 
 <script>
+import Card from '../utils/Card.vue';
+import ChordsPlayedComponent from '../music/ChordsPlayedComponent.vue';
+
 export default {
   name: "ValidationForm",
+  components: {
+    Card,
+    ChordsPlayedComponent
+  },
   props: {
     progression: {
       type: Object,

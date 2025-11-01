@@ -5,10 +5,15 @@
         Check <b class="text-sky-400">notes sequence</b> that you played:
       </template>
 
-      <span v-for="(note, index) in progression">
-        {{ note }}
-        <span v-if="index < progression.length - 1">- </span>
-      </span>
+      <div class="w-full flex flex-wrap justify-start gap-2">
+        <Card
+          v-for="(note, index) in progression"
+        >
+          <template #name>
+            {{ note }} 
+          </template>
+        </Card>
+      </div>
     </DefaultToggleComponent>
   </div>
 </template>

@@ -95,5 +95,3 @@ Thumbs.db
 
 # DOCKER
 docker-compose.override.yml
-
-utils
