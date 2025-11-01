@@ -25,7 +25,7 @@ async def transcribe(
 async def get_progression_info(
     chordProgression: str = Form(...),
     noteProgression: str = Form(...),
-    tempo: str = Form(...),
+    tempo: int = Form(...),
     uploaded_file: UploadFile = File(...)
 ):  
     return audio_controller.progression_info(chordProgression, noteProgression, tempo, uploaded_file)

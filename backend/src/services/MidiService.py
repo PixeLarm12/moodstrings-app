@@ -152,10 +152,10 @@ class MidiService:
             first_event = progression["notes"][0]
 
         if not first_event:
-            corrected_key = f"{corrected_tonic}{'' if corrected_mode == 'major' else 'm'}"
+            corrected_key = f"{detected_tonic}{'' if detected_mode == 'major' else 'm'}"
 
             return {
-                "tonic": f"{sanitize_chord_name(str(corrected_tonic), 'tab')} ({sanitize_chord_name(str(corrected_tonic))})",
+                "tonic": f"{sanitize_chord_name(str(detected_tonic), 'tab')} ({sanitize_chord_name(str(detected_tonic))})",
                 "key": f"{sanitize_chord_name(str(corrected_key), 'tab')} ({sanitize_chord_name(str(corrected_key))})"
             }
 
@@ -167,10 +167,10 @@ class MidiService:
         )
 
         if first_root == detected_tonic:
-            corrected_key = f"{corrected_tonic}{'' if corrected_mode == 'major' else 'm'}"
+            corrected_key = f"{detected_tonic}{'' if detected_mode == 'major' else 'm'}"
 
             return {
-                "tonic": f"{sanitize_chord_name(str(corrected_tonic), 'tab')} ({sanitize_chord_name(str(corrected_tonic))})",
+                "tonic": f"{sanitize_chord_name(str(detected_tonic), 'tab')} ({sanitize_chord_name(str(detected_tonic))})",
                 "key": f"{sanitize_chord_name(str(corrected_key), 'tab')} ({sanitize_chord_name(str(corrected_key))})"
             }
 

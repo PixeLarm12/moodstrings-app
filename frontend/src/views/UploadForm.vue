@@ -182,7 +182,7 @@ export default {
         this.uploadedFileUrl = ""
       }
     },
-    cleanFields() {
+    cleanFields(keepFile = false) {
       this.message = ""
       this.errors = []
       this.progression = {
@@ -193,9 +193,12 @@ export default {
       this.keyName = ""
       this.tempo = []
       this.tonic = ""
-      this.file = null
-      this.uploadedFileUrl = null
       this.isAudioRecorded = false
+      
+      if(!keepFile){
+        this.file = null
+        this.uploadedFileUrl = null
+      }
     },
     async getProgressionInfo(progression, bpm){
       try {
@@ -204,9 +207,9 @@ export default {
         this.showValidationForm = false
 
         const formData = new FormData()
-        formData.append("chordProgression", JSON.stringify(progression.chordProgression))
-        formData.append("noteProgression", JSON.stringify(progression.noteProgression))
-        formData.append("tempo", JSON.stringify(bpm))
+        formData.append("chordProgression", progression.chordProgression)
+        formData.append("noteProgression", progression.noteProgression)
+        formData.append("tempo", bpm)
         formData.append("uploaded_file", this.file)
 
         const response = await axios.post(`${this.API_URL}/get-progression-info`, formData, {
@@ -226,7 +229,7 @@ export default {
           this.progression = response.data.progression || []
         } else {
           this.loading = false
-          this.message = "Something went wrong: "
+          this.message = "Error validating progression: "
           this.errors = response.data.errors
           this.showUploadForm = false
           this.showValidationForm = true
@@ -235,7 +238,7 @@ export default {
         
       } catch (error) {
         this.loading = false
-        this.message = "Something went wrong: "
+        this.message = "Something went wrong validating progression: "
         this.errors = response.data.errors
         this.showUploadForm = false
         this.showValidationForm = true
@@ -244,27 +247,27 @@ export default {
     },
     formatProgressionStrings(progression) {
       if (!progression || typeof progression !== "object") {
-        return { noteProgression: "", chordProgression: "" };
+        return { noteProgression: null, chordProgression: null };
       }
 
       const chordProgression = Array.isArray(progression.chords)
         ? progression.chords.map(ch => ch.chord).join(" ")
-        : "";
+        : null;
 
       const noteProgression = Array.isArray(progression.notes)
         ? progression.notes.join(" ")
-        : "";
+        : null;
 
       return { chordProgression, noteProgression };
     },
     handleConfirmedProgression(progression) {
-      const bpm = progression.bpm
+      const bpm = progression.bpm ? parseInt(progression.bpm) : 0
       const formatted = this.formatProgressionStrings(progression)
       
       this.getProgressionInfo(formatted, bpm)
     },
     handleEditedProgression(progression) {
-      const bpm = progression.bpm
+      const bpm = progression.bpm ? parseInt(progression.bpm) : 0
       const formatted = this.formatProgressionStrings(progression)
 
       this.getProgressionInfo(formatted, bpm)
@@ -301,6 +304,11 @@ export default {
     optionRecordMic(newVal, oldValue){
       if(oldValue != newVal){  
         this.cleanFields()
+      }
+    },
+    loading(newVal, oldValue){
+      if(newVal){  
+        this.cleanFields(true)
       }
     }
   }

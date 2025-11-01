@@ -4,64 +4,64 @@
 
       <div v-if="(progression.chords.length > 0 || progression.notes.length > 0)" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
 
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
-          <div class="w-full md:col-span-7">
-              <div class="w-full flex flex-col gap-2">
-                  <p><span class="font-semibold text-sky-400">Key:</span> {{ keyName }}</p>
-                  <p><span class="font-semibold text-sky-400">Tempo:</span> {{ tempo.time }} BPM (<i>{{ tempo.name }}</i>)</p>
-                  <p><span class="font-semibold text-sky-400">Tonic:</span> {{ tonic }}</p>
-              </div>
-          </div>
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
+            <div class="w-full md:col-span-7">
+                <div class="w-full flex flex-col gap-2">
+                    <p><span class="font-semibold text-sky-400">Key:</span> {{ keyName }}</p>
+                    <p><span class="font-semibold text-sky-400">Tempo:</span> {{ tempo.time }} BPM (<i>{{ tempo.name }}</i>)</p>
+                    <p><span class="font-semibold text-sky-400">Tonic:</span> {{ tonic }}</p>
+                </div>
+            </div>
 
-              <div class="w-full md:col-span-5 flex flex-col justify-start gap-2 md:gap-4">
-              <button
+            <div class="w-full md:col-span-5 flex flex-col justify-start gap-2 md:gap-4">
+              <!-- <button
                   v-if="(progression.chords.length > 0)"
                   type="button"
                   class="py-2 px-2 1/2 bg-sky-700 rounded-lg font-semibold hover:bg-sky-900"
                   @click="downloadMidi"
               >
                   Download midi file
-              </button>  
+              </button>   -->
               
-              <button
+              <!-- <button
                   type="button"
                   class="py-2 px-2 1/2 bg-sky-700 rounded-lg font-semibold hover:bg-sky-900"
                   @click="downloadMusicalSheet"
               >
                   Download music sheet
-              </button>
-              </div>
-          </div>
+              </button> -->
+            </div>
+        </div>
 
-          <div v-if="progression.chords.length > 0 && !(progression.chords.length <= 0 && progression.notes.length > 0)" class="my-2">
-              <ChordsPlayedComponent :progression="progression.chords"></ChordsPlayedComponent>
-          </div>
+        <div v-if="progression.chords.length > 0 && !(progression.chords.length <= 0 && progression.notes.length > 0)" class="my-2">
+            <ChordsPlayedComponent :progression="progression.chords"></ChordsPlayedComponent>
+        </div>
 
-          <div v-if="progression.chords.length <= 0 && progression.notes.length > 0" class="my-2">
-              <NotesPlayedComponent :progression="progression.notes"></NotesPlayedComponent>
-          </div>
+        <div v-if="progression.chords.length <= 0 && progression.notes.length > 0" class="my-2">
+            <NotesPlayedComponent :progression="progression.notes"></NotesPlayedComponent>
+        </div>
 
-          <div v-if="emotion" class="my-2">
-              <EmotionsComponent :emotion="emotion"></EmotionsComponent>
-          </div>
+        <div v-if="emotion" class="my-2">
+            <EmotionsComponent :emotion="emotion"></EmotionsComponent>
+        </div>
 
-          <div class="flex justify-around my-4">
-              <button
-                type="button"
-                class="py-2 px-12 bg-sky-600 rounded-lg font-semibold hover:bg-sky-700"
-                @click="showScalesModal = true"
-              >
-              See relative scales
-              </button>
+        <div class="flex justify-around my-4">
+            <button
+              type="button"
+              class="py-2 px-12 bg-sky-600 rounded-lg font-semibold hover:bg-sky-700"
+              @click="showScalesModal = true"
+            >
+            See relative scales
+            </button>
 
-              <button
-                type="button"
-                class="py-2 px-12 bg-gray-700 rounded-lg font-semibold hover:bg-gray-600"
-                @click="reset()"
-              >
-              Send new file
-              </button>  
-          </div>
+            <button
+              type="button"
+              class="py-2 px-12 bg-gray-700 rounded-lg font-semibold hover:bg-gray-600"
+              @click="reset()"
+            >
+            Send new file
+            </button>  
+        </div>
       </div>
   </div>
 </template>

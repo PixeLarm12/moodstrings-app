@@ -45,9 +45,18 @@ def transcribe(file, is_recorded):
     }
 
 def progression_info(chordProgression, noteProgression, tempo, file):
-    if chordProgression:
+    errors = []
+
+    if not tempo:
+        errors.append({"message": "BPM not informed."})
+    elif not chordProgression and not noteProgression:
+        errors.append({"message": "Progression not informed."})
+    elif tempo <= 0:
+        errors.append({"message": "BPM has incorrect value."})
+
+    if len(errors) <= 0:
         audio_service = AudioService(file)
-        midi_file = audio_service.create_midi_file_from_progression(chord_progression=chordProgression, bpm=int(tempo))
+        midi_file = audio_service.create_midi_file_from_progression(chord_progression=chordProgression, bpm=tempo)
         midi_service = MidiService(midi_data=midi_file, bpm=tempo)
         progression = midi_service.extract_notes_and_chords()
 
@@ -74,6 +83,10 @@ def progression_info(chordProgression, noteProgression, tempo, file):
             "key_name": key_info['key'],
             "tonic": key_info['tonic']
         }
+    
+    return {
+        "errors": errors
+    }
 
 async def get_midi_to_download(file):
     try:
