@@ -131,96 +131,190 @@ def classify_tempo(tempo) -> tuple[int, str]:
 
     return bpm, nome
 
-def get_emotion_pt(emotion: str) -> str:
+def get_emotion(emotion: str, lang: str = "en") -> str:
     translated = emotion
 
-    if emotion == "angry":
-        translated = 'Irritado'
-    if emotion == "exciting":
-        translated = 'Empolgante/Excitante'
-    if emotion == "fear":
-        translated = 'Medo/Assustador'
-    if emotion == "funny":
-        translated = 'Engraçado/Divertido'
-    if emotion == "happy":
-        translated = 'Feliz/Alegre'
-    if emotion == "lazy":
-        translated = 'Preguiçoso/Relaxado'
-    if emotion == "magnificent":
-        translated = 'Magnífico/Grandioso'
-    if emotion == "quiet":
-        translated = 'Calmo/Silencioso/Sereno'
-    if emotion == "romantic":
-        translated = 'Romântico/Apaixonado'
-    if emotion == "sad":
-        translated = 'Triste/Melancólico'
-    if emotion == "warm":
-        translated = 'Aconchegante/Caloroso'
+    if lang == "ptbr":
+        if emotion == "angry":
+            translated = 'Irritado'
+        if emotion == "exciting":
+            translated = 'Empolgante/Excitante'
+        if emotion == "fear":
+            translated = 'Medo/Assustador'
+        if emotion == "funny":
+            translated = 'Engraçado/Divertido'
+        if emotion == "happy":
+            translated = 'Feliz/Alegre'
+        if emotion == "lazy":
+            translated = 'Preguiçoso/Relaxado'
+        if emotion == "magnificent":
+            translated = 'Magnífico/Grandioso'
+        if emotion == "quiet":
+            translated = 'Calmo/Silencioso/Sereno'
+        if emotion == "romantic":
+            translated = 'Romântico/Apaixonado'
+        if emotion == "sad":
+            translated = 'Triste/Melancólico'
+        if emotion == "warm":
+            translated = 'Aconchegante/Caloroso'
+    else:
+        if emotion == "angry":
+            translated = "Angry"
+        if emotion == "exciting":
+            translated = "Exciting"
+        if emotion == "fear":
+            translated = "Fearful"
+        if emotion == "funny":
+            translated = "Funny/Playful"
+        if emotion == "happy":
+            translated = "Happy/Cheerful"
+        if emotion == "lazy":
+            translated = "Lazy/Relaxed"
+        if emotion == "magnificent":
+            translated = "Magnificent/Grand"
+        if emotion == "quiet":
+            translated = "Calm/Quiet/Serene"
+        if emotion == "romantic":
+            translated = "Romantic/Passionate"
+        if emotion == "sad":
+            translated = "Sad/Melancholic"
+        if emotion == "warm":
+            translated = "Warm/Cozy"
 
     return translated
 
-def get_emotion_description_pt(emotion: str) -> str:
-    mapping = {
-        "angry": (
-            "Caracteriza-se por tensão rítmica, timbres agressivos e acentuação forte. "
-            "Frequentemente associado a gêneros como metal, punk e trap mais intenso. "
-            "Exemplos emblemáticos incluem bandas como Rage Against the Machine e Slipknot, "
-            "bem como produções cinematográficas de ação com elevada percussividade."
-        ),
-        "exciting": (
-            "Marcas de alta energia, andamento acelerado e progressões tonais ascendentes. "
-            "Comum em pop dançante, EDM, rock enérgico e trilhas esportivas. "
-            "Artistas como Avicii, Imagine Dragons e Dua Lipa exemplificam esta sensação "
-            "com grooves pulsantes e refrões expansivos."
-        ),
-        "fear": (
-            "Texturas atmosféricas, dissonâncias, dinâmica imprevisível e uso expressivo de silêncio. "
-            "Presente em trilhas de suspense e horror, música experimental e dark ambient. "
-            "Compositores como Bernard Herrmann e Trent Reznor são frequentemente associados "
-            "a sonoridades que evocam apreensão e inquietação."
-        ),
-        "funny": (
-            "Ambiente leve, andamento moderado e melodias lúdicas. "
-            "Comum em swing jazz, funk descontraído e trilhas de comédia. "
-            "Louis Jordan, Hermeto Pascoal e temas animados de desenhos animados "
-            "representam bem a sonoridade jovial e humorística."
-        ),
-        "happy": (
-            "Progressões tonais brilhantes, métricas claras e melodias ascendentes. "
-            "Comum em pop, samba, funk soul e folk otimista. "
-            "Stevie Wonder, Pharrell Williams e artistas brasileiros como Jorge Ben "
-            "trabalham essa atmosfera luminosa e positiva."
-        ),
-        "lazy": (
-            "Atmosfera relaxada, andamentos lentos e timbres suaves. "
-            "Associado a lo-fi hip hop, bossa nova e jazz chill. "
-            "Stan Getz, João Gilberto e playlists de lo-fi criam um ambiente sonoro introspectivo e confortável."
-        ),
-        "magnificent": (
-            "Toque majestoso, orquestrações amplas, harmonia rica e resoluções triunfantes. "
-            "Comum em música sinfônica, trilhas épicas e corais cinematográficos. "
-            "Hans Zimmer, John Williams e compositores românticos como Tchaikovsky representam esta estética monumental."
-        ),
-        "quiet": (
-            "Simplicidade melódica, dinâmica suave e texturas minimalistas. "
-            "Presente em ambient, neoclássico e bossa nova intimista. "
-            "Erik Satie, Ludovico Einaudi e Nils Frahm são referências de contemplação sonora e serenidade."
-        ),
-        "romantic": (
-            "Melodias expressivas, harmonia rica e timbres quentes. "
-            "Encontrado em R&B suave, boleros, baladas pop e repertório romântico erudito. "
-            "Adele, Sade e Chopin exploram essa dimensão emocional com lirismo."
-        ),
-        "sad": (
-            "Andamento lento, tonalidades menores e foco melódico melancólico. "
-            "Comum em blues, indie acústico e música erudita introspectiva. "
-            "Billie Holiday, Radiohead e Samuel Barber materializam este universo emotivo."
-        ),
-        "warm": (
-            "Sons acolhedores, textura orgânica e progressões suaves. "
-            "Encontrado em soul, folk acústico e MPB. "
-            "Norah Jones, Elis Regina e James Taylor exemplificam uma estética reconfortante e íntima."
-        ),
-    }
+def get_emotion_description(emotion: str, lang: str = "en") -> str:
 
-    return mapping.get(emotion, "Nenhum perfil musical cadastrado para esta emoção.")
+    if lang == "ptbr":
+        mapping = {
+            "angry": (
+                "Caracteriza-se por tensão rítmica, timbres agressivos e acentuação forte. "
+                "Frequentemente associado a gêneros como metal, punk e trap mais intenso. "
+                "Exemplos emblemáticos incluem bandas como Rage Against the Machine e Slipknot, "
+                "bem como produções cinematográficas de ação com elevada percussividade."
+            ),
+            "exciting": (
+                "Marcas de alta energia, andamento acelerado e progressões tonais ascendentes. "
+                "Comum em pop dançante, EDM, rock enérgico e trilhas esportivas. "
+                "Artistas como Avicii, Imagine Dragons e Dua Lipa exemplificam esta sensação "
+                "com grooves pulsantes e refrões expansivos."
+            ),
+            "fear": (
+                "Texturas atmosféricas, dissonâncias, dinâmica imprevisível e uso expressivo de silêncio. "
+                "Presente em trilhas de suspense e horror, música experimental e dark ambient. "
+                "Compositores como Bernard Herrmann e Trent Reznor são frequentemente associados "
+                "a sonoridades que evocam apreensão e inquietação."
+            ),
+            "funny": (
+                "Ambiente leve, andamento moderado e melodias lúdicas. "
+                "Comum em swing jazz, funk descontraído e trilhas de comédia. "
+                "Louis Jordan, Hermeto Pascoal e temas animados de desenhos animados "
+                "representam bem a sonoridade jovial e humorística."
+            ),
+            "happy": (
+                "Progressões tonais brilhantes, métricas claras e melodias ascendentes. "
+                "Comum em pop, samba, funk soul e folk otimista. "
+                "Stevie Wonder, Pharrell Williams e artistas brasileiros como Jorge Ben "
+                "trabalham essa atmosfera luminosa e positiva."
+            ),
+            "lazy": (
+                "Atmosfera relaxada, andamentos lentos e timbres suaves. "
+                "Associado a lo-fi hip hop, bossa nova e jazz chill. "
+                "Stan Getz, João Gilberto e playlists de lo-fi criam um ambiente sonoro introspectivo e confortável."
+            ),
+            "magnificent": (
+                "Toque majestoso, orquestrações amplas, harmonia rica e resoluções triunfantes. "
+                "Comum em música sinfônica, trilhas épicas e corais cinematográficos. "
+                "Hans Zimmer, John Williams e compositores românticos como Tchaikovsky representam esta estética monumental."
+            ),
+            "quiet": (
+                "Simplicidade melódica, dinâmica suave e texturas minimalistas. "
+                "Presente em ambient, neoclássico e bossa nova intimista. "
+                "Erik Satie, Ludovico Einaudi e Nils Frahm são referências de contemplação sonora e serenidade."
+            ),
+            "romantic": (
+                "Melodias expressivas, harmonia rica e timbres quentes. "
+                "Encontrado em R&B suave, boleros, baladas pop e repertório romântico erudito. "
+                "Adele, Sade e Chopin exploram essa dimensão emocional com lirismo."
+            ),
+            "sad": (
+                "Andamento lento, tonalidades menores e foco melódico melancólico. "
+                "Comum em blues, indie acústico e música erudita introspectiva. "
+                "Billie Holiday, Radiohead e Samuel Barber materializam este universo emotivo."
+            ),
+            "warm": (
+                "Sons acolhedores, textura orgânica e progressões suaves. "
+                "Encontrado em soul, folk acústico e MPB. "
+                "Norah Jones, Elis Regina e James Taylor exemplificam uma estética reconfortante e íntima."
+            ),
+        }
+
+        return mapping.get(emotion, "Nenhum perfil musical cadastrado para esta emoção.")
+    else:
+        mapping = {
+            "angry": (
+                "Defined by rhythmic tension, aggressive timbres, and strong accents. "
+                "Common in metal, punk, and intense trap. "
+                "Representative examples include Rage Against the Machine and Slipknot, "
+                "as well as action film scores with heavy percussive elements."
+            ),
+            "exciting": (
+                "Marked by high energy, fast tempo, and ascending tonal progressions. "
+                "Found in dance-pop, EDM, energetic rock, and sports soundtracks. "
+                "Artists like Avicii, Imagine Dragons, and Dua Lipa illustrate this "
+                "with driving grooves and explosive choruses."
+            ),
+            "fear": (
+                "Atmospheric textures, dissonance, unpredictable dynamics, and expressive use of silence. "
+                "Typical in suspense and horror scores, experimental music, and dark ambient. "
+                "Composers such as Bernard Herrmann and Trent Reznor are associated "
+                "with sonic palettes that evoke tension and unease."
+            ),
+            "funny": (
+                "Light-hearted atmosphere, moderate tempo, and playful melodies. "
+                "Common in swing jazz, groovy funk, and comedy soundtracks. "
+                "Louis Jordan, Hermeto Pascoal, and animated cartoon themes "
+                "capture this humorous and buoyant mood."
+            ),
+            "happy": (
+                "Bright tonal progressions, clear metrics, and uplifting melodic lines. "
+                "Frequent in pop, samba, funk-soul, and optimistic folk. "
+                "Artists such as Stevie Wonder, Pharrell Williams, and Jorge Ben "
+                "deliver a radiant and positive sonic character."
+            ),
+            "lazy": (
+                "Relaxed atmosphere, slow tempos, and smooth timbres. "
+                "Linked to lo-fi hip-hop, bossa nova, and chill jazz. "
+                "Stan Getz, João Gilberto, and lo-fi playlists create a contemplative and comfortable sound environment."
+            ),
+            "magnificent": (
+                "Majestic feel, large orchestration, rich harmony, and triumphant resolutions. "
+                "Present in symphonic music, epic film scores, and choral works. "
+                "Hans Zimmer, John Williams, and romantic-era composers like Tchaikovsky "
+                "embody this monumental aesthetic."
+            ),
+            "quiet": (
+                "Melodic simplicity, soft dynamics, and minimal textures. "
+                "Appears in ambient, neo-classical, and intimate bossa nova. "
+                "Erik Satie, Ludovico Einaudi, and Nils Frahm represent contemplative and serene soundscapes."
+            ),
+            "romantic": (
+                "Expressive melodies, rich harmony, and warm timbres. "
+                "Found in smooth R&B, boleros, pop ballads, and romantic classical repertoire. "
+                "Adele, Sade, and Chopin explore this emotional spectrum with lyrical sensitivity."
+            ),
+            "sad": (
+                "Slow tempos, minor tonalities, and melancholic melodic focus. "
+                "Common in blues, acoustic indie, and introspective classical works. "
+                "Billie Holiday, Radiohead, and Samuel Barber exemplify this emotional depth."
+            ),
+            "warm": (
+                "Comforting sounds, organic textures, and gentle harmonic movement. "
+                "Present in soul, acoustic folk, and MPB. "
+                "Norah Jones, Elis Regina, and James Taylor illustrate a cozy and intimate aesthetic."
+            ),
+        }
+
+        return mapping.get(emotion, "No musical profile registered for this emotion.")
+
+    
