@@ -91,40 +91,40 @@ def sanitize_chord_name(chordName: str, type: str = None) -> str:
     raw = chordName.lower()
 
     if raw.startswith('a'):
-        if type is 'tab':
+        # if type is 'tab':
             response = 'A'
-        else:
-            response = 'Lá'
+        # else:
+        #     response = 'Lá'
     elif raw.startswith('b'):
-        if type is 'tab':
+        # if type is 'tab':
             response = 'B'
-        else:
-            response = 'Si'
+        # else:
+        #     response = 'Si'
     elif raw.startswith('c'):
-        if type is 'tab':
+        # if type is 'tab':
             response = 'C'
-        else:
-            response = 'Dó'
+        # else:
+        #     response = 'Dó'
     elif raw.startswith('d'):
-        if type is 'tab':
+        # if type is 'tab':
             response = 'D'
-        else:
-            response = 'Ré'
+        # else:
+        #     response = 'Ré'
     elif raw.startswith('e'):
-        if type is 'tab':
+        # if type is 'tab':
             response = 'E'
-        else:
-            response = 'Mi'
+        # else:
+        #     response = 'Mi'
     elif raw.startswith('f'):
-        if type is 'tab':
+        # if type is 'tab':
             response = 'F'
-        else:
-            response = 'Fá'
+        # else:
+        #     response = 'Fá'
     elif raw.startswith('g'):
-        if type is 'tab':
+        # if type is 'tab':
             response = 'G'
-        else:
-            response = 'Sol'
+        # else:
+        #     response = 'Sol'
     
     if response == '[No Name]':
         return response
@@ -135,32 +135,32 @@ def sanitize_chord_name(chordName: str, type: str = None) -> str:
         if type == 'tab':
             response += 'm'
         else:
-            response += ' Menor'
+            response += ' Minor'
     else:
         if type != 'tab':
-            response += ' Maior'
+            response += ' Major'
 
     if raw.find('#') != -1 or raw.find('sus') != -1:
         if type is 'tab':
             response += '#' 
         else:
-            response += ' Sustenido'
+            response += ' Sharp'
     elif raw.find('b') != -1:
         if type is 'tab':
             response += 'b'
         else:
-            response += ' Bemol'
+            response += ' Flat'
 
     if raw.find('9') != -1:
         if type is 'tab':
             response += '9'
         else:
-            response += ' com Nona'
+            response += 'Ninth'
     elif raw.find('7') != -1:
         if type is 'tab':
             response += '7'
         else:
-            response += ' com Sétima'
+            response += ' Seventh'
 
     return response
 
