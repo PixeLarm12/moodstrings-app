@@ -100,12 +100,14 @@
 <script>
 import Card from '../utils/Card.vue';
 import ChordsPlayedComponent from '../music/ChordsPlayedComponent.vue';
+import NotesPlayedComponent from '../music/NotesPlayedComponent.vue';
 
 export default {
   name: "ValidationForm",
   components: {
     Card,
-    ChordsPlayedComponent
+    ChordsPlayedComponent,
+    NotesPlayedComponent
   },
   props: {
     progression: {
@@ -156,6 +158,41 @@ export default {
 
         this.$emit('edit', object)
         this.editMode = false;
+      }
+    }
+  },
+  watch: {
+    editMode(newVal, oldVal){
+      if (newVal) {
+        let chords = ""
+        let notes = ""
+        if(this.progression.chords.length > 0){
+          for (let index = 0; index < this.progression.chords.length; index++) {
+            const ch = this.progression.chords[index];
+            
+            if(index == 0){
+              chords = ch.chord
+            } else {
+              chords += "-" + ch.chord  
+            }
+          }
+        }
+
+        if(this.progression.notes.length > 0){
+          for (let index = 0; index < this.progression.notes.length; index++) {
+            const n = this.progression.notes[index];
+            
+            if(index == 0){
+              notes = n
+            } else {
+              notes += "-" + n  
+            }
+          }
+        }
+
+        this.manualChords = chords
+        this.manualNotes = notes
+        this.manualBpm = this.tempo.time
       }
     }
   }
