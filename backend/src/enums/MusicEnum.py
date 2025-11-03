@@ -39,7 +39,7 @@ class Scales(Enum):
     RELATIVE_KEYS_INV = {v: k for k, v in RELATIVE_KEYS.items()}
 
 class HarmonicFunctions(Enum):
-    FUNCTIONS = [
+    FUNCTIONS_PTBR = [
         ("I", "Tônica"),
         ("II", "Supertônica"),
         ("III", "Mediante"),
@@ -47,4 +47,14 @@ class HarmonicFunctions(Enum):
         ("V", "Dominante"),
         ("VI", "Submediante"),
         ("VII", "Sensível")
+    ]
+
+    FUNCTIONS_EN = [
+        ("I", "Tonic"),
+        ("II", "Supertonic"),
+        ("III", "Mediant"),
+        ("IV", "Subdominant"),
+        ("V", "Dominant"),
+        ("VI", "Submediant"),
+        ("VII", "Leading Tone")
     ]

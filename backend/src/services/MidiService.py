@@ -89,7 +89,7 @@ class MidiService:
             return "Out of scale"
 
         index = scale_notes.index(root_note)
-        roman, name = MusicEnum.HarmonicFunctions.FUNCTIONS.value[index]
+        roman, name = MusicEnum.HarmonicFunctions.FUNCTIONS_EN.value[index]
 
         return f"{roman} ({name})"
 

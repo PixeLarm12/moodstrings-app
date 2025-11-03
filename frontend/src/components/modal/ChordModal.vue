@@ -1,15 +1,15 @@
 <template>
   <DefaultModal :show="show" @close="$emit('close')">
     <template #header>
-      Acorde: <b>{{ chordName }}</b>
+      Chord: <b>{{ chordName }}</b>
     </template>
 
-    <h2 class="text-xl">Função do acorde na escala: </h2>
+    <h2 class="text-xl">Harmonic function based on scale: </h2>
     <p class="mb-4">
       {{ chordFunction }}
     </p>
 
-    <h3 class="text-xl mb-4">Notas que formam o acorde:</h3>
+    <h3 class="text-xl mb-4">Notes that create the chord:</h3>
     <ul class="list-disc pl-5">
       <li v-for="(note, index) in notes" :key="index" class="list-none">{{ note }}</li>
     </ul>
