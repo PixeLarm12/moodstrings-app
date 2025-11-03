@@ -40,32 +40,20 @@ async def download_midi(uploaded_file: UploadFile):
 async def download_sheet(uploaded_file: UploadFile):
     return await audio_controller.get_musical_sheet_to_download(uploaded_file)
 
-@app.post("/test")
-async def test(progression: str = Form(...)):
-    # chords_list = []
-    # chords_list.append("C-major triad")
-    # chords_list.append("Major Third above C")
-    # chords_list.append("D-major triad")
-    # chords_list.append("E-major triad")
-    # chords_list.append("F-major triad")
-    # chords_list.append("G-major triad")
-    # chords_list.append("Perfect Fourth above D")
-    # chords_list.append("Perfect Fourth above E")
-    # chords_list.append("A-major triad")
-    # chords_list.append("enharmonic equivalent to major triad above Eb")
-    # chords_list.append("enharmonic equivalent to major triad above Eb")
+@app.get("/test")
+async def test():
+    progression = "C-Cm-Bm7-Bb-F#-F#m9"
 
-    # C-Cm-Bb-F#-F#m-C9-A7M-Em7
     chords_list = [
-        ch.strip().replace('"', '').replace('b', '♭').replace('#', '♯') #unicode fix
+        ch.strip().replace('"', '') #unicode fix
         for ch in progression.split("-")
     ]
 
     for chord in chords_list:
-        chord = m21Harmony.ChordSymbol("Bdim")
+        if chord.find("b") != -1:
+            chord = chord.replace('b', '-') # music21 bemol is 'flat'
+        symbol = m21Harmony.ChordSymbol(chord)
 
-        StringUtil.define_chord_name(chord.pitchedCommonName)
-
+        print(f"TESTE NOME: {StringUtil.get_clean_chord_name(symbol.pitchedCommonName)}")
+        
     return 1
-
-    # return ;

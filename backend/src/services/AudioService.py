@@ -81,6 +81,7 @@ class AudioService:
 
         # Normalize input
         cleaned = (chord_progression
+                .replace('♯', '#')
                 .replace("–", "-")
                 .replace("—", "-")
                 .replace(" ", ""))
@@ -96,12 +97,18 @@ class AudioService:
         s = stream.Stream()
         s.append(tempo.MetronomeMark(number=bpm))
 
-        for chord_symbol in chords_list:
-            try:
-                ch = harmony.ChordSymbol(chord_symbol)
-                c = chord.Chord(ch.pitches)
+        for raw_chord in chords_list:
+            try: 
+                if raw_chord.find("b") != -1:
+                    raw_chord = raw_chord.replace('b', '-') # music21 bemol is 'flat'
+                elif raw_chord.find("♭") != -1:
+                    raw_chord = raw_chord.replace('♭', '-') # music21 bemol is 'flat'
+                
+                ch = harmony.ChordSymbol(raw_chord)
+                c = chord.Chord(ch.pitches) # just to create Chord object separated
+
             except Exception:
-                c = note.Note(chord_symbol)
+                c = note.Note(raw_chord)
 
             c.duration.quarterLength = duration
             s.append(c)

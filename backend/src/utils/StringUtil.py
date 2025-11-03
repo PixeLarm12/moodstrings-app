@@ -1,44 +1,69 @@
-from src.enums.MusicEnum import Chords
+import re
 
-def define_chord_name(input_chord: str = "") -> str:
-    chord_name = '[No Name]'
+def get_clean_chord_name(text) -> str:
+    QUALITY_MAP = {
+        "major": "",
+        "minor": "m",
+        "dominant": "",  # handled separately
+        "diminished": "dim",
+        "augmented": "aug",
+    }
+
+    EXTENSION_MAP = {
+        "seventh": "7",
+        "ninth": "9",
+        "eleventh": "11",
+        "thirteenth": "13",
+    }
+
+    if not isinstance(text, str):
+        text = str(text)
+
+    original = text.strip()
+    lowered = original.lower()
+
+    root_match = re.match(r"([a-g][b#]?)", original, re.IGNORECASE)
+    if not root_match:
+        return "[No Name]"  # fallback: return original input
+
+    root = root_match.group(1)
+    root = root[0].upper() + (root[1:] if len(root) > 1 else "")
+
+    if "minor third above" in lowered:
+        return f"{root}m"
+    if "perfect fourth" in lowered or "perfect octave" in lowered:
+        return root  # power chord / doubling
+    if "quartal" in lowered or "tetramirror" in lowered:
+        return root  # exotic modern voicing, fallback
     
-    print(f"input: {input_chord}")
-    if not input_chord:
-        return chord_name
+    quality = ""
+    extension = ""
 
-    isMajor = False
-    isMinor = False
-    isSeventh = False
-    isNinth = False
+    # Dominant seventh override
+    if "dominant seventh" in lowered:
+        return f"{root}7"
 
-    root = None
+    # Identify quality
+    for word, symbol in QUALITY_MAP.items():
+        if word in lowered:
+            quality = symbol
+            break
 
-    # enharmonic equivalent to major triad above Eb
+    # Extensions
+    for word, symbol in EXTENSION_MAP.items():
+        if word in lowered:
+            extension = symbol
+            break
 
-    # may be known chords, but played as non-conventional type
-    if input_chord.lower().find("enharmonic") != -1:
-        if input_chord.lower().find("major") != -1:
-            isMajor = True
-        elif input_chord.lower().find("minor") != -1:
-            isMinor = True
-        
-        if input_chord.lower().find("seventh") != -1:
-            isSeventh = True
-        if input_chord.lower().find("ninth") != -1:
-            isNinth = True
+    # Incomplete but clear construction
+    if "incomplete major-seventh" in lowered:
+        return f"{root}maj7"
 
-        root = input_chord.split()[-1]
+    # Major seventh explicit
+    if "major seventh" in lowered:
+        return f"{root}maj7"
 
-        if not (root in Chords.KNOWN_CHORDS.value):
-            chord_name = '[No Name]'
-        else:
-            if isMinor:
-                chord_name = root + "m" 
-            else:
-                chord_name = root.upper() 
-
-    
+    return f"{root}{quality}{extension}"
 
 def simplify_chord_name(chord_name: str) -> str:
     if not chord_name:
@@ -46,20 +71,16 @@ def simplify_chord_name(chord_name: str) -> str:
 
     chord_name = chord_name.strip().lower()
 
-    # Remove unnecessary text like "major triad", "minor triad", "seventh chord", etc.
     for keyword in ["major triad", "minor triad", "seventh chord", "major", "minor"]:
         chord_name = chord_name.replace(keyword, "").strip()
 
-    # Extract root and modifiers
     parts = chord_name.split("-")  # assuming your input uses "-" separator
     root = parts[0].capitalize() if parts else None
     modifier = "".join(parts[1:]).replace(" ", "") if len(parts) > 1 else ""
 
-    # Detect minor
     if "m" in modifier or "min" in modifier:
         return f"{root}m{modifier.replace('m','')}"  # keep extensions like 7, 9
 
-    # Major or other
     return f"{root}{modifier}"
 
 def sanitize_chord_name(chordName: str, type: str = None) -> str:
