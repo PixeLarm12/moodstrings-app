@@ -126,7 +126,8 @@ export default {
       editMode: false,
       manualChords: "",
       manualNotes: "",
-      manualBpm: null
+      manualBpm: null,
+      errors: "",
     };
   },
   methods: {

@@ -12,33 +12,36 @@ def transcribe(file, is_recorded):
     errors = FileValidator.validate(file)
 
     if len(errors) <= 0:
-        redirect_action = FileUtil.redirectByFileType(file)
-        bpm = 0
-        tempo_name = ""
+        try:
+            redirect_action = FileUtil.redirectByFileType(file)
+            bpm = 0
+            tempo_name = ""
 
-        if redirect_action == 'transcribe':
-            audio_service = AudioService(file, is_recorded=(is_recorded == 1))
-            midi_file = audio_service.create_midi_file()
-            midi_service = MidiService(midi_data=midi_file, wav_path=audio_service.get_wav_path())
-            
-            bpm, tempo_name = classify_tempo(midi_service.find_tempo())
+            if redirect_action == 'transcribe':
+                audio_service = AudioService(file, is_recorded=(is_recorded == 1))
+                midi_file = audio_service.create_midi_file()
+                midi_service = MidiService(midi_data=midi_file, wav_path=audio_service.get_wav_path())
+                
+                bpm, tempo_name = classify_tempo(midi_service.find_tempo())
 
-            audio_service.cleanup()
-        else:
-            midi_service = MidiService(file=file)
+                audio_service.cleanup()
+            else:
+                midi_service = MidiService(file=file)
 
-        progression = midi_service.extract_notes_and_chords()
+            progression = midi_service.extract_notes_and_chords()
 
-        if not progression.get("chords") and not progression.get("notes"):
-            return {"error": "Something went wrong. We couldn't extract either chords or notes."}
+            if not progression.get("chords") and not progression.get("notes"):
+                return {"error": "Something went wrong. We couldn't extract either chords or notes."}
 
-        return {
-            "progression": progression,
-            "tempo": {
-                "time": bpm,
-                "name": tempo_name,
-            },
-        }
+            return {
+                "progression": progression,
+                "tempo": {
+                    "time": bpm,
+                    "name": tempo_name,
+                },
+            }
+        except Exception as e:
+                errors.append({"message": f"{e}"})
 
     return {
         "errors": errors
@@ -57,40 +60,44 @@ def progression_info(chordProgression, noteProgression, tempo, file):
         errors.append({"message": "BPM can't be higher than 320."})
 
     if len(errors) <= 0:
-        audio_service = AudioService(file)
-        midi_file = audio_service.create_midi_file_from_progression(chord_progression=chordProgression, bpm=tempo)
-        midi_service = MidiService(midi_data=midi_file, bpm=tempo)
-        progression = midi_service.extract_notes_and_chords()
+        try:
+            audio_service = AudioService(file)
+            midi_file = audio_service.create_midi_file_from_progression(chord_progression=chordProgression, bpm=tempo)
+            midi_service = MidiService(midi_data=midi_file, bpm=tempo)
+            progression = midi_service.extract_notes_and_chords()
 
-        ai_service = AIService()
+            ai_service = AIService()
 
-        chordsForteClass = midi_service.extract_chords_forteclass()
+            chordsForteClass = midi_service.extract_chords_forteclass()
 
-        emotion = ai_service.rf_predict(chordsForteClass)
+            emotion = ai_service.rf_predict(chordsForteClass)
 
-        key_info = midi_service.find_estimate_key()
-        relative_scales = midi_service.find_relative_scales()
-        bpm, tempo_name = classify_tempo(midi_service.find_tempo())
+            key_info = midi_service.find_estimate_key()
+            relative_scales = midi_service.find_relative_scales()
+            bpm, tempo_name = classify_tempo(midi_service.find_tempo())
 
-        key_info = midi_service.correct_key_with_first_event(key_info, progression)
+            key_info = midi_service.correct_key_with_first_event(key_info, progression)
 
-        return {
-            "progression": progression,
-            "emotion": emotion,
-            "relative_scales": [relative_scales],
-            "tempo": {
-                "time": bpm,
-                "name": tempo_name,
-            },
-            "key_name": key_info['key'],
-            "tonic": key_info['tonic']
-        }
-    
+            return {
+                "progression": progression,
+                "emotion": emotion,
+                "relative_scales": [relative_scales],
+                "tempo": {
+                    "time": bpm,
+                    "name": tempo_name,
+                },
+                "key_name": key_info['key'],
+                "tonic": key_info['tonic']
+            }    
+        except Exception as e:
+            errors.append({"message": f"{e}"})
+        
     return {
         "errors": errors
     }
 
 async def get_midi_to_download(file):
+    errors = []
     try:
         midi_service = MidiService()
 
@@ -109,11 +116,15 @@ async def get_midi_to_download(file):
                 "Content-Disposition": f"attachment; filename={filename}"
             }
         )
-
     except Exception as e:
-        return {"error": str(e)}
+        errors.append({"message": f"{e}"})
+
+    return {
+        "errors": errors
+    }
     
 async def get_musical_sheet_to_download(file):
+    errors = []
     try:
         midi_service = MidiService(file=file)
 
@@ -134,7 +145,11 @@ async def get_musical_sheet_to_download(file):
         )
 
     except Exception as e:
-        return {"error": str(e)}
+        errors.append({"message": f"{e}"})
+
+    return {
+        "errors": errors
+    }
 
 
 

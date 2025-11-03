@@ -175,7 +175,7 @@ export default {
       } catch (error) {
         this.loading = false
         this.message = "Something went wrong uploading file: "
-        this.errors = response.data.errors
+        this.errors = error.message
         this.showUploadForm = true
         this.showValidationForm = false
         this.file = null
@@ -235,11 +235,10 @@ export default {
           this.showValidationForm = true
           this.showProgressionInfo = false
         }
-        
       } catch (error) {
         this.loading = false
         this.message = "Something went wrong validating progression: "
-        this.errors = response.data.errors
+        this.errors = error.message
         this.showUploadForm = false
         this.showValidationForm = true
         this.showProgressionInfo = false
@@ -261,16 +260,56 @@ export default {
       return { chordProgression, noteProgression };
     },
     handleConfirmedProgression(progression) {
-      const bpm = progression.bpm ? parseInt(progression.bpm) : 0
-      const formatted = this.formatProgressionStrings(progression)
-      
-      this.getProgressionInfo(formatted, bpm)
-    },
-    handleEditedProgression(progression) {
+      this.message = ""
+      this.errors = []
       const bpm = progression.bpm ? parseInt(progression.bpm) : 0
       const formatted = this.formatProgressionStrings(progression)
 
-      this.getProgressionInfo(formatted, bpm)
+      if(progression.bpm && (progression.notes || progression.chords)){
+        this.getProgressionInfo(formatted, bpm)
+      } else {
+        this.message = "Error validating progression: "
+        this.loading = false
+        this.showUploadForm = false
+        this.showValidationForm = true
+        this.showProgressionInfo = false
+
+        if (!progression.bpm){
+          this.errors.push({"message": "BPM not informed."})
+        } else if (!progression.chords && !progression.notes){
+          this.errors.push({"message": "Progression not informed."})
+        } else if(progression.bpm <= 0) {
+          this.errors.push({"message": "BPM can't be less or equal than 0."})
+        } else if(progression.bpm > 320){
+          this.errors.push({"message": "BPM can't be higher than 320."})
+        }
+      }
+    },
+    handleEditedProgression(progression) {
+      this.message = ""
+      this.errors = []
+      const bpm = progression.bpm ? parseInt(progression.bpm) : 0
+      const formatted = this.formatProgressionStrings(progression)
+
+      if(progression.bpm && (progression.notes || progression.chords)){
+        this.getProgressionInfo(formatted, bpm)
+      } else {
+        this.message = "Error validating progression: "
+        this.loading = false
+        this.showUploadForm = false
+        this.showValidationForm = true
+        this.showProgressionInfo = false
+
+        if (!progression.bpm){
+          this.errors.push({"message": "BPM not informed."})
+        } else if (!progression.chords && !progression.notes){
+          this.errors.push({"message": "Progression not informed."})
+        } else if(progression.bpm <= 0) {
+          this.errors.push({"message": "BPM can't be less or equal than 0."})
+        } else if(progression.bpm > 320){
+          this.errors.push({"message": "BPM can't be higher than 320."})
+        }
+      }
     },
     handleRecordedAudio(blob) {
       const audioFile = new File([blob], "recording.webm", { type: "audio/webm" })
@@ -304,11 +343,6 @@ export default {
     optionRecordMic(newVal, oldValue){
       if(oldValue != newVal){  
         this.cleanFields()
-      }
-    },
-    loading(newVal, oldValue){
-      if(newVal){  
-        this.cleanFields(true)
       }
     }
   }
