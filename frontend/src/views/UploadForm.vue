@@ -6,7 +6,7 @@
       <h1 class="text-3xl font-bold">Chord and Emotion Recognizer</h1>
 
       <h2 v-if="file && file.name && (progression.chords.length > 0 || progression.notes.length > 0)" class="text-lg font-semibold italic mb-2 text-gray-500">
-        Arquivo: {{ file.name }}
+        File name: {{ file.name }}
       </h2>
 
       <button
