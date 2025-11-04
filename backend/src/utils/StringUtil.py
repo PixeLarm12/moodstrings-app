@@ -153,6 +153,17 @@ def sanitize_chord_name(chordName: str, type: str = None) -> str:
         else:
             response += ' Seventh'
 
+    if response == 'E#' or response == 'E Sharp':
+        if type is 'tab':
+            response = "F"
+        else:
+            response = "F Major"
+    elif response == 'B#' or response == 'B Sharp':
+        if type is 'tab':
+            response = "C"
+        else:
+            response = "C Major"
+    
     return response
 
 def classify_tempo(tempo) -> tuple[int, str]:

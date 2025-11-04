@@ -259,20 +259,20 @@ class MidiService:
             if tonic == maj.getTonic().name:
                 actual_scale = maj
                 mode = "major"
-                tonic = maj.getTonic().name.replace("-", "#")
+                tonic = maj.getTonic().name.replace("-", "b")
                 self._tone_info = self.find_estimate_key(objKey=m21Key.Key(tonic, mode))
 
         for min in derived_minors:
             if tonic == min.getTonic().name:
                 actual_scale = min
                 mode = "minor"
-                tonic = min.getTonic().name.replace("-", "#")
+                tonic = min.getTonic().name.replace("-", "b")
                 self._tone_info = self.find_estimate_key(objKey=m21Key.Key(tonic, mode))
 
         harmonic_chords = []
         for i, pitch in enumerate(actual_scale.pitches):
-            chord_name = pitch.name.replace("-", "#")
-            name = sanitize_chord_name(chord_name.replace("-", "#"))
+            chord_name = pitch.name.replace("-", "b")
+            name = sanitize_chord_name(chord_name.replace("-", "b"))
             function = actual_scale.getScaleDegreeFromPitch(pitch.name)
             function_roman = MusicEnum.HarmonicFunctions.FUNCTIONS_EN.value[function-1]
 
@@ -282,8 +282,8 @@ class MidiService:
                 "name": name
             })
 
-        key_name = sanitize_chord_name(actual_scale.name.replace("-", "#"), 'tab')
-        key_full_name = sanitize_chord_name(actual_scale.name.replace("-", "#"))
+        key_name = sanitize_chord_name(actual_scale.name.replace("-", "b"), 'tab')
+        key_full_name = sanitize_chord_name(actual_scale.name.replace("-", "b"))
 
         key = f"{key_name} ({key_full_name})"
 
@@ -305,17 +305,17 @@ class MidiService:
             selfScaleObj = m21Scale.MajorScale(m21Pitch.Pitch(self._scale["tonic"]))
             relative = selfScaleObj.getRelativeMinor()
             mode = "minor"
-            tonic = relative.getTonic().name.replace("-", "#")
+            tonic = relative.getTonic().name.replace("-", "b")
         else:
             selfScaleObj = m21Scale.MinorScale(m21Pitch.Pitch(self._scale["tonic"]))
             relative = selfScaleObj.getRelativeMajor()
             mode = "major"
-            tonic = relative.getTonic().name.replace("-", "#")
+            tonic = relative.getTonic().name.replace("-", "b")
 
         harmonic_chords = []
         for i, pitch in enumerate(relative.pitches):
-            chord_name = pitch.name.replace("-", "#")
-            name = sanitize_chord_name(chord_name.replace("-", "#"))
+            chord_name = pitch.name.replace("-", "b")
+            name = sanitize_chord_name(chord_name.replace("-", "b"))
             function = relative.getScaleDegreeFromPitch(pitch.name)
             function_roman = MusicEnum.HarmonicFunctions.FUNCTIONS_EN.value[function-1]
 
@@ -325,8 +325,8 @@ class MidiService:
                 "name": name
             })
             
-        key_name = sanitize_chord_name(relative.name.replace("-", "#"), 'tab')
-        key_full_name = sanitize_chord_name(relative.name.replace("-", "#"))
+        key_name = sanitize_chord_name(relative.name.replace("-", "b"), 'tab')
+        key_full_name = sanitize_chord_name(relative.name.replace("-", "b"))
 
         key = f"{key_name} ({key_full_name})"
 
