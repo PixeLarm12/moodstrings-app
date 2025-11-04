@@ -1,18 +1,21 @@
 <template>
   <DefaultModal :show="show" @close="$emit('close')">
     <template #header>
-      Chord: <b>{{ chordName }}</b>
+      <h1 class="text-2xl text-sky-400 font-bold mb-4">{{ chordName }}</h1>
     </template>
 
     <h2 class="text-xl">Harmonic function based on scale: </h2>
-    <p class="mb-4">
+    <p class="my-2 text-sky-400">
       {{ chordFunction }}
     </p>
 
-    <h3 class="text-xl mb-4">Notes that create the chord:</h3>
-    <ul class="list-disc pl-5">
-      <li v-for="(note, index) in notes" :key="index" class="list-none">{{ note }}</li>
-    </ul>
+    <h3 class="text-xl mt-4 mb-2">The chord were created by these notes:</h3>
+
+    <div class="flex flex-row justify-start text-sky-400">
+      <span v-for="(note, index) in notes" :key="index" class="text-xl font-semibold">
+        {{ note }}<span v-if="index < notes.length - 1">-</span>
+      </span>
+    </div>
   </DefaultModal>
 </template>
 

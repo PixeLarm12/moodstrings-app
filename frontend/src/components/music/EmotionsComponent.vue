@@ -9,13 +9,19 @@
   <div class="mt-6">
     <DefaultToggleComponent>
       <template #header>
-        Check <b class="text-sky-400">emotions</b> related to your sequence:
+        Check <b class="text-sky-400">emotion</b> related to your sequence:
       </template>
 
-        <button 
+        <!-- <button 
             type="button" 
             class="hover:text-sky-400 hover:cursor-pointer"
             @click="openAIModelModal(emotion)"
+        >
+            {{ emotion.content }} ({{ emotion.model_used }})
+        </button>  -->
+        <button 
+            type="button" 
+            class="font-semibold text-sky-400"
         >
             {{ emotion.content }} ({{ emotion.model_used }})
         </button> 

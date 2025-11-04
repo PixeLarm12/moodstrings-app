@@ -84,6 +84,10 @@
       />
       <!-- END MUSIC INFORMATION -->
 
+      <div class="text-gray-600 italic flex flex-col justify-center">
+        <p>Developed by: Lucas & Guilherme</p>
+        2025
+      </div>
     </div>
   </div>
 </template>
