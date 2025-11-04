@@ -76,7 +76,7 @@
         v-if="showProgressionInfo"
         :progression="progression"
         :emotion="emotion" 
-        :relative-scales="relativeScales"
+        :scales="scales"
         :tempo="tempo" 
         :key-name="keyName" 
         :tonic="tonic"
@@ -116,7 +116,7 @@ export default {
         notes: [],
       },
       emotion: [],
-      relativeScales: [],
+      scales: [],
       message: "",
       errors: [],
       keyName: "",
@@ -193,7 +193,7 @@ export default {
         chords: [],
         notes: [],
       },
-      this.relativeScales = []
+      this.scales = []
       this.keyName = ""
       this.tempo = []
       this.tonic = ""
@@ -227,7 +227,7 @@ export default {
           
           this.emotion = response.data.emotion || []
           this.keyName = response.data.key_name || ""
-          this.relativeScales = response.data.relative_scales || []
+          this.scales = response.data.scales || []
           this.tonic = response.data.tonic || ""
           this.tempo = response.data.tempo || []
           this.progression = response.data.progression || []

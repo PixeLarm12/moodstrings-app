@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center justify-center py-8 px-4">
-      <ScalesModal :show="showScalesModal" :relative-scales="relativeScales" @close="showScalesModal = false" />
+      <ScalesModal :show="showScalesModal" :scales="scales" @close="showScalesModal = false" />
 
       <div v-if="(progression.chords.length > 0 || progression.notes.length > 0)" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
 
@@ -51,7 +51,7 @@
               class="py-2 px-12 bg-sky-600 rounded-lg font-semibold hover:bg-sky-700"
               @click="showScalesModal = true"
             >
-            See relative scales
+            See scales
             </button>
 
             <button
@@ -90,7 +90,7 @@ export default {
       type: Object,
       default: () => []
     },
-    relativeScales: {
+    scales: {
       type: Array,
       default: () => []
     },

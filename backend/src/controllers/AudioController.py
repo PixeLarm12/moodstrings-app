@@ -73,15 +73,19 @@ def progression_info(chordProgression, noteProgression, tempo, file):
             emotion = ai_service.rf_predict(chordsForteClass)
 
             key_info = midi_service.find_estimate_key()
-            relative_scales = midi_service.find_relative_scales()
-            bpm, tempo_name = classify_tempo(midi_service.find_tempo())
-
             key_info = midi_service.correct_key_with_first_event(key_info, progression)
+            bpm, tempo_name = classify_tempo(midi_service.find_tempo())
+            scale = midi_service.find_scale(key_info, chordProgression)
+            relative_scales = midi_service.find_relative_scales()
+
 
             return {
                 "progression": progression,
                 "emotion": emotion,
-                "relative_scales": relative_scales,
+                "scales": {
+                    "actual": scale,
+                    "relatives": relative_scales
+                },
                 "tempo": {
                     "time": bpm,
                     "name": tempo_name,

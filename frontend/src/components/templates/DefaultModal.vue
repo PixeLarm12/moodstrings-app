@@ -1,7 +1,6 @@
 <template>
-  <div v-if="show" class="text-black fixed inset-0 bg-white/20 backdrop-blur-sm flex items-center justify-center z-50">
-    <div class="text-white bg-gray-800 p-6 rounded-xl shadow-lg shadow-gray-400 w-96 relative flex flex-col justify-start">
-      
+  <div v-if="show" class="min-w-[40vw] min-h-[40vh] text-black fixed inset-0 bg-white/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="min-w-[40vw] min-h-[40vh] text-white bg-gray-800 p-6 rounded-xl shadow-lg shadow-gray-400 relative flex flex-col justify-start">
       <h2 v-if="$slots.header" class="text-xl mb-4">
         <slot name="header"></slot>
       </h2>

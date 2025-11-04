@@ -2,7 +2,7 @@ import tempfile
 from io import BytesIO
 import pretty_midi
 from pretty_midi import PrettyMIDI
-from music21 import chord as m21Chord, converter as m21Converter, key as m21Key, harmony as m21Harmony, pitch as m21Pitch
+from music21 import chord as m21Chord, converter as m21Converter, key as m21Key, harmony as m21Harmony, pitch as m21Pitch, scale as m21Scale
 import soundfile as sf
 import librosa
 from src.utils.StringUtil import sanitize_chord_name, simplify_chord_name, get_clean_chord_name
@@ -36,6 +36,10 @@ class MidiService:
             self.adjust_bpm()
         self._tone_info = self.find_estimate_key()
         self._global_root_note = None
+        self._scale = {
+            "key": "",
+            "chords": []
+        }
 
     @property
     def midi_data(self):
@@ -157,7 +161,8 @@ class MidiService:
 
             return {
                 "tonic": f"{sanitize_chord_name(str(detected_tonic), 'tab')} ({sanitize_chord_name(str(detected_tonic))})",
-                "key": f"{sanitize_chord_name(str(corrected_key), 'tab')} ({sanitize_chord_name(str(corrected_key))})"
+                "key": f"{sanitize_chord_name(str(corrected_key), 'tab')} ({sanitize_chord_name(str(corrected_key))})",
+                "mode": detected_mode
             }
 
         first_root = self._global_root_note
@@ -172,7 +177,8 @@ class MidiService:
 
             return {
                 "tonic": f"{sanitize_chord_name(str(detected_tonic), 'tab')} ({sanitize_chord_name(str(detected_tonic))})",
-                "key": f"{sanitize_chord_name(str(corrected_key), 'tab')} ({sanitize_chord_name(str(corrected_key))})"
+                "key": f"{sanitize_chord_name(str(corrected_key), 'tab')} ({sanitize_chord_name(str(corrected_key))})",
+                "mode": detected_mode
             }
 
         if relative == first_root:
@@ -182,7 +188,8 @@ class MidiService:
 
             return {
                 "tonic": f"{sanitize_chord_name(str(corrected_tonic), 'tab')} ({sanitize_chord_name(str(corrected_tonic))})",
-                "key": f"{sanitize_chord_name(str(corrected_key), 'tab')} ({sanitize_chord_name(str(corrected_key))})"
+                "key": f"{sanitize_chord_name(str(corrected_key), 'tab')} ({sanitize_chord_name(str(corrected_key))})",
+                "mode": corrected_mode
             }
 
         inferred_mode = "minor" if "m" in first_event and "maj" not in first_event else "major"
@@ -192,13 +199,15 @@ class MidiService:
         corrected_key = f"{corrected_tonic}{'' if corrected_mode == 'major' else 'm'}"
         return {
                 "tonic": f"{sanitize_chord_name(str(corrected_tonic), 'tab')} ({sanitize_chord_name(str(corrected_tonic))})",
-                "key": f"{sanitize_chord_name(str(corrected_key), 'tab')} ({sanitize_chord_name(str(corrected_key))})"
+                "key": f"{sanitize_chord_name(str(corrected_key), 'tab')} ({sanitize_chord_name(str(corrected_key))})",
+                "mode": corrected_mode
             }
 
 
-    def find_estimate_key(self):
-        midi_file = self.create_midi_converter()
-        objKey = midi_file.analyze("key")
+    def find_estimate_key(self, objKey = None):
+        if not objKey:
+            midi_file = self.create_midi_converter()
+            objKey = midi_file.analyze("key")
 
         if objKey.mode is "major":
             key = objKey[:-1]
@@ -215,41 +224,117 @@ class MidiService:
 
     def find_tempo(self):
         return self.get_estimated_bpm()
+    
+    def find_scale(self, key_info, progression):
+        self._scale = {
+            "key": "",
+            "mode": "",
+            "tonic": "",
+            "chords": []
+        }
 
-    def find_relative_scales(self):
-        tonic = self._tone_info["tonic"]
-        mode = self._tone_info["mode"]
+        tonic = key_info["tonic"].split(" ")[0]
+        mode = key_info.get("mode").lower()
 
-        scale_notes = (
-            MusicEnum.Scales.MAJOR.value.get(tonic)
-            if mode == "major"
-            else MusicEnum.Scales.MINOR.value.get(tonic)
-        )
+        cleaned = (progression
+                .replace('♯', '#')
+                .replace('♭', 'b')
+                .replace("–", "-")
+                .replace("—", "-")
+                .replace(" ", ""))
 
-        if not scale_notes:
-            return {"error": "Scale not mapped in enum"}
+        chords_list = [
+            ch.strip().replace('"', '').replace('b', '-')
+            for ch in cleaned.split("-")
+        ]
 
-        if mode == "major":
-            triad_qualities = ["major", "minor", "minor", "major", "major", "minor", "diminished"]
-        else:
-            triad_qualities = ["minor", "diminished", "major", "minor", "minor", "major", "major"]
+        major_scale = m21Scale.MajorScale()
+        minor_scale = m21Scale.MinorScale()
+
+        derived_majors = major_scale.deriveAll(chords_list)
+        derived_minors = minor_scale.deriveAll(chords_list)
+
+        actual_scale = None
+        for maj in derived_majors:
+            if tonic == maj.getTonic().name:
+                actual_scale = maj
+                mode = "major"
+                tonic = maj.getTonic().name.replace("-", "#")
+                self._tone_info = self.find_estimate_key(objKey=m21Key.Key(tonic, mode))
+
+        for min in derived_minors:
+            if tonic == min.getTonic().name:
+                actual_scale = min
+                mode = "minor"
+                tonic = min.getTonic().name.replace("-", "#")
+                self._tone_info = self.find_estimate_key(objKey=m21Key.Key(tonic, mode))
 
         harmonic_chords = []
-
-        for i, root in enumerate(scale_notes):
-            quality = triad_qualities[i]
-            chord_name = f"{root} {quality}"
-            chord_function = self.get_chord_function(root)
+        for i, pitch in enumerate(actual_scale.pitches):
+            chord_name = pitch.name.replace("-", "#")
+            name = sanitize_chord_name(chord_name.replace("-", "#"))
+            function = actual_scale.getScaleDegreeFromPitch(pitch.name)
+            function_roman = MusicEnum.HarmonicFunctions.FUNCTIONS_EN.value[function-1]
 
             harmonic_chords.append({
-                "function": chord_function,
-                "chord": sanitize_chord_name(chord_name, "tab"),
-                "name": sanitize_chord_name(chord_name)
+                "function": function_roman,
+                "chord": chord_name,
+                "name": name
             })
 
-        return {
-            "key": f"{tonic} {mode}",
+        key_name = sanitize_chord_name(actual_scale.name.replace("-", "#"), 'tab')
+        key_full_name = sanitize_chord_name(actual_scale.name.replace("-", "#"))
+
+        key = f"{key_name} ({key_full_name})"
+
+        self._scale = {
+            "key": key,
+            "mode": mode,
+            "tonic": tonic,
             "chords": harmonic_chords
+        }
+
+        return self._scale
+
+
+    def find_relative_scales(self):
+        mode = self._scale["mode"]
+        tonic = self._scale["tonic"]
+        
+        if mode == "major":
+            selfScaleObj = m21Scale.MajorScale(m21Pitch.Pitch(self._scale["tonic"]))
+            relative = selfScaleObj.getRelativeMinor()
+            mode = "minor"
+            tonic = relative.getTonic().name.replace("-", "#")
+        else:
+            selfScaleObj = m21Scale.MinorScale(m21Pitch.Pitch(self._scale["tonic"]))
+            relative = selfScaleObj.getRelativeMajor()
+            mode = "major"
+            tonic = relative.getTonic().name.replace("-", "#")
+
+        harmonic_chords = []
+        for i, pitch in enumerate(relative.pitches):
+            chord_name = pitch.name.replace("-", "#")
+            name = sanitize_chord_name(chord_name.replace("-", "#"))
+            function = relative.getScaleDegreeFromPitch(pitch.name)
+            function_roman = MusicEnum.HarmonicFunctions.FUNCTIONS_EN.value[function-1]
+
+            harmonic_chords.append({
+                "function": function_roman,
+                "chord": chord_name,
+                "name": name
+            })
+            
+        key_name = sanitize_chord_name(relative.name.replace("-", "#"), 'tab')
+        key_full_name = sanitize_chord_name(relative.name.replace("-", "#"))
+
+        key = f"{key_name} ({key_full_name})"
+
+        return {
+            "key": key,
+            "chords": harmonic_chords,
+            "mode": mode,
+            "tonic": tonic
         }
 
     def extract_chord_progression(self, bucket_size: float = 0.18) -> list[dict]:
