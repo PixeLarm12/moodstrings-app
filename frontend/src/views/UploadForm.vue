@@ -1,72 +1,93 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-900 text-white">
-    <div class="w-full max-w-md text-center space-y-6">
+    <div class="w-full max-w-md md:max-w-2xl text-center space-y-6">
       <img src="/logo.png" alt="Logo" class="w-24 h-24 mx-auto rounded-full shadow-lg" />
 
-      <h1 class="text-3xl font-bold">Upload de Arquivo</h1>
+      <h1 class="text-3xl font-bold">Chord and Emotion Recognizer</h1>
 
-      <ChordModal :show="showChordModal" :notes="modalNotes" :chord-name="modalChordName" @close="showChordModal = false" />
-      <AIModelModal :show="showAIModal" :evaluation="modalEvaluation" :model-name="modalModelName" @close="showAIModal = false" />
+      <h2 v-if="file && file.name && (progression.chords.length > 0)" class="text-lg font-semibold italic mb-2 text-gray-500">
+        File name: {{ file.name }}
+      </h2>
 
-      <form @submit.prevent="handleSubmit" class="space-y-4">
+      <button
+        v-show="!loading && !showProgressionInfo && !showValidationForm"
+        @click="optionRecordMic = !optionRecordMic"
+        class="px-4 py-2 rounded bg-teal-600 text-white hover:bg-sky-700"
+      >
+        {{ optionRecordMic ? 'Want to upload my file!' : 'Try record from your browser!' }}
+      </button>
+
+      <!-- MIC RECORDER -->
+      <MicRecorder 
+        v-if="optionRecordMic"
+        @audio-recorded="handleRecordedAudio"
+      />
+      <!-- END MIC RECORDER -->
+
+      <p v-if="errors.length > 0" class="mt-4 font-medium">
+        <span class="text-xl text-red-500">{{ message }}</span>
+        <ul class="list-none text-red-300" v-for="(error, index) in errors">
+          <li>{{ (index+1) }}: {{ error.message }}</li>
+        </ul>
+      </p>
+
+      <Loading v-show="loading" :file-name="file ? file.name : ''"></Loading>
+
+      <!-- UPLOAD FORM -->
+      <form v-if="showUploadForm" @submit.prevent="handleSubmit" class="space-y-4">
+        <audio
+          v-if="uploadedFileUrl"
+          :src="uploadedFileUrl"
+          controls
+          class="mt-4 w-full"
+        ></audio>
+
         <input
+          v-if="!optionRecordMic"
           type="file"
           @change="handleFileChange"
           class="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 
                  file:rounded-lg file:border-0 file:text-sm file:font-semibold 
-                 file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+                 file:bg-sky-600 file:text-white hover:file:bg-sky-700"
         />
 
         <button
+          v-if="submitReadOnlyChecker"
           type="submit"
-          class="w-full py-2 bg-blue-600 rounded-lg font-semibold hover:bg-blue-700"
+          class="w-full py-2 bg-sky-600 rounded-lg font-semibold hover:bg-sky-700"
         >
-          Enviar
+          Send
         </button>
       </form>
+      <!-- END UPLOAD FORM -->
 
-      <Loading v-if="loading"></Loading>
-      <p v-else-if="message" class="mt-4 font-medium">
-        <span :class="success">{{ message }}</span>
-      </p>
+      <!-- VALIDATION FORM -->
+      <ValidationForm
+        v-if="showValidationForm"
+        :progression="progression"
+        :tempo="tempo"
+        @confirm="handleConfirmedProgression"
+        @edit="handleEditedProgression"
+      />
+      <!-- END VALIDATION FORM -->
 
-      <div v-if="chordProgression.length > 0" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
-        <p><span class="font-semibold text-blue-400">Tom:</span> {{ key }}</p>
-        <p>
-          <span class="font-semibold text-blue-400">Emoção: </span> 
-          <ul v-for="(emotion, index) in emotions" :key="index">
-            <li class="list-none">
-              <button 
-                type="button" 
-                v-if="emotion.model_used != 'KNN'"
-                class="hover:text-blue-400 hover:cursor-pointer"
-                @click="openAIModelModal(emotion)"
-              >
-              {{ ++index }} - {{ emotion.content }} ({{ emotion.model_used }})
-              </button> 
-              <span v-else>{{ ++index }} - {{ emotion.content }} ({{ emotion.model_used }})</span>
-              <span v-if="index < chordProgression.length - 1">, </span>
-            </li>
-          </ul>
-        </p>  
-        <p>
-          <span class="font-semibold text-blue-400">Progressão: </span> 
-          <span v-for="(info, index) in chordProgression" :key="index">
-            <button 
-              type="button" 
-              class="hover:text-blue-400 hover:cursor-pointer"
-              @click="openChordModal(info)"
-            >
-            {{ info.chord }}
-            </button> 
-            <span v-if="index < chordProgression.length - 1">, </span>
-          </span>
-        </p>  
-        <p><span class="font-semibold text-blue-400">Andamento:</span> {{ tempo }} BPM (<i>{{ tempoName }}</i>)</p>
-        <p><span class="font-semibold text-blue-400">Tônica:</span> {{ tonic }}</p>
-        <p><span class="font-semibold text-blue-400">Modo:</span> {{ mode }}</p>
+      <!-- MUSIC INFORMATION -->
+      <ProgressionInfo
+        v-if="showProgressionInfo"
+        :progression="progression"
+        :emotion="emotion" 
+        :scales="scales"
+        :tempo="tempo" 
+        :key-name="keyName" 
+        :tonic="tonic"
+        @reset="handleFormReset"
+      />
+      <!-- END MUSIC INFORMATION -->
+
+      <div class="text-gray-600 italic flex flex-col justify-center">
+        <p>Developed by: Lucas & Guilherme</p>
+        2025
       </div>
-
     </div>
   </div>
 </template>
@@ -74,44 +95,53 @@
 <script>
 import axios from "axios"
 import Loading from "../components/utils/Loading.vue"
-import ChordModal from "../components/chord/ChordModal.vue"
-import AIModelModal from "../components/ai/AIModelModal.vue"
+import MicRecorder from "../components/utils/MicRecorder.vue"
+import ProgressionInfo from "../components/sections/ProgressionInfo.vue"
+import ValidationForm from "../components/sections/ValidationForm.vue"
 
 export default {
   name: "UploadForm",
   data() {
     return {
       file: null,
+      uploadedFileUrl: null,
+      isAudioRecorded: false,
+      optionRecordMic: false,
       loading: false,
-      showChordModal: false,
-      showAIModal: false,
-      modalNotes: [],
-      modalEvaluation: [],
-      chordProgression: [],
-      emotions: [],
+      showUploadForm: true,
+      showProgressionInfo: false,
+      showValidationForm: false,
+      progression: {
+        chords: []
+      },
+      emotion: [],
+      scales: [],
       message: "",
-      modalChordName: "",
-      modalModelName: "",
-      key: "",
-      tempoName: "",
-      tempo: "",
+      errors: [],
+      keyName: "",
+      tempo: [],
       tonic: "",
-      mode: "",
       API_URL: import.meta.env.VITE_API_URL
     }
   },
   components: {
     Loading,
-    ChordModal,
-    AIModelModal
+    MicRecorder,
+    ProgressionInfo,
+    ValidationForm
   },  
   methods: {
     handleFileChange(event) {
       this.file = event.target.files[0]
+      this.isAudioRecorded = false
+
+      if (this.file) {
+        this.uploadedFileUrl = URL.createObjectURL(this.file)
+      }
     },
     async handleSubmit() {
       if (!this.file) {
-        this.message = "Selecione um arquivo primeiro!"
+        this.message = "Select file first!"
         this.cleanFields()
         this.loading = false
         return
@@ -119,58 +149,200 @@ export default {
 
       const formData = new FormData()
       formData.append("uploaded_file", this.file)
+      formData.append("is_recorded", this.isAudioRecorded ? 1 : 0)
 
       try {
-        this.cleanFields()
         this.loading = true
+        this.showUploadForm = false
+        this.errors = []
+        this.message = ""
 
         const response = await axios.post(`${this.API_URL}/upload-file`, formData, {
           headers: { "Content-Type": "multipart/form-data" }
         })
 
-        if (!response.data.error) {
+        if (!response.data.errors) {
           this.loading = false
-          this.message = "Veja as informações extraídas:"
+          this.showUploadForm = false
+          this.showValidationForm = true
 
-          this.chordProgression = response.data.chord_progression || []
-          this.key = response.data.key || ""
-          this.emotions = response.data.emotions || ""
-          this.tempoName = response.data.tempo_name || ""
-          this.tempo = response.data.tempo || ""
-          this.tonic = response.data.tonic || ""
-          this.mode = response.data.mode || ""
+          this.progression = response.data.progression || []
+          this.tempo = response.data.tempo || []
         } else {
           this.loading = false
-          this.message = `Error: ${response.data.error}`
+          this.message = "Error uploading file: "
+          this.errors = response.data.errors
+          this.showUploadForm = true
+          this.showValidationForm = false
+          this.file = null
+          this.uploadedFileUrl = ""
         }
-        
       } catch (error) {
         this.loading = false
-        this.message = `Error: ${error.message}`
+        this.message = "Something went wrong uploading file: "
+        this.errors = error.message
+        this.showUploadForm = true
+        this.showValidationForm = false
+        this.file = null
+        this.uploadedFileUrl = ""
       }
     },
-    cleanFields() {
+    cleanFields(keepFile = false) {
       this.message = ""
-      this.chordProgression = []
-      this.key = ""
-      this.tempo = ""
+      this.errors = []
+      this.progression = {
+        chords: []
+      },
+      this.scales = []
+      this.keyName = ""
+      this.tempo = []
       this.tonic = ""
-      this.mode = ""
+      this.isAudioRecorded = false
+      
+      if(!keepFile){
+        this.file = null
+        this.uploadedFileUrl = null
+      }
     },
-    openChordModal(info) {
-      this.showChordModal = true
-      this.modalNotes = info.notes
-      this.modalChordName = `${info.chord} (${info.name})`
+    async getProgressionInfo(progression, bpm){
+      try {
+        this.loading = true
+        this.showUploadForm = false
+        this.showValidationForm = false
+
+        const formData = new FormData()
+        formData.append("chordProgression", progression.chordProgression)
+        formData.append("tempo", bpm)
+        formData.append("uploaded_file", this.file)
+
+        const response = await axios.post(`${this.API_URL}/get-progression-info`, formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        })
+
+        if (!response.data.errors) {
+          this.loading = false
+          this.showUploadForm = false
+          this.showProgressionInfo = true
+          
+          this.emotion = response.data.emotion || []
+          this.keyName = response.data.key_name || ""
+          this.scales = response.data.scales || []
+          this.tonic = response.data.tonic || ""
+          this.tempo = response.data.tempo || []
+          this.progression = response.data.progression || []
+        } else {
+          this.loading = false
+          this.message = "Error validating progression: "
+          this.errors = response.data.errors
+          this.showUploadForm = false
+          this.showValidationForm = true
+          this.showProgressionInfo = false
+        }
+      } catch (error) {
+        this.loading = false
+        this.message = "Something went wrong validating progression: "
+        this.errors = error.message
+        this.showUploadForm = false
+        this.showValidationForm = true
+        this.showProgressionInfo = false
+      }
     },
-    openAIModelModal(emotion) {
-      this.showAIModal = true
-      this.modalEvaluation = emotion.evaluation
-      this.modalModelName = emotion.model_used
+    formatProgressionStrings(progression) {
+      if (!progression || typeof progression !== "object") {
+        return { chordProgression: null };
+      }
+
+      const chordProgression = Array.isArray(progression.chords)
+        ? progression.chords.map(ch => ch.chord.trim()).join("-") 
+        : null;
+        
+      return { chordProgression };
+    },
+    handleConfirmedProgression(progression) {
+      this.message = ""
+      this.errors = []
+      const bpm = progression.bpm ? parseInt(progression.bpm) : 0
+      const formatted = this.formatProgressionStrings(progression)
+
+      if(progression.bpm && (progression.chords)){
+        this.getProgressionInfo(formatted, bpm)
+      } else {
+        this.message = "Error validating progression: "
+        this.loading = false
+        this.showUploadForm = false
+        this.showValidationForm = true
+        this.showProgressionInfo = false
+
+        if (!progression.bpm){
+          this.errors.push({"message": "BPM not informed."})
+        } else if (!progression.chords){
+          this.errors.push({"message": "Progression not informed."})
+        } else if(progression.bpm <= 0) {
+          this.errors.push({"message": "BPM can't be less or equal than 0."})
+        } else if(progression.bpm > 320){
+          this.errors.push({"message": "BPM can't be higher than 320."})
+        }
+      }
+    },
+    handleEditedProgression(progression) {
+      this.message = ""
+      this.errors = []
+      const bpm = progression.bpm ? parseInt(progression.bpm) : 0
+      const formatted = this.formatProgressionStrings(progression)
+
+      if(progression.bpm && (progression.chords)){
+        this.getProgressionInfo(formatted, bpm)
+      } else {
+        this.message = "Error validating progression: "
+        this.loading = false
+        this.showUploadForm = false
+        this.showValidationForm = true
+        this.showProgressionInfo = false
+
+        if (!progression.bpm){
+          this.errors.push({"message": "BPM not informed."})
+        } else if (!progression.chords){
+          this.errors.push({"message": "Progression not informed."})
+        } else if(progression.bpm <= 0) {
+          this.errors.push({"message": "BPM can't be less or equal than 0."})
+        } else if(progression.bpm > 320){
+          this.errors.push({"message": "BPM can't be higher than 320."})
+        }
+      }
+    },
+    handleRecordedAudio(blob) {
+      const audioFile = new File([blob], "recording.webm", { type: "audio/webm" })
+      this.file = audioFile
+      this.isAudioRecorded = true
+      this.uploadedFileUrl = URL.createObjectURL(audioFile)
+    },
+    handleFormReset(){
+      this.cleanFields()
+      this.showUploadForm = true
+      this.optionRecordMic = false
+      this.showValidationForm = false
+      this.showProgressionInfo = false
     }
   },
   computed: {
     success() {
-      return this.chordProgression.length > 0 ? "text-green-600" : "text-red-500"
+      let isSuccess = false;
+
+      if(this.progression.chords.length > 0){
+        isSuccess = true;
+      }
+
+      return isSuccess ? "text-green-600" : "text-red-500"
+    },
+    submitReadOnlyChecker() {
+      return this.file
+    }
+  },
+  watch: {
+    optionRecordMic(newVal, oldValue){
+      if(oldValue != newVal){  
+        this.cleanFields()
+      }
     }
   }
 }

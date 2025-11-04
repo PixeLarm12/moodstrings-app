@@ -1,14 +1,13 @@
 <template>
   <DefaultModal :show="show" @close="$emit('close')">
     <template #header>
-      Modelo usado: <b>{{ modelName }}</b>
+      <h1 class="text-2xl text-sky-400 font-bold mb-4">{{ modelName }}</h1>
     </template>
 
-    <h3 class="text-xl mb-4">Informações:</h3>
-    <ul class="list-disc pl-5">
-      <li class="list-none">Acurácia: <b>{{ evaluation.accuracy }}</b></li>
-      <li class="list-none">Número de amostras: <b>{{ evaluation.samples }}</b></li>
-    </ul>
+    <div class="flex flex-col justify-start text-lg">
+      <span>Accuracy: <b class="font-semibold text-sky-400">{{ evaluation.accuracy }}%</b></span>
+      <span>Samples: <b class="font-semibold text-sky-400">{{ evaluation.samples }}</b></span>
+    </div>
   </DefaultModal>
 </template>
 
@@ -19,8 +18,8 @@ export default {
   components: { DefaultModal },
   props: {
     evaluation: {
-      type: Array,
-      default: () => []
+      type: Object,
+      default: () => {}
     },
     modelName: {
       type: String,
