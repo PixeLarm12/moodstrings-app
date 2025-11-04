@@ -146,7 +146,6 @@ class MidiService:
         detected_key: Dict[str, Any],
         progression: Dict[str, Any]
     ) -> Dict[str, Any]:
-
         detected_tonic = detected_key["tonic"]
         detected_mode = detected_key["mode"]
 
@@ -239,6 +238,7 @@ class MidiService:
                 .replace('♭', 'b')
                 .replace("–", "-")
                 .replace("—", "-")
+                .replace("m", " ")
                 .replace(" ", ""))
 
         chords_list = [
@@ -246,11 +246,16 @@ class MidiService:
             for ch in cleaned.split("-")
         ]
 
+        # all_chords_notes = []
+        # for c in chords_list:
+        #     obj = m21Harmony.ChordSymbol(c)
+        #     all_chords_notes.extend([p.name for p in obj.pitches])
+
         major_scale = m21Scale.MajorScale()
         minor_scale = m21Scale.MinorScale()
 
-        derived_majors = major_scale.deriveAll(chords_list)
         derived_minors = minor_scale.deriveAll(chords_list)
+        derived_majors = major_scale.deriveAll(chords_list)
 
         actual_scale = None
         for maj in derived_majors:
