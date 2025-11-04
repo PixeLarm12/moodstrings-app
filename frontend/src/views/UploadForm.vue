@@ -76,7 +76,7 @@
         v-if="showProgressionInfo"
         :progression="progression"
         :emotion="emotion" 
-        :relative-scale="relativeScales"
+        :relative-scales="relativeScales"
         :tempo="tempo" 
         :key-name="keyName" 
         :tonic="tonic"

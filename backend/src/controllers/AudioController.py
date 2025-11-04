@@ -81,7 +81,7 @@ def progression_info(chordProgression, noteProgression, tempo, file):
             return {
                 "progression": progression,
                 "emotion": emotion,
-                "relative_scales": [relative_scales],
+                "relative_scales": relative_scales,
                 "tempo": {
                     "time": bpm,
                     "name": tempo_name,

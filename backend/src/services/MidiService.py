@@ -217,14 +217,6 @@ class MidiService:
         return self.get_estimated_bpm()
 
     def find_relative_scales(self):
-        midi_file = self.create_midi_converter()
-        detected_key: m21Key.Key = midi_file.analyze("key")
-
-        self._tone_info = {
-            "tonic": detected_key.tonic.name,
-            "mode": detected_key.mode.lower()
-        }
-
         tonic = self._tone_info["tonic"]
         mode = self._tone_info["mode"]
 
@@ -251,7 +243,8 @@ class MidiService:
 
             harmonic_chords.append({
                 "function": chord_function,
-                "chord": chord_name
+                "chord": sanitize_chord_name(chord_name, "tab"),
+                "name": sanitize_chord_name(chord_name)
             })
 
         return {

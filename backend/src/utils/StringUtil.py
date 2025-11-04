@@ -110,7 +110,19 @@ def sanitize_chord_name(chordName: str, type: str = None) -> str:
 
     raw = chordName[1:]
 
-    if raw.find('min') != -1 or raw.find('minor') != -1 or raw == 'm':
+    if raw.find('diminished') != -1 or raw.find('dim') != -1:
+        if type is 'tab':
+            # response += '°'
+            response += 'dim'
+        else:
+            response += ' Diminished'
+    elif raw.find('augmented') != -1 or raw.find('aug') != -1:
+        if type is 'tab':
+            # response += '+'
+            response += 'aug'
+        else:
+            response += ' Augmented'
+    elif raw.find('min') != -1 or raw.find('minor') != -1 or raw == 'm':
         if type == 'tab':
             response += 'm'
         else:
