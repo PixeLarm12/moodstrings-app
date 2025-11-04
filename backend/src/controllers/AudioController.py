@@ -30,8 +30,9 @@ def transcribe(file, is_recorded):
 
             progression = midi_service.extract_notes_and_chords()
 
-            if not progression.get("chords") and not progression.get("notes"):
-                return {"error": "Something went wrong. We couldn't extract either chords or notes."}
+            if not progression.get("chords"):
+                errors.append({"message": "Something went wrong. We couldn't extract chord progression."})
+                return {"errors": errors}
 
             return {
                 "progression": progression,
@@ -47,12 +48,12 @@ def transcribe(file, is_recorded):
         "errors": errors
     }
 
-def progression_info(chordProgression, noteProgression, tempo, file):
+def progression_info(chordProgression, tempo, file):
     errors = []
 
     if not tempo:
         errors.append({"message": "BPM not informed."})
-    elif not chordProgression and not noteProgression:
+    elif not chordProgression:
         errors.append({"message": "Progression not informed."})
     elif tempo <= 0:
         errors.append({"message": "BPM can't be less or equal than 0."})

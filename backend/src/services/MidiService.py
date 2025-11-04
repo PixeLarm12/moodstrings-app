@@ -153,8 +153,6 @@ class MidiService:
         first_event = None
         if progression.get("chords") and len(progression["chords"]) > 0:
             first_event = progression["chords"][0]["chord"]
-        elif progression.get("notes") and len(progression["notes"]) > 0:
-            first_event = progression["notes"][0]
 
         if not first_event:
             corrected_key = f"{detected_tonic}{'' if detected_mode == 'major' else 'm'}"
@@ -450,7 +448,6 @@ class MidiService:
 
     def extract_notes_and_chords(self) -> dict:
         chords = self.extract_chord_progression()
-        notes = self.extract_note_sequence()
 
         # Resolve global root note
         if chords:
@@ -463,32 +460,8 @@ class MidiService:
                     self._global_root_note = chord_obj.root().name
             except Exception:
                 self._global_root_note = None
-        else:
-            # fallback to note mode estimation
-            self._global_root_note = self._infer_root_from_notes(notes)
 
         return {
             "root_note": self._global_root_note,
-            "notes": notes,
             "chords": chords
         }
-
-    
-    def _infer_root_from_notes(self, notes: list[str]) -> str:
-        if not notes:
-            return None
-
-        pitch_classes = []
-        for n in notes:
-            try:
-                p = m21Pitch.Pitch(n)
-                pitch_classes.append(p.pitchClass)
-            except Exception:
-                continue
-
-        if not pitch_classes:
-            return None
-
-        most_common = Counter(pitch_classes).most_common(1)[0][0]
-        
-        return m21Pitch.Pitch(midi=most_common).name

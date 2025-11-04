@@ -5,7 +5,7 @@
 
       <h1 class="text-3xl font-bold">Chord and Emotion Recognizer</h1>
 
-      <h2 v-if="file && file.name && (progression.chords.length > 0 || progression.notes.length > 0)" class="text-lg font-semibold italic mb-2 text-gray-500">
+      <h2 v-if="file && file.name && (progression.chords.length > 0)" class="text-lg font-semibold italic mb-2 text-gray-500">
         File name: {{ file.name }}
       </h2>
 
@@ -112,8 +112,7 @@ export default {
       showProgressionInfo: false,
       showValidationForm: false,
       progression: {
-        chords: [],
-        notes: [],
+        chords: []
       },
       emotion: [],
       scales: [],
@@ -155,6 +154,8 @@ export default {
       try {
         this.loading = true
         this.showUploadForm = false
+        this.errors = []
+        this.message = ""
 
         const response = await axios.post(`${this.API_URL}/upload-file`, formData, {
           headers: { "Content-Type": "multipart/form-data" }
@@ -190,8 +191,7 @@ export default {
       this.message = ""
       this.errors = []
       this.progression = {
-        chords: [],
-        notes: [],
+        chords: []
       },
       this.scales = []
       this.keyName = ""
@@ -212,7 +212,6 @@ export default {
 
         const formData = new FormData()
         formData.append("chordProgression", progression.chordProgression)
-        formData.append("noteProgression", progression.noteProgression)
         formData.append("tempo", bpm)
         formData.append("uploaded_file", this.file)
 
@@ -250,18 +249,14 @@ export default {
     },
     formatProgressionStrings(progression) {
       if (!progression || typeof progression !== "object") {
-        return { noteProgression: null, chordProgression: null };
+        return { chordProgression: null };
       }
 
       const chordProgression = Array.isArray(progression.chords)
         ? progression.chords.map(ch => ch.chord.trim()).join("-") 
         : null;
-
-      const noteProgression = Array.isArray(progression.notes)
-        ? progression.notes.map(n => n.trim()).join("-")          
-        : null;
-
-      return { chordProgression, noteProgression };
+        
+      return { chordProgression };
     },
     handleConfirmedProgression(progression) {
       this.message = ""
@@ -269,7 +264,7 @@ export default {
       const bpm = progression.bpm ? parseInt(progression.bpm) : 0
       const formatted = this.formatProgressionStrings(progression)
 
-      if(progression.bpm && (progression.notes || progression.chords)){
+      if(progression.bpm && (progression.chords)){
         this.getProgressionInfo(formatted, bpm)
       } else {
         this.message = "Error validating progression: "
@@ -280,7 +275,7 @@ export default {
 
         if (!progression.bpm){
           this.errors.push({"message": "BPM not informed."})
-        } else if (!progression.chords && !progression.notes){
+        } else if (!progression.chords){
           this.errors.push({"message": "Progression not informed."})
         } else if(progression.bpm <= 0) {
           this.errors.push({"message": "BPM can't be less or equal than 0."})
@@ -295,7 +290,7 @@ export default {
       const bpm = progression.bpm ? parseInt(progression.bpm) : 0
       const formatted = this.formatProgressionStrings(progression)
 
-      if(progression.bpm && (progression.notes || progression.chords)){
+      if(progression.bpm && (progression.chords)){
         this.getProgressionInfo(formatted, bpm)
       } else {
         this.message = "Error validating progression: "
@@ -306,7 +301,7 @@ export default {
 
         if (!progression.bpm){
           this.errors.push({"message": "BPM not informed."})
-        } else if (!progression.chords && !progression.notes){
+        } else if (!progression.chords){
           this.errors.push({"message": "Progression not informed."})
         } else if(progression.bpm <= 0) {
           this.errors.push({"message": "BPM can't be less or equal than 0."})
@@ -333,7 +328,7 @@ export default {
     success() {
       let isSuccess = false;
 
-      if(this.progression.chords.length > 0 || this.progression.notes.length > 0){
+      if(this.progression.chords.length > 0){
         isSuccess = true;
       }
 

@@ -2,7 +2,7 @@
   <div class="flex items-center justify-center py-8 px-4">
       <ScalesModal :show="showScalesModal" :scales="scales" @close="showScalesModal = false" />
 
-      <div v-if="(progression.chords.length > 0 || progression.notes.length > 0)" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
+      <div v-if="(progression.chords.length > 0)" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
 
         <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
             <div class="w-full md:col-span-7">
@@ -33,12 +33,8 @@
             </div>
         </div>
 
-        <div v-if="progression.chords.length > 0 && !(progression.chords.length <= 0 && progression.notes.length > 0)" class="my-2">
+        <div v-if="progression.chords.length > 0 && !(progression.chords.length <= 0)" class="my-2">
             <ChordsPlayedComponent :progression="progression.chords"></ChordsPlayedComponent>
-        </div>
-
-        <div v-if="progression.chords.length <= 0 && progression.notes.length > 0" class="my-2">
-            <NotesPlayedComponent :progression="progression.notes"></NotesPlayedComponent>
         </div>
 
         <div v-if="emotion" class="my-2">
@@ -71,7 +67,6 @@ import axios from "axios"
 import ScalesModal from "../modal/ScalesModal.vue"
 import EmotionsComponent from "../music/EmotionsComponent.vue"
 import ChordsPlayedComponent from "../music/ChordsPlayedComponent.vue"
-import NotesPlayedComponent from "../music/NotesPlayedComponent.vue"
 
 export default {
   name: "ProgressionInfo",
@@ -110,8 +105,7 @@ export default {
   components: {
     ScalesModal,
     EmotionsComponent,
-    ChordsPlayedComponent,
-    NotesPlayedComponent
+    ChordsPlayedComponent
   },
   methods: {
     handleFileChange(event) {

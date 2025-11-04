@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col items-center justify-center text-white bg-gray-900 py-8 px-4">
-    <div v-if="progression && (progression.chords?.length || progression.notes?.length)"
+    <div v-if="progression && (progression.chords?.length)"
          class="w-full max-w-3xl bg-gray-800 rounded-xl p-6 shadow-lg space-y-6">
       
       <!-- Title -->
@@ -17,11 +17,6 @@
       <!-- Detected Chords -->
       <div v-if="progression.chords?.length" class="space-y-2">
           <ChordsPlayedComponent :progression="progression.chords" :lock-chord-modal="true"></ChordsPlayedComponent>
-      </div>
-
-      <!-- Detected Notes -->
-      <div v-if="!progression.chords?.length && progression.notes?.length" class="space-y-2">
-        <NotesPlayedComponent :progression="progression.notes"></NotesPlayedComponent>
       </div>
 
       <!-- Question -->
@@ -59,21 +54,12 @@
           class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500"
         />
 
-        <label v-if="progression.chords?.length || !(!progression.chords?.length && progression.notes?.length)" class="block text-sm text-gray-300 mb-1">Chords (separated by hifen "-"):</label>
+        <label v-if="progression.chords?.length || !(!progression.chords?.length)" class="block text-sm text-gray-300 mb-1">Chords (separated by hifen "-"):</label>
         <input
-          v-if="progression.chords?.length || !(!progression.chords?.length && progression.notes?.length)"
+          v-if="progression.chords?.length || !(!progression.chords?.length)"
           v-model="manualChords"
           type="text"
           placeholder="Example: C G Am F"
-          class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500"
-        />
-
-        <label v-if="!progression.chords?.length && progression.notes?.length" class="block text-sm text-gray-300 mb-1">Notes (separated by hifen "-"):</label>
-        <input
-          v-if="!progression.chords?.length && progression.notes?.length"
-          v-model="manualNotes"
-          type="text"
-          placeholder="Example: C E G A"
           class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500"
         />
 
@@ -100,14 +86,12 @@
 <script>
 import Card from '../utils/Card.vue';
 import ChordsPlayedComponent from '../music/ChordsPlayedComponent.vue';
-import NotesPlayedComponent from '../music/NotesPlayedComponent.vue';
 
 export default {
   name: "ValidationForm",
   components: {
     Card,
-    ChordsPlayedComponent,
-    NotesPlayedComponent
+    ChordsPlayedComponent
   },
   props: {
     progression: {
@@ -125,7 +109,6 @@ export default {
     return {
       editMode: false,
       manualChords: "",
-      manualNotes: "",
       manualBpm: null,
       errors: "",
     };
@@ -138,7 +121,6 @@ export default {
       if(emitType === 'confirm'){
         const object = {
           chords: this.progression.chords,
-          notes: this.progression.notes,
           bpm: this.tempo.time
         };
 
@@ -149,9 +131,6 @@ export default {
         const object = {
           chords: this.manualChords
             ? this.manualChords.trim().split(/-/).map(chord => ({ chord }))
-            : [],
-          notes: this.manualNotes
-            ? this.manualNotes.trim().split(/-/)
             : [],
           bpm: this.manualBpm ? this.manualBpm : null
         };
@@ -166,7 +145,6 @@ export default {
     editMode(newVal, oldVal){
       if (newVal) {
         let chords = ""
-        let notes = ""
         if(this.progression.chords.length > 0){
           for (let index = 0; index < this.progression.chords.length; index++) {
             const ch = this.progression.chords[index];
@@ -179,20 +157,7 @@ export default {
           }
         }
 
-        if(this.progression.notes.length > 0){
-          for (let index = 0; index < this.progression.notes.length; index++) {
-            const n = this.progression.notes[index];
-            
-            if(index == 0){
-              notes = n
-            } else {
-              notes += "-" + n  
-            }
-          }
-        }
-
         this.manualChords = chords
-        this.manualNotes = notes
         this.manualBpm = this.tempo.time
       }
     }

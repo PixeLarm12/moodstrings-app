@@ -26,11 +26,10 @@ async def transcribe(
 @app.post("/get-progression-info")
 async def get_progression_info(
     chordProgression: str = Form(...),
-    noteProgression: str = Form(...),
     tempo: int = Form(...),
     uploaded_file: UploadFile = File(...)
 ):  
-    return audio_controller.progression_info(chordProgression, noteProgression, tempo, uploaded_file)
+    return audio_controller.progression_info(chordProgression, tempo, uploaded_file)
 
 @app.post("/download-midi")
 async def download_midi(uploaded_file: UploadFile):
@@ -39,21 +38,3 @@ async def download_midi(uploaded_file: UploadFile):
 @app.post("/download-sheet")
 async def download_sheet(uploaded_file: UploadFile):
     return await audio_controller.get_musical_sheet_to_download(uploaded_file)
-
-@app.get("/test")
-async def test():
-    progression = "C-Cm-Bm7-Bb-F#-F#m9"
-
-    chords_list = [
-        ch.strip().replace('"', '') #unicode fix
-        for ch in progression.split("-")
-    ]
-
-    for chord in chords_list:
-        if chord.find("b") != -1:
-            chord = chord.replace('b', '-') # music21 bemol is 'flat'
-        symbol = m21Harmony.ChordSymbol(chord)
-
-        print(f"TESTE NOME: {StringUtil.get_clean_chord_name(symbol.pitchedCommonName)}")
-        
-    return 1
