@@ -24,7 +24,7 @@ class AIService:
 
         return {
             "model_used": "Naive Bayes",
-            "content": get_emotion_portuguese(emotion),
+            "content": get_emotion(emotion),
             "evaluation": evaluation
         }
     
@@ -35,7 +35,7 @@ class AIService:
 
         return {
             "model_used": "KNN",
-            "content": get_emotion_portuguese(emotion),
+            "content": get_emotion(emotion),
             # "evaluation": evaluation
         }
     
@@ -46,7 +46,7 @@ class AIService:
 
         return {
             "model_used": "SVM",
-            "content": get_emotion_portuguese(emotion),
+            "content": get_emotion(emotion),
             "evaluation": evaluation
         }
 
