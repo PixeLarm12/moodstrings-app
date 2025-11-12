@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-900 text-white">
     <div class="w-full max-w-md md:max-w-2xl text-center space-y-6">
-      <img src="/logo.png" alt="Logo" class="w-24 h-24 mx-auto rounded-full shadow-lg" />
+      <img src="/logo.png" alt="Logo" class="w-32 h-32 md:w-52 md:h-52 mx-auto shadow-lg mb-12" />
 
       <h1 class="text-3xl font-bold">Chord and Emotion Recognizer</h1>
 
