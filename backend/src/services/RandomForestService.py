@@ -4,10 +4,12 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
+from collections import Counter
 from typing import Tuple
 from pathlib import Path
 import joblib
 import time
+import numpy as np
 
 BASE_DIR = Path(__file__).resolve().parent                    # /app/src/services
 MODELS_DIR = (BASE_DIR / '..' / 'AIModels').resolve()        # /app/src/AIModels
@@ -23,6 +25,8 @@ class RandomForestService:
     def __init__(self):
         self._emotion_model = None
         self.model_path = os.path.abspath(MODEL_PATH)
+        self.n_features = 0;
+        self.feature_names = None;
 
         # check if current saved model exists
         if os.path.exists(self.model_path):
@@ -62,21 +66,44 @@ class RandomForestService:
         self.save_model()
         print("📦 Successfully saved model!")
 
-    def load_model(self):
-        self._emotion_model = joblib.load(self.model_path)
-        print(f"✅ Model loaded from: {self.model_path}")
-
     def save_model(self):
         os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
         joblib.dump(self._emotion_model, self.model_path)
         print(f"💾 Model saved in: {self.model_path}")
 
-    def predict(self, forteclass_sequence: str) -> str:
-        if not forteclass_sequence or len(forteclass_sequence.strip()) == 0:
-            raise ValueError("Forteclasses sequence is null or invalid")
+    def load_model(self):
+        """Load pretrained RandomForest model (and metadata if available)."""
+        print(f"📂 Loading model from {self.model_path} ...")
 
-        if self._emotion_model is None:
-            raise ValueError("Model not loaded")
+        model_package = joblib.load(self.model_path)
+
+        if not isinstance(model_package, dict) or "model" not in model_package:
+            raise ValueError("❌ Invalid model file format: missing 'model' key.")
+
+        rf_model = model_package["model"]
+        self.feature_names = model_package["feature_names"]
+        self.n_features = model_package["n_features"]
+
+        vect = CountVectorizer(token_pattern=r'[^,]+', lowercase=False)
+        vect.vocabulary_ = {feat: i for i, feat in enumerate(self.feature_names)}
+        vect.fixed_vocabulary_ = True  # prevent re-fitting / vocabulary drift
+
+        self._emotion_model = Pipeline([
+            ("vect", vect),
+            ("clf", rf_model)
+        ])
+
+        self.model_metadata = {
+            key: val for key, val in model_package.items() if key != "model"
+        }
+
+        print("✅ Model and vectorizer successfully loaded!")
+        print(f"🔹 Feature count: {self.n_features}")
+        print(f"🔹 Pipeline ready for prediction.")
+
+    def predict(self, forteclass_sequence: str) -> str:
+        if not isinstance(forteclass_sequence, str):
+            raise ValueError("Expected forteclass_sequence as a string (comma-separated)")
 
         pred = self._emotion_model.predict([forteclass_sequence])[0]
         return pred
