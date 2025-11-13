@@ -101,12 +101,17 @@ class RandomForestService:
         print(f"🔹 Feature count: {self.n_features}")
         print(f"🔹 Pipeline ready for prediction.")
 
-    def predict(self, forteclass_sequence: str) -> str:
+    def predict(self, forteclass_sequence: str, mode: str) -> str:
         if not isinstance(forteclass_sequence, str):
             raise ValueError("Expected forteclass_sequence as a string (comma-separated)")
 
-        pred = self._emotion_model.predict([forteclass_sequence])[0]
-        return pred
+        df = pd.DataFrame([{
+            'forteclass_sequence': forteclass_sequence,
+            'mode': mode
+        }])
+
+        pred = self._emotion_model.predict(df)[0]
+        return pred;
 
     def evaluate(self) -> dict:
             if not os.path.exists(TEST_DATASET_PATH):

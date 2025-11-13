@@ -71,7 +71,7 @@ def progression_info(chordProgression, tempo, file):
 
             chordsForteClass = midi_service.extract_chords_forteclass()
 
-            emotion = ai_service.rf_predict(chordsForteClass)
+            
 
             key_info = midi_service.find_estimate_key()
             key_info = midi_service.correct_key_with_first_event(key_info, progression)
@@ -79,6 +79,7 @@ def progression_info(chordProgression, tempo, file):
             scale = midi_service.find_scale(key_info, chordProgression)
             relative_scales = midi_service.find_relative_scales()
 
+            emotion = ai_service.rf_predict(chordsForteClass, key_info["mode"])
 
             return {
                 "progression": progression,
