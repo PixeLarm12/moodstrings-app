@@ -69,32 +69,36 @@ def progression_info(chordProgression, tempo, file):
 
             ai_service = AIService()
 
-            chordsForteClass = midi_service.extract_chords_forteclass()
+            chordsForteClass = midi_service.extract_chord_progression_forteclass()
 
-            
-
+            # print(f"forteclass: {chordsForteClass[:-2]}")
             key_info = midi_service.find_estimate_key()
             key_info = midi_service.correct_key_with_first_event(key_info, progression)
-            bpm, tempo_name = classify_tempo(midi_service.find_tempo())
-            scale = midi_service.find_scale(key_info, chordProgression)
-            relative_scales = midi_service.find_relative_scales()
+            # bpm, tempo_name = classify_tempo(midi_service.find_tempo())
+            # scale = midi_service.find_scale(key_info, chordProgression)
+            # relative_scales = midi_service.find_relative_scales()
 
-            emotion = ai_service.rf_predict(chordsForteClass, key_info["mode"])
+            emotion = ai_service.rf_predict(chordsForteClass[:-1], key_info["mode"])
+            # debug = ai_service.debug_prediction(chordsForteClass[:-1], key_info["mode"])
 
-            return {
-                "progression": progression,
-                "emotion": emotion,
-                "scales": {
-                    "actual": scale,
-                    "relatives": relative_scales
-                },
-                "tempo": {
-                    "time": bpm,
-                    "name": tempo_name,
-                },
-                "key_name": key_info['key'],
-                "tonic": key_info['tonic']
-            }    
+            # # print(f"DEBUG: {debug}")
+            print(f"PREDICTED FORTECLASS_SEQUENCE: {chordsForteClass[:-1]}")
+            print(f"EMOTION: {emotion}")
+            # return {
+            #     "progression": progression,
+            #     "emotion": emotion,
+            #     "scales": {
+            #         "actual": scale,
+            #         "relatives": relative_scales
+            #     },
+            #     "tempo": {
+            #         "time": bpm,
+            #         "name": tempo_name,
+            #     },
+            #     "key_name": key_info['key'],
+            #     "tonic": key_info['tonic']
+            # }    
+            return {"message": "testing"}
         except Exception as e:
             errors.append({"message": f"{e}"})
         

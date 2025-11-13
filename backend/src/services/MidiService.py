@@ -99,42 +99,42 @@ class MidiService:
 
     def extract_chords_forteclass(self, chord_threshold=2):
         raw_chords = []
-        forte_classes = []
 
         for instrument in self._midi_data.instruments:
             if instrument.is_drum:
                 continue
 
+            # Group notes by time
             notes_by_time = {}
-            bucket_size = 0.25
+            bucket_size = 0.25  # quantization
 
             for note in instrument.notes:
                 bucket = round(note.start / bucket_size) * bucket_size
                 notes_by_time.setdefault(bucket, []).append(note.pitch)
 
-            previous_chord = None
             for time in sorted(notes_by_time.keys()):
                 pitches = notes_by_time[time]
                 if len(pitches) >= chord_threshold:
-                    item = '+'.join(sorted(pretty_midi.note_number_to_name(p) for p in pitches))
-                    if item != previous_chord:
-                        raw_chords.append(item)
-                        previous_chord = item
+                    chord_notes = sorted(pretty_midi.note_number_to_name(p) for p in pitches)
+                    raw_chords.append("+".join(chord_notes))
 
-        prev_forte = None
+        forte_classes = []
         for raw in raw_chords:
             note_names = raw.split("+")
             try:
-                objChord = m21Chord.Chord(note_names)
+                objChord = m21.chord.Chord(note_names)
                 forte_class = objChord.forteClassTn
 
-                if forte_class is not None and forte_class != prev_forte:
+                if forte_class is not None:
+                    # Always append each forte class (do not skip duplicates)
                     forte_classes.append(str(forte_class))
-                    prev_forte = forte_class
             except Exception:
+                # Skip any chord that fails to convert
                 continue
 
+        # Return as string, separated by ' - '
         return ' - '.join(forte_classes)
+
 
     def create_midi_converter(self):
         with tempfile.NamedTemporaryFile(suffix=".mid", delete=False) as tmp_midi:
@@ -470,3 +470,42 @@ class MidiService:
             "root_note": self._global_root_note,
             "chords": chords
         }
+    
+    def extract_chord_progression_forteclass(self, bucket_size: float = 0.18) -> list[dict]:
+        chord_progression = []
+        chordString = ""
+
+        MIN_VELOCITY = 35       # soft notes could be noise
+        MIN_DURATION = 0.07
+
+        for instrument in self.midi_data.instruments:
+            if instrument.is_drum:
+                continue
+            
+            notes_by_time = {}
+
+            for note in instrument.notes:
+                duration = note.end - note.start
+                if note.velocity < MIN_VELOCITY or duration < MIN_DURATION:
+                    continue
+
+                bucket = round(note.start / bucket_size) * bucket_size
+                notes_by_time.setdefault(bucket, []).append(note.pitch)
+
+            for time in sorted(notes_by_time.keys()):
+                pitches = notes_by_time[time]
+
+                # Include all notes, even single notes
+                note_names = [librosa.midi_to_note(p) for p in pitches]
+                normalized = [n.replace("♯", "#").replace("♭", "b") for n in note_names]
+
+                try:
+                    objChord = m21Chord.Chord(normalized)
+                except Exception:
+                    continue
+
+                chord_name = objChord.forteClassTn
+                chordString += f"{chord_name},"
+
+
+        return chordString

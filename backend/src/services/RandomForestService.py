@@ -4,6 +4,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
+from sklearn.model_selection import train_test_split
 from collections import Counter
 from typing import Tuple
 from pathlib import Path
@@ -14,10 +15,10 @@ import numpy as np
 BASE_DIR = Path(__file__).resolve().parent                    # /app/src/services
 MODELS_DIR = (BASE_DIR / '..' / 'AIModels').resolve()        # /app/src/AIModels
 DATASET_DIR = (BASE_DIR / '..' / 'dataset').resolve()        # /app/src/dataset
-MODEL_PATH = MODELS_DIR / 'emotion_randomforest_model.pkl'
+# MODEL_PATH = MODELS_DIR / 'emotion_randomforest_model.pkl'
 
-TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'train_dataset.csv')
-TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'test_dataset.csv')
+TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'emotions_balanced_stratified.csv')
+TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'emotions_balanced_stratified.csv')
 MODEL_PATH = os.path.join(MODELS_DIR, 'emotion_randomforest_model.pkl')
 
 
@@ -37,34 +38,47 @@ class RandomForestService:
             self.train_models()
 
     def train_models(self):
-        if not os.path.exists(TRAIN_DATASET_PATH):
-            raise FileNotFoundError(f"Train dataset not found: {TRAIN_DATASET_PATH}")
-
+        # Load dataset
         train_df = pd.read_csv(TRAIN_DATASET_PATH)
-
-        required_columns = ["forteclass_sequence", "emotion"]
-        if not all(col in train_df.columns for col in required_columns):
-            raise ValueError(f"Dataset needs more columns: {required_columns}")
-
-        train_df = train_df.dropna(subset=['forteclass_sequence'])
+        train_df = train_df.dropna(subset=['forteclass_sequence', 'mode'])
         train_df = train_df[train_df['forteclass_sequence'].str.len() > 0]
 
-        X_train = train_df['forteclass_sequence']
-        y_train = train_df['emotion']
+        # Combine sequence + mode
+        X = train_df['forteclass_sequence'] + ',' + train_df['mode']
+        y = train_df['emotion']
 
-        print(f"Training with {len(X_train)} samples...")
+        # 80/20 split with stratification
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=y
+        )
 
-        self._emotion_model = Pipeline([
-            ("vect", CountVectorizer(token_pattern=r'[^,]+', lowercase=False)),
-            ("clf", RandomForestClassifier(n_estimators=100, random_state=42))
-        ])
+        print(f"Training with {len(X_train)} samples, testing with {len(X_test)} samples...")
 
-        start = time.time()
-        self._emotion_model.fit(X_train, y_train)
-        print(f"✅ Trained model found in {time.time() - start:.2f}s")
+        # Vectorize sequences
+        vect = CountVectorizer(token_pattern=r'[^,]+', lowercase=False)
+        X_train_vect = vect.fit_transform(X_train)
+        X_test_vect = vect.transform(X_test)
 
-        self.save_model()
-        print("📦 Successfully saved model!")
+        # Train Random Forest
+        clf = RandomForestClassifier(n_estimators=200, random_state=42)
+        clf.fit(X_train_vect, y_train)
+
+        # Evaluate on test set
+        y_pred = clf.predict(X_test_vect)
+        accuracy = accuracy_score(y_test, y_pred)
+        print(f"✅ Validation Accuracy: {accuracy:.4f}")
+        print(classification_report(y_test, y_pred))
+
+        # Save the model
+        os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
+        joblib.dump({
+            "model": clf,
+            "vectorizer": vect,
+            "feature_names": list(vect.vocabulary_.keys())
+        }, self.model_path)
+        print(f"💾 Model trained and saved at {self.model_path}")
+
+
 
     def save_model(self):
         os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
@@ -72,71 +86,103 @@ class RandomForestService:
         print(f"💾 Model saved in: {self.model_path}")
 
     def load_model(self):
-        """Load pretrained RandomForest model (and metadata if available)."""
-        print(f"📂 Loading model from {self.model_path} ...")
-
-        model_package = joblib.load(self.model_path)
-
-        if not isinstance(model_package, dict) or "model" not in model_package:
-            raise ValueError("❌ Invalid model file format: missing 'model' key.")
-
-        rf_model = model_package["model"]
-        self.feature_names = model_package["feature_names"]
-        self.n_features = model_package["n_features"]
-
-        vect = CountVectorizer(token_pattern=r'[^,]+', lowercase=False)
-        vect.vocabulary_ = {feat: i for i, feat in enumerate(self.feature_names)}
-        vect.fixed_vocabulary_ = True  # prevent re-fitting / vocabulary drift
-
+        package = joblib.load(self.model_path)
         self._emotion_model = Pipeline([
-            ("vect", vect),
-            ("clf", rf_model)
+            ('vect', package['vectorizer']),
+            ('clf', package['model'])
         ])
+        print("✅ Model loaded, ready for prediction")
 
-        self.model_metadata = {
-            key: val for key, val in model_package.items() if key != "model"
-        }
-
-        print("✅ Model and vectorizer successfully loaded!")
-        print(f"🔹 Feature count: {self.n_features}")
-        print(f"🔹 Pipeline ready for prediction.")
 
     def predict(self, forteclass_sequence: str, mode: str) -> str:
+        # XMIDI_sad_pop_50MDB94E.midi,sad,pop,"3-11B,3-11A,3-10,3-11B,3-11A,3-10,3-11B,2-4,2-5,2-3,2-4,2-3,2-2,2-3,2-4,2-5,2-4,2-3,2-5,2-4,2-3,2-5,2-4,2-5,2-3,2-4,2-3,2-4,2-5,2-4,2-3,2-5,2-2,2-4,2-5,2-3,2-4,2-3,2-4,2-5,2-4,2-3,2-5,2-4,2-3,2-5,2-4,2-5,2-3,2-4,2-3,2-4,2-5,2-4,2-3,2-5,2-4,2-3,2-5,2-4,2-3,2-5,2-4,2-3,3-11B,3-11A,3-10,3-11A,3-10,3-11B,3-11A,3-10,3-11A,3-10,3-11B,2-2,2-1,1-1,3-6,1-1,2-1,1-1,2-2,1-1,4-11B,1-1,3-2A,1-1,2-2,1-1,2-1,1-1,2-2,1-1,4-11B,1-1,4-11B,1-1,2-2,2-1,1-1,2-2,1-1,2-2,1-1,2-1,1-1,2-3,2-4,2-5,4-11B,1-1,2-2,2-1,1-1,2-2,1-1,3-6,1-1,3-2A,1-1,2-2,1-1,3-2A,1-1,2-2,1-1,2-1,1-1,2-1,1-1,2-3,2-4,2-5,3-6,1-1,4-11B,2-2,1-1,2-2,1-1,3-7A,1-1,2-1,1-1,3-6,1-1,2-2,1-1,2-2,1-1,2-2,1-1,3-2A,2-3,1-1,2-2,1-1,3-2A,1-1,2-2,1-1,2-1,2-3,2-2,2-1,2-5",167,D,major
         if not isinstance(forteclass_sequence, str):
             raise ValueError("Expected forteclass_sequence as a string (comma-separated)")
+        
+        # Combine sequence + mode just like training
+        combined_input = f"{forteclass_sequence},{mode}"
 
-        df = pd.DataFrame([{
-            'forteclass_sequence': forteclass_sequence,
-            'mode': mode
-        }])
-
-        pred = self._emotion_model.predict(df)[0]
-        return pred;
+        # Pipeline handles vectorization + prediction
+        pred = self._emotion_model.predict([combined_input])[0]
+        return pred
 
     def evaluate(self) -> dict:
-            if not os.path.exists(TEST_DATASET_PATH):
-                raise FileNotFoundError(f"Test dataset not found: {TEST_DATASET_PATH}")
+        if not os.path.exists(TEST_DATASET_PATH):
+            raise FileNotFoundError(f"Test dataset not found: {TEST_DATASET_PATH}")
 
-            test_df = pd.read_csv(TEST_DATASET_PATH)
-            test_df = test_df.dropna(subset=['forteclass_sequence'])
-            test_df = test_df[test_df['forteclass_sequence'].str.len() > 0]
+        # Load CSV
+        test_df = pd.read_csv(TEST_DATASET_PATH)
 
-            X_test = test_df['forteclass_sequence']
-            y_test = test_df['emotion']
+        # Drop rows with empty sequences
+        test_df = test_df.dropna(subset=['forteclass_sequence', 'mode'])
+        test_df = test_df[test_df['forteclass_sequence'].str.len() > 0]
 
-            print(f"\n🔍 Evaluating with {len(X_test)} samples...")
+        # Combine forteclass_sequence and mode into single string
+        combined_feature = test_df['forteclass_sequence'] + "," + test_df['mode']
 
-            y_pred = self._emotion_model.predict(X_test)
+        # Labels
+        y_test = test_df['emotion']
 
-            accuracy = accuracy_score(y_test, y_pred)
-            print(f"\n=== RANDOM FOREST EMOTION MODEL EVALUATION ===")
-            print(f"Accuracy: {accuracy:.4f}")
-            print("\nDetailed classification report:")
-            print(classification_report(y_test, y_pred))
+        print(f"\n🔍 Evaluating with {len(combined_feature)} samples...")
 
-            # Return metrics
-            return {
-                "accuracy": round(accuracy * 100, 2),
-                "samples": len(X_test),
-                # "unique_emotions": sorted(y_test.unique())
-            }
+        # Convert Series to DataFrame with a single column (matches training)
+        # X_test = pd.DataFrame({'forteclass_sequence': combined_feature})
+
+        # Predict
+        y_pred = self._emotion_model.predict(combined_feature)
+
+        # Metrics
+        accuracy = accuracy_score(y_test, y_pred)
+        print(f"\n=== RANDOM FOREST EMOTION MODEL EVALUATION ===")
+        print(f"Accuracy: {accuracy:.4f}")
+        print("\nDetailed classification report:")
+        print(classification_report(y_test, y_pred))
+
+        return {
+            "accuracy": round(accuracy * 100, 2),
+            # "samples": len(X_test),
+        }
+    
+    def debug_prediction(self, forteclass_sequence: str, mode: str):
+        """
+        Debug the pipeline step by step for a single input sequence.
+        Prints tokenization and final predicted probabilities.
+        """
+        if self._emotion_model is None:
+            raise ValueError("Model not loaded. Call load_model() first.")
+
+        print("Training vocabulary:", list(self._emotion_model.steps[0][1].vocabulary_.keys()))
+        # Combine forteclass_sequence and mode like during evaluation
+        combined_input = f"{forteclass_sequence},{mode}"
+
+        # Step 1: Vectorize input
+        vect = None
+        clf = None
+        if hasattr(self._emotion_model, 'named_steps'):
+            vect = self._emotion_model.named_steps.get('vect')
+            clf = self._emotion_model.named_steps.get('clf')
+        else:
+            # fallback if not named_steps
+            if isinstance(self._emotion_model, Pipeline):
+                vect = self._emotion_model.steps[0][1]
+                clf = self._emotion_model.steps[1][1]
+            else:
+                raise ValueError("Pipeline structure not recognized.")
+
+        X_vect = vect.transform([combined_input])
+        print("✅ Vectorized input shape:", X_vect.shape)
+        print("Vectorized features (non-zero indices):", X_vect.nonzero())
+
+        # Step 2: Predict probabilities
+        y_proba = clf.predict_proba(X_vect)
+        print("Predicted probabilities for each class:")
+        for cls, prob in zip(clf.classes_, y_proba[0]):
+            print(f"  {cls}: {prob:.4f}")
+
+        # Step 3: Predict label
+        y_pred = clf.predict(X_vect)
+        print("Predicted label:", y_pred[0])
+        return y_pred[0]
+
+
+

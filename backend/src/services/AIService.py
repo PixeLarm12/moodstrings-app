@@ -17,6 +17,10 @@ class AIService:
             "description": get_emotion_description(emotion)
         }
     
+    def debug_prediction(self, forte_sequence, mode):
+        rf_service = RandomForestService()
+        rf_service.debug_prediction(forte_sequence, mode)
+    
     def nb_predict(self, forte_sequence: str) -> str:
         nb_service = NaiveBayesService()
         emotion = nb_service.predict(forte_sequence)
