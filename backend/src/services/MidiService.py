@@ -97,45 +97,6 @@ class MidiService:
 
         return f"{roman} ({name})"
 
-    def extract_chords_forteclass(self, chord_threshold=2):
-        raw_chords = []
-
-        for instrument in self._midi_data.instruments:
-            if instrument.is_drum:
-                continue
-
-            # Group notes by time
-            notes_by_time = {}
-            bucket_size = 0.25  # quantization
-
-            for note in instrument.notes:
-                bucket = round(note.start / bucket_size) * bucket_size
-                notes_by_time.setdefault(bucket, []).append(note.pitch)
-
-            for time in sorted(notes_by_time.keys()):
-                pitches = notes_by_time[time]
-                if len(pitches) >= chord_threshold:
-                    chord_notes = sorted(pretty_midi.note_number_to_name(p) for p in pitches)
-                    raw_chords.append("+".join(chord_notes))
-
-        forte_classes = []
-        for raw in raw_chords:
-            note_names = raw.split("+")
-            try:
-                objChord = m21.chord.Chord(note_names)
-                forte_class = objChord.forteClassTn
-
-                if forte_class is not None:
-                    # Always append each forte class (do not skip duplicates)
-                    forte_classes.append(str(forte_class))
-            except Exception:
-                # Skip any chord that fails to convert
-                continue
-
-        # Return as string, separated by ' - '
-        return ' - '.join(forte_classes)
-
-
     def create_midi_converter(self):
         with tempfile.NamedTemporaryFile(suffix=".mid", delete=False) as tmp_midi:
             self._midi_data.write(tmp_midi.name)
@@ -227,7 +188,8 @@ class MidiService:
             "key": "",
             "mode": "",
             "tonic": "",
-            "chords": []
+            "chords": [],
+            "exists": False
         }
 
         tonic = key_info["tonic"].split(" ")[0]
@@ -245,11 +207,6 @@ class MidiService:
             ch.strip().replace('"', '').replace('b', '-')
             for ch in cleaned.split("-")
         ]
-
-        # all_chords_notes = []
-        # for c in chords_list:
-        #     obj = m21Harmony.ChordSymbol(c)
-        #     all_chords_notes.extend([p.name for p in obj.pitches])
 
         major_scale = m21Scale.MajorScale()
         minor_scale = m21Scale.MinorScale()
@@ -272,30 +229,33 @@ class MidiService:
                 tonic = min.getTonic().name.replace("-", "b")
                 self._tone_info = self.find_estimate_key(objKey=m21Key.Key(tonic, mode))
 
-        harmonic_chords = []
-        for i, pitch in enumerate(actual_scale.pitches):
-            chord_name = pitch.name.replace("-", "b")
-            name = sanitize_chord_name(chord_name.replace("-", "b"))
-            function = actual_scale.getScaleDegreeFromPitch(pitch.name)
-            function_roman = MusicEnum.HarmonicFunctions.FUNCTIONS_EN.value[function-1]
 
-            harmonic_chords.append({
-                "function": function_roman,
-                "chord": chord_name,
-                "name": name
-            })
+        if actual_scale != None:
+            harmonic_chords = []
+            for i, pitch in enumerate(actual_scale.pitches):
+                chord_name = pitch.name.replace("-", "b")
+                name = sanitize_chord_name(chord_name.replace("-", "b"))
+                function = actual_scale.getScaleDegreeFromPitch(pitch.name)
+                function_roman = MusicEnum.HarmonicFunctions.FUNCTIONS_EN.value[function-1]
 
-        key_name = sanitize_chord_name(actual_scale.name.replace("-", "b"), 'tab')
-        key_full_name = sanitize_chord_name(actual_scale.name.replace("-", "b"))
+                harmonic_chords.append({
+                    "function": function_roman,
+                    "chord": chord_name,
+                    "name": name
+                })
 
-        key = f"{key_name} ({key_full_name})"
+            key_name = sanitize_chord_name(actual_scale.name.replace("-", "b"), 'tab')
+            key_full_name = sanitize_chord_name(actual_scale.name.replace("-", "b"))
 
-        self._scale = {
-            "key": key,
-            "mode": mode,
-            "tonic": tonic,
-            "chords": harmonic_chords
-        }
+            key = f"{key_name} ({key_full_name})"
+
+            self._scale = {
+                "key": key,
+                "mode": mode,
+                "tonic": tonic,
+                "chords": harmonic_chords,
+                "exists": True
+            }
 
         return self._scale
 
@@ -471,19 +431,17 @@ class MidiService:
             "chords": chords
         }
     
-    def extract_chord_progression_forteclass(self, bucket_size: float = 0.18) -> list[dict]:
-        chord_progression = []
-        chordString = ""
-
+    def extract_chord_progression_forteclass(self, bucket_size: float = 0.18) -> str:
+        chord_sequence = []
+       
         MIN_VELOCITY = 35       # soft notes could be noise
         MIN_DURATION = 0.07
 
         for instrument in self.midi_data.instruments:
             if instrument.is_drum:
                 continue
-            
+            # Group notes by start time bucket
             notes_by_time = {}
-
             for note in instrument.notes:
                 duration = note.end - note.start
                 if note.velocity < MIN_VELOCITY or duration < MIN_DURATION:
@@ -492,10 +450,9 @@ class MidiService:
                 bucket = round(note.start / bucket_size) * bucket_size
                 notes_by_time.setdefault(bucket, []).append(note.pitch)
 
-            for time in sorted(notes_by_time.keys()):
-                pitches = notes_by_time[time]
+            for t in sorted(notes_by_time.keys()):
+                pitches = notes_by_time[t]
 
-                # Include all notes, even single notes
                 note_names = [librosa.midi_to_note(p) for p in pitches]
                 normalized = [n.replace("♯", "#").replace("♭", "b") for n in note_names]
 
@@ -505,7 +462,11 @@ class MidiService:
                     continue
 
                 chord_name = objChord.forteClassTn
-                chordString += f"{chord_name},"
 
+                # Add root pitch class as prefix to distinguish repeated ForteClass in different keys
+                # root_pc = objChord.root().pitchClass
+                quality = objChord.quality
+                chord_sequence.append(f"{chord_name}")
 
-        return chordString
+        # Join all chords with comma
+        return ",".join(chord_sequence)

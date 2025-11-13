@@ -5,9 +5,9 @@ from src.services.SVMService import SVMService
 from src.utils.StringUtil import get_emotion, get_emotion_description
 
 class AIService:
-    def rf_predict(self, forte_sequence: str, mode: str) -> str:
+    def rf_predict(self, forte_sequence: str, mode: str, tonic: str = None) -> str:
         rf_service = RandomForestService() 
-        emotion = rf_service.predict(forte_sequence, mode)
+        emotion = rf_service.predict(forte_sequence, mode, tonic)
         evaluation = rf_service.evaluate() 
 
         return {

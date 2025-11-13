@@ -94,16 +94,20 @@ class RandomForestService:
         print("✅ Model loaded, ready for prediction")
 
 
-    def predict(self, forteclass_sequence: str, mode: str) -> str:
+    def predict(self, forteclass_sequence: str, mode: str, tonic: str) -> str:
         # XMIDI_sad_pop_50MDB94E.midi,sad,pop,"3-11B,3-11A,3-10,3-11B,3-11A,3-10,3-11B,2-4,2-5,2-3,2-4,2-3,2-2,2-3,2-4,2-5,2-4,2-3,2-5,2-4,2-3,2-5,2-4,2-5,2-3,2-4,2-3,2-4,2-5,2-4,2-3,2-5,2-2,2-4,2-5,2-3,2-4,2-3,2-4,2-5,2-4,2-3,2-5,2-4,2-3,2-5,2-4,2-5,2-3,2-4,2-3,2-4,2-5,2-4,2-3,2-5,2-4,2-3,2-5,2-4,2-3,2-5,2-4,2-3,3-11B,3-11A,3-10,3-11A,3-10,3-11B,3-11A,3-10,3-11A,3-10,3-11B,2-2,2-1,1-1,3-6,1-1,2-1,1-1,2-2,1-1,4-11B,1-1,3-2A,1-1,2-2,1-1,2-1,1-1,2-2,1-1,4-11B,1-1,4-11B,1-1,2-2,2-1,1-1,2-2,1-1,2-2,1-1,2-1,1-1,2-3,2-4,2-5,4-11B,1-1,2-2,2-1,1-1,2-2,1-1,3-6,1-1,3-2A,1-1,2-2,1-1,3-2A,1-1,2-2,1-1,2-1,1-1,2-1,1-1,2-3,2-4,2-5,3-6,1-1,4-11B,2-2,1-1,2-2,1-1,3-7A,1-1,2-1,1-1,3-6,1-1,2-2,1-1,2-2,1-1,2-2,1-1,3-2A,2-3,1-1,2-2,1-1,3-2A,1-1,2-2,1-1,2-1,2-3,2-2,2-1,2-5",167,D,major
         if not isinstance(forteclass_sequence, str):
             raise ValueError("Expected forteclass_sequence as a string (comma-separated)")
         
+        # normalized = self.normalize_sequence(forteclass_sequence)
         # Combine sequence + mode just like training
-        combined_input = f"{forteclass_sequence},{mode}"
+        combined_input = f"{forteclass_sequence},{mode},{tonic}"
 
         # Pipeline handles vectorization + prediction
         pred = self._emotion_model.predict([combined_input])[0]
+        
+        self.debug_prediction(forteclass_sequence, mode)
+
         return pred
 
     def evaluate(self) -> dict:
@@ -183,6 +187,17 @@ class RandomForestService:
         y_pred = clf.predict(X_vect)
         print("Predicted label:", y_pred[0])
         return y_pred[0]
+    
+    # def normalize_sequence(self, seq_str: str, target_len: int = 125) -> str:
+    #     tokens = [t for t in (s.strip() for s in seq_str.split(',')) if t != ""]
+    #     if not tokens:
+    #         return ','.join(['PAD'] * target_len)
 
+    #     if len(tokens) >= target_len:
+    #         return ','.join(tokens[:target_len])
 
-
+    #     # build blocks of the original token block
+    #     out = []
+    #     while len(out) < target_len:
+    #         out.extend(tokens)
+    #     return ','.join(out[:target_len])
