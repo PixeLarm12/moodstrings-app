@@ -79,6 +79,7 @@ def progression_info(chordProgression, tempo, file):
             else:
                 relative_scales = None
                 scale = None
+                
             chordsForteClass = midi_service.extract_chord_progression_forteclass()
 
             emotion = ai_service.rf_predict(chordsForteClass[:-1], key_info["mode"], key_info["tonic"])

@@ -4,7 +4,7 @@ from src.services.KNNService import KNNService
 from src.services.SVMService import SVMService
 from src.utils.StringUtil import get_emotion, get_emotion_description
 
-class AIService:
+class AIService: 
     def rf_predict(self, forte_sequence: str, mode: str, tonic: str = None) -> str:
         rf_service = RandomForestService() 
         emotion = rf_service.predict(forte_sequence, mode, tonic)
@@ -12,9 +12,10 @@ class AIService:
 
         return {
             "model_used": "Random Forest",
-            "content": get_emotion(emotion),
+            "content": get_emotion(emotion["emotion"]),
             "evaluation": evaluation,
-            "description": get_emotion_description(emotion)
+            "description": get_emotion_description(emotion["emotion"]),
+            "emotion_proba": emotion["probabilities"]
         }
     
     def debug_prediction(self, forte_sequence, mode):

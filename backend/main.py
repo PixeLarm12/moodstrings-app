@@ -5,6 +5,7 @@ from src.controllers import AudioController as audio_controller
 from src.controllers import AdminController as admin_controller
 from src.utils import StringUtil
 from music21 import chord as m21Chord, harmony as m21Harmony
+from src.services.AITrainingService import AITrainingService
 
 app = FastAPI()
 
@@ -38,3 +39,19 @@ async def download_midi(uploaded_file: UploadFile):
 @app.post("/download-sheet")
 async def download_sheet(uploaded_file: UploadFile):
     return await audio_controller.get_musical_sheet_to_download(uploaded_file)
+
+@app.get("/split-dataset")
+def split_dataset():
+    service = AITrainingService(True);
+    
+    return {
+        "message": "spliting dataset"
+    }
+
+@app.get("/train-rf")
+def train_rf():
+    service = AITrainingService();
+    
+    return {
+        "message": "training random forest"
+    }
