@@ -6,6 +6,7 @@ from src.controllers import AdminController as admin_controller
 from src.utils import StringUtil
 from music21 import chord as m21Chord, harmony as m21Harmony
 from src.services.AITrainingService import AITrainingService
+from src.services.RandomForestService import RandomForestService
 
 app = FastAPI()
 
@@ -152,4 +153,14 @@ def train_rf_full_ngrams():
     
     return {
         "message": "training full ngrams random forest"
+    }
+
+@app.get("/find-evaluation")
+def find_evaluation():
+    service = RandomForestService();
+    evaluation = service.evaluate()
+    # service.predict("3-11B,3-11B,3-11B,3-11B,3-11B,3-11B,3-11B,3-11", "major")
+    
+    return {
+        "evaluation_result": evaluation
     }
