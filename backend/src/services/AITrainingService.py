@@ -29,6 +29,11 @@ NGRAMS_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'ngrams_train_dataset.csv'
 NGRAMS_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'ngrams_test_dataset.csv')
 RF_NGRAMS_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_ngrams_v1.pkl')
 
+FULL_NGRAMS_DATASET_PATH = os.path.join(DATASET_DIR, 'full_ngrams_dataset.csv')  
+FULL_NGRAMS_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'full_ngrams_train_dataset.csv')
+FULL_NGRAMS_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'full_ngrams_test_dataset.csv')
+RF_FULL_NGRAMS_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_full_ngrams_v1.pkl')
+
 class AITrainingService:
 
     def __init__(self, action: str = None):
@@ -400,95 +405,6 @@ class AITrainingService:
             "test_samples": test_df.shape[0]
         }
     
-    # def train_ngrams_model(self):
-    #     """
-    #     Train the Random Forest using N-grams + SVD + LDA features.
-    #     Saves model into RF_NGRAMS_MODEL_PATH.
-    #     """
-    #     if not os.path.exists(NGRAMS_TRAIN_DATASET_PATH):
-    #         raise FileNotFoundError(
-    #             f"N-grams train dataset missing: {NGRAMS_TRAIN_DATASET_PATH}\n"
-    #             f"➡️ Run split_ngrams_dataset() first."
-    #         )
-
-    #     df = pd.read_csv(NGRAMS_TRAIN_DATASET_PATH)
-
-    #     print(f"📚 Training N-GRAMS model with {df.shape[0]} samples...")
-
-    #     X = df["ngrams_input"]
-    #     y = df["emotion"]
-
-    #     print("🔧 Building N-GRAMS pipeline (Vectorizer + SVD + LDA + RF)...")
-
-    #     vectorizer = CountVectorizer(
-    #         token_pattern=r"[^, ]+",
-    #         ngram_range=(1, 4),
-    #         lowercase=False,
-    #         max_features=12000
-    #     )
-
-    #     svd = TruncatedSVD(
-    #         n_components=150,
-    #         random_state=42
-    #     )
-
-    #     lda = LatentDirichletAllocation(
-    #         n_components=12,
-    #         learning_method="batch",
-    #         max_iter=20,
-    #         random_state=42,
-    #         n_jobs=-1
-    #     )
-
-    #     # Combined feature extraction
-    #     features = FeatureUnion([
-    #         ("svd", Pipeline([
-    #             ("vect", vectorizer),
-    #             ("svd", svd)
-    #         ])),
-    #         ("lda", Pipeline([
-    #             ("vect", vectorizer),
-    #             ("lda", lda)
-    #         ]))
-    #     ])
-
-    #     # Final classifier
-    #     rf = RandomForestClassifier(
-    #         n_estimators=500,
-    #         max_depth=25,
-    #         min_samples_leaf=2,
-    #         n_jobs=-1,
-    #         class_weight="balanced",
-    #         max_features="sqrt",
-    #         random_state=42
-    #     )
-
-    #     # Full pipeline
-    #     pipeline = Pipeline([
-    #         ("features", features),
-    #         ("clf", rf)
-    #     ])
-
-    #     print("🚀 Training N-GRAMS model...")
-    #     pipeline.fit(X, y)
-    #     print("✅ N-GRAMS model training complete!")
-
-    #     # Save individual components for reload compatibility
-    #     package = {
-    #         "vectorizer": vectorizer,
-    #         "svd": svd,
-    #         "lda": lda,
-    #         "model": rf
-    #     }
-
-    #     os.makedirs(os.path.dirname(RF_NGRAMS_MODEL_PATH), exist_ok=True)
-
-    #     joblib.dump(package, RF_NGRAMS_MODEL_PATH, compress=3)
-
-    #     print(f"💾 N-GRAMS model saved: {RF_NGRAMS_MODEL_PATH}")
-
-    #     self._ngrams_emotion_model = pipeline
-
     def train_ngrams_model(self):
         print("📘 Loading dataset...")
         df = pd.read_csv(NGRAMS_TRAIN_DATASET_PATH)
@@ -514,11 +430,12 @@ class AITrainingService:
                 random_state=42
             )),
             ("clf", RandomForestClassifier(
-                n_estimators=500,
-                max_depth=25,
+                n_estimators=800,
+                max_depth=30,
                 min_samples_leaf=2,
-                class_weight="balanced",
+                min_samples_split=4,
                 n_jobs=-1,
+                max_features="sqrt",
                 random_state=42
             ))
         ])
