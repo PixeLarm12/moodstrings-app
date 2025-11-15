@@ -23,6 +23,13 @@ NEW_TRAIN_DATASET_PATH = os.path.join(NEW_DATASET_DIR, 'train_dataset.csv')
 NEW_TEST_DATASET_PATH = os.path.join(NEW_DATASET_DIR, 'test_dataset.csv')
 NEW_RF_MODEL_PATH = os.path.join(NEW_MODELS_DIR, 'random_forest_v1.pkl')
 
+CHUNK_MODELS_DIR = (BASE_DIR / '..' / 'TrainedModels').resolve()
+CHUNK_DATASET_DIR = (BASE_DIR / '..' / 'lucas-dataset').resolve()
+
+CHUNK_TRAIN_DATASET_PATH = os.path.join(CHUNK_DATASET_DIR, 'chunk_train_dataset.csv')
+CHUNK_TEST_DATASET_PATH = os.path.join(CHUNK_DATASET_DIR, 'chunk_test_dataset.csv')
+CHUNK_RF_MODEL_PATH = os.path.join(CHUNK_MODELS_DIR, 'random_forest_chunked_v1.pkl')
+
 
 class RandomForestService:
     """
@@ -36,13 +43,15 @@ class RandomForestService:
     def __init__(self):
         self._emotion_model = None
         # model we will actually use (from AITrainingService)
-        self.model_path = os.path.abspath(NEW_RF_MODEL_PATH)
+        # self.model_path = os.path.abspath(NEW_RF_MODEL_PATH)
+        self.model_path = os.path.abspath(CHUNK_RF_MODEL_PATH)
         self.vectorizer = None
         self.classifier = None
 
         if os.path.exists(self.model_path):
             print(f"🔹 Found trained model at: {self.model_path}")
-            self.load_model()
+            # self.load_model()
+            self.load_chunk_model()
         else:
             raise FileNotFoundError(
                 f"Trained model not found at {self.model_path}. "
@@ -74,6 +83,26 @@ class RandomForestService:
         print(f"   - Vectorizer vocabulary size: {len(self.vectorizer.vocabulary_)}")
         print(f"   - Classes: {list(self.classifier.classes_)}")
 
+    def load_chunk_model(self):
+        pkg = joblib.load(CHUNK_RF_MODEL_PATH)
+
+        if not isinstance(pkg, dict) or "vectorizer" not in pkg or "model" not in pkg:
+            raise ValueError("Chunked model package is invalid. Expected dict with 'vectorizer' and 'model'.")
+
+        self.chunk_vectorizer = pkg["vectorizer"]
+        self.chunk_classifier = pkg["model"]
+
+        # Build pipeline
+        self._chunk_model = Pipeline([
+            ("vect", self.chunk_vectorizer),
+            ("clf", self.chunk_classifier)
+        ])
+
+        print("✅ Chunked model loaded.")
+        print(f"   - Vocabulary size: {len(self.chunk_vectorizer.vocabulary_)}")
+        print(f"   - Classes: {list(self.chunk_classifier.classes_)}")
+
+
     # -----------------------
     # Predict
     # -----------------------
@@ -104,6 +133,26 @@ class RandomForestService:
             "probabilities": {c: float(p) for c, p in zip(classes, probs)}
         }
         return result
+    
+    def predict_chunk(self, forteclass_sequence: str, mode: str):
+        if self._chunk_model is None:
+            raise ValueError("Chunked model not loaded. Run load_chunk_model() first.")
+
+        if not isinstance(forteclass_sequence, str) or not isinstance(mode, str):
+            raise ValueError("forteclass_sequence and mode must be strings.")
+
+        combined = f"{forteclass_sequence} | {mode}"
+
+        X = [combined]
+        probs = self._chunk_model.predict_proba(X)[0]
+        pred = self._chunk_model.predict(X)[0]
+        classes = list(self.chunk_classifier.classes_)
+
+        return {
+            "emotion": str(pred),
+            "probabilities": {c: float(p) for c, p in zip(classes, probs)}
+        }
+
 
     # -----------------------
     # Evaluate using new test dataset created by AITrainingService.split_raw_dataset()
@@ -137,6 +186,39 @@ class RandomForestService:
             "report": report,
             "n_samples": len(X)
         }
+    
+    def evaluate_chunk(self) -> dict:
+        if self._chunk_model is None:
+            raise ValueError("Chunked model not loaded. Run load_chunk_model() first.")
+
+        if not os.path.exists(CHUNK_TEST_DATASET_PATH):
+            raise FileNotFoundError(f"Chunked test dataset not found: {CHUNK_TEST_DATASET_PATH}")
+
+        df = pd.read_csv(CHUNK_TEST_DATASET_PATH)
+
+        # Clean rows
+        df = df.dropna(subset=['forteclass_sequence', 'mode'])
+        df = df[df['forteclass_sequence'].str.len() > 0]
+
+        X = (df['forteclass_sequence'] + "," + df['mode']).values
+        y_true = df['emotion'].values
+
+        print(f"🔍 Evaluating CHUNKED model on {len(X)} samples...")
+
+        y_pred = self._chunk_model.predict(X)
+
+        acc = accuracy_score(y_true, y_pred) * 100
+        report = classification_report(y_true, y_pred, output_dict=True)
+
+        print(f"🎯 CHUNKED Accuracy: {acc:.2f}%")
+        print(classification_report(y_true, y_pred))
+
+        return {
+            "accuracy": f"{acc:.2f}",
+            "report": report,
+            "n_samples": len(X)
+        }
+
 
     # -----------------------
     # Dataset distribution (quick check)

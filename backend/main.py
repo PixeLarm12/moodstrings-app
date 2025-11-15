@@ -42,8 +42,9 @@ async def download_sheet(uploaded_file: UploadFile):
 
 @app.get("/split-dataset")
 def split_dataset():
-    service = AITrainingService(True);
-    
+    service = AITrainingService();
+    service.split_raw_dataset()
+
     return {
         "message": "spliting dataset"
     }
@@ -51,7 +52,35 @@ def split_dataset():
 @app.get("/train-rf")
 def train_rf():
     service = AITrainingService();
+    service.train_model()
     
     return {
         "message": "training random forest"
+    }
+
+@app.get("/chunk-dataset")
+def chunk_dataset():
+    service = AITrainingService("chunk");
+    service.chunk_dataset_based_on_forteclasses_average()
+    
+    return {
+        "message": "chunking random forest"
+    }
+
+@app.get("/split-chunk-dataset")
+def split_chunk_dataset():
+    service = AITrainingService();
+    service.split_chunk_dataset()
+    
+    return {
+        "message": "spliting chunk dataset"
+    }
+
+@app.get("/train-rf-chunked")
+def train_rf_chunked():
+    service = AITrainingService();
+    service.train_chunk_model()
+    
+    return {
+        "message": "training chunked random forest"
     }

@@ -17,21 +17,15 @@ TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'train_dataset.csv')
 TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'test_dataset.csv')
 RF_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_v1.pkl')
 
+CHUNK_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_dataset.csv')  
+CHUNK_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'chunk_train_dataset.csv')
+CHUNK_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'chunk_test_dataset.csv')
+RF_CHUNKED_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_chunked_v1.pkl')
+
 class AITrainingService:
 
-    def __init__(self, split: bool = False):
+    def __init__(self, action: str = None):
         self.rf_model_path = os.path.abspath(RF_MODEL_PATH)
-
-        # first of all, split raw_dataset into test_dataset.csv (15%) and train_dataset.csv (85%)
-        if not split:
-            if os.path.exists(self.rf_model_path):
-                print(f"🔹 Existing model found at: {self.rf_model_path}")
-                self.load_model()
-            else:
-                print("⚠️ Model not found — training a new one...")
-                self.train_model()
-        else:
-            self.split_raw_dataset()
 
     # -------------------------------------------------------------
     # SPLIT RAW DATASET
@@ -88,7 +82,7 @@ class AITrainingService:
         )
 
         rf = RandomForestClassifier(
-            n_estimators=500,
+            n_estimators=200,
             max_depth=None,
             n_jobs=-1,
             class_weight="balanced"
@@ -161,4 +155,185 @@ class AITrainingService:
             "report": report,
             "total_test_samples": test_df.shape[0]
         }
+    
+    # -------------------------------------------------------------
+    # CHUNK DATASET BASED ON FORTECLASS AVERAGE
+    # -------------------------------------------------------------
+    def chunk_dataset_based_on_forteclasses_average(self, min_chunk=12, max_chunk=20) -> str:
+        if not os.path.exists(RAW_DATASET_PATH):
+            raise FileNotFoundError(f"Raw dataset not found: {RAW_DATASET_PATH}")
+
+        df = pd.read_csv(RAW_DATASET_PATH)
+
+        if "num_classes" not in df.columns:
+            raise ValueError("raw_dataset.csv must contain a num_classes column.")
+
+        print(f"📊 Loaded RAW dataset: {df.shape[0]} samples")
+        print("🔍 Analyzing num_classes distribution...")
+
+        min_val = df["num_classes"].min()
+        max_val = df["num_classes"].max()
+        avg_val = df["num_classes"].mean()
+        median_val = df["num_classes"].median()
+
+        print(f"   ➤ Min: {min_val}")
+        print(f"   ➤ Max: {max_val}")
+        print(f"   ➤ Avg: {avg_val:.2f}")
+        print(f"   ➤ Median: {median_val}")
+
+        # -------------------------------------------------
+        # Determine chunk size
+        # -------------------------------------------------
+        # Logic:
+        # If average progression is too long (>60), chunk = ~15
+        # If moderately long (>40), chunk = ~18
+        # Otherwise use median in range [min_chunk, max_chunk]
+
+        if avg_val > 60:
+            chunk_size = 15
+        elif avg_val > 40:
+            chunk_size = 18
+        else:
+            chunk_size = int(max(min(avg_val // 1, max_chunk), min_chunk))
+
+        print(f"\n📐 Using chunk_size = {chunk_size}")
+
+        new_rows = []
+
+        # -------------------------------------------------
+        # Walk through the dataset row by row
+        # -------------------------------------------------
+        for idx, row in df.iterrows():
+            full_seq = row["forteclass_sequence"]
+            emotion = row["emotion"]
+            mode = row["mode"]
+
+            # Split forteclass string into list
+            tokens = [t for t in full_seq.split(",") if t.strip() != ""]
+
+            # If small, keep row unchanged
+            if len(tokens) <= chunk_size:
+                new_rows.append({
+                    "forteclass_sequence": ",".join(tokens),
+                    "num_classes": len(tokens),
+                    "mode": mode,
+                    "emotion": emotion
+                })
+                continue
+
+            # If long → split into chunks
+            for i in range(0, len(tokens), chunk_size):
+                sub = tokens[i:i + chunk_size]
+                if len(sub) == 0:
+                    continue
+
+                new_rows.append({
+                    "forteclass_sequence": ",".join(sub),
+                    "num_classes": len(sub),
+                    "mode": mode,
+                    "emotion": emotion
+                })
+
+        # Convert to dataframe
+        out_df = pd.DataFrame(new_rows)
+
+        CHUNKED_PATH = os.path.join(DATASET_DIR, "chunked_dataset.csv")
+        out_df.to_csv(CHUNKED_PATH, index=False)
+
+        print(f"\n✅ Chunking complete!")
+        print(f"📄 New dataset saved: {CHUNKED_PATH}")
+        print(f"🆕 Total rows: {out_df.shape[0]} (was {df.shape[0]})")
+        print(f"📉 Average num_classes AFTER chunking: {out_df['num_classes'].mean():.2f}")
+
+        return CHUNKED_PATH
+    
+    # -------------------------------------------------------------
+    # SPLIT CHUNK DATASET
+    # -------------------------------------------------------------
+    def split_chunk_dataset(self, test_size=0.2, random_state=42) -> dict:
+        if not os.path.exists(CHUNK_DATASET_PATH):
+            raise FileNotFoundError(f"Chunk dataset not found: {CHUNK_DATASET_PATH}")
+
+        df = pd.read_csv(CHUNK_DATASET_PATH)
+
+        print(f"📊 Loaded CHUNK dataset: {df.shape[0]} samples")
+        print(f"📤 Splitting into train/test ({int((1 - test_size) * 100)}% / {int(test_size * 100)}%)")
+
+        train_df, test_df = train_test_split(
+            df,
+            test_size=test_size,
+            random_state=random_state,
+            stratify=df["emotion"]
+        )
+
+        train_df.to_csv(CHUNK_TRAIN_DATASET_PATH, index=False)
+        test_df.to_csv(CHUNK_TEST_DATASET_PATH, index=False)
+
+        print(f"✅ Train dataset saved: {CHUNK_TRAIN_DATASET_PATH} ({train_df.shape[0]} samples)")
+        print(f"🧪 Test dataset saved:  {CHUNK_TEST_DATASET_PATH} ({test_df.shape[0]} samples)")
+
+        return {
+            "train_samples": train_df.shape[0],
+            "test_samples": test_df.shape[0]
+        }
+    
+    # -------------------------------------------------------------
+    # TRAIN CHUNKED MODEL
+    # -------------------------------------------------------------
+    def train_chunk_model(self):
+        if not os.path.exists(CHUNK_TRAIN_DATASET_PATH):
+            raise FileNotFoundError(
+                f"Chunked train dataset missing: {CHUNK_TRAIN_DATASET_PATH}\n"
+                f"➡️ Run split_chunk_dataset() first."
+            )
+
+        train_df = pd.read_csv(CHUNK_TRAIN_DATASET_PATH)
+
+        print(f"📚 Training CHUNKED model with {train_df.shape[0]} samples...")
+
+        # ---------- FEATURES ----------
+        X = train_df["forteclass_sequence"] + " | " + train_df["mode"]
+        y = train_df["emotion"]
+
+        print("🔧 Building CHUNKED pipeline (CountVectorizer + RandomForest)...")
+
+        vectorizer = CountVectorizer(
+            analyzer="word",
+            ngram_range=(1, 4),
+            token_pattern=r"[^, ]+"
+        )
+
+        # ~50%
+        rf = RandomForestClassifier(
+            max_depth=30,
+            n_estimators=1000,
+            min_samples_leaf=2,
+            min_samples_split=4,
+            n_jobs=-1,
+            max_features="sqrt",
+        )
+ 
+        pipeline = Pipeline([
+            ("vect", vectorizer),
+            ("clf", rf)
+        ])
+
+        print("🚀 Training CHUNKED model...")
+        pipeline.fit(X, y)
+        print("✅ Chunked training complete!")
+
+        # Prepare saving
+        package = {
+            "vectorizer": pipeline.named_steps["vect"],
+            "model": pipeline.named_steps["clf"]
+        }
+
+        os.makedirs(os.path.dirname(RF_CHUNKED_MODEL_PATH), exist_ok=True)
+
+        joblib.dump(package, RF_CHUNKED_MODEL_PATH, compress=3)
+
+        print(f"💾 CHUNKED model saved in: {RF_CHUNKED_MODEL_PATH}")
+
+        # Keep in memory
+        self._chunk_emotion_model = pipeline
 
