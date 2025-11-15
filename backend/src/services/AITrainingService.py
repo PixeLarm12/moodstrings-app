@@ -6,6 +6,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.decomposition import TruncatedSVD, LatentDirichletAllocation
+from sklearn.pipeline import FeatureUnion
 import joblib
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -21,6 +23,11 @@ CHUNK_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_dataset.csv')
 CHUNK_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'chunk_train_dataset.csv')
 CHUNK_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'chunk_test_dataset.csv')
 RF_CHUNKED_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_chunked_v1.pkl')
+
+NGRAMS_DATASET_PATH = os.path.join(DATASET_DIR, 'ngrams_dataset.csv')
+NGRAMS_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'ngrams_train_dataset.csv')
+NGRAMS_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'ngrams_test_dataset.csv')
+RF_NGRAMS_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_ngrams_v1.pkl')
 
 class AITrainingService:
 
@@ -337,3 +344,189 @@ class AITrainingService:
         # Keep in memory
         self._chunk_emotion_model = pipeline
 
+    def build_ngrams_dataset(self) -> str:
+        """
+        Uses the chunked dataset to build the N-grams/LDA-ready dataset.
+        Basically just copies chunked_dataset.csv into a new file but prepares the
+        sequence string in the correct format.
+        """
+        if not os.path.exists(CHUNK_DATASET_PATH):
+            raise FileNotFoundError(
+                f"Chunk dataset missing: {CHUNK_DATASET_PATH}\n"
+                f"➡️ Run chunk_dataset_based_on_forteclasses_average() first."
+            )
+
+        df = pd.read_csv(CHUNK_DATASET_PATH)
+
+        print(f"📊 Building N-GRAMS dataset from {df.shape[0]} chunked samples...")
+
+        # Build the combined token sequence
+        df["ngrams_input"] = df["forteclass_sequence"] + " | " + df["mode"]
+
+        # Save
+        df.to_csv(NGRAMS_DATASET_PATH, index=False)
+
+        print(f"✅ N-GRAMS dataset saved: {NGRAMS_DATASET_PATH}")
+
+        return NGRAMS_DATASET_PATH
+    
+    def split_ngrams_dataset(self, test_size=0.2, random_state=42) -> dict:
+        if not os.path.exists(NGRAMS_DATASET_PATH):
+            raise FileNotFoundError(
+                f"N-grams dataset missing: {NGRAMS_DATASET_PATH}\n"
+                f"➡️ Run build_ngrams_dataset() first."
+            )
+
+        df = pd.read_csv(NGRAMS_DATASET_PATH)
+
+        print(f"📊 Loaded N-GRAMS dataset: {df.shape[0]} samples")
+        print(f"📤 Splitting ({100 - int(test_size*100)}% train / {int(test_size*100)}% test)")
+
+        train_df, test_df = train_test_split(
+            df,
+            test_size=test_size,
+            random_state=random_state,
+            stratify=df["emotion"]
+        )
+
+        train_df.to_csv(NGRAMS_TRAIN_DATASET_PATH, index=False)
+        test_df.to_csv(NGRAMS_TEST_DATASET_PATH, index=False)
+
+        print(f"✅ N-GRAMS train saved: {NGRAMS_TRAIN_DATASET_PATH} ({train_df.shape[0]} samples)")
+        print(f"🧪 N-GRAMS test saved:  {NGRAMS_TEST_DATASET_PATH} ({test_df.shape[0]} samples)")
+
+        return {
+            "train_samples": train_df.shape[0],
+            "test_samples": test_df.shape[0]
+        }
+    
+    # def train_ngrams_model(self):
+    #     """
+    #     Train the Random Forest using N-grams + SVD + LDA features.
+    #     Saves model into RF_NGRAMS_MODEL_PATH.
+    #     """
+    #     if not os.path.exists(NGRAMS_TRAIN_DATASET_PATH):
+    #         raise FileNotFoundError(
+    #             f"N-grams train dataset missing: {NGRAMS_TRAIN_DATASET_PATH}\n"
+    #             f"➡️ Run split_ngrams_dataset() first."
+    #         )
+
+    #     df = pd.read_csv(NGRAMS_TRAIN_DATASET_PATH)
+
+    #     print(f"📚 Training N-GRAMS model with {df.shape[0]} samples...")
+
+    #     X = df["ngrams_input"]
+    #     y = df["emotion"]
+
+    #     print("🔧 Building N-GRAMS pipeline (Vectorizer + SVD + LDA + RF)...")
+
+    #     vectorizer = CountVectorizer(
+    #         token_pattern=r"[^, ]+",
+    #         ngram_range=(1, 4),
+    #         lowercase=False,
+    #         max_features=12000
+    #     )
+
+    #     svd = TruncatedSVD(
+    #         n_components=150,
+    #         random_state=42
+    #     )
+
+    #     lda = LatentDirichletAllocation(
+    #         n_components=12,
+    #         learning_method="batch",
+    #         max_iter=20,
+    #         random_state=42,
+    #         n_jobs=-1
+    #     )
+
+    #     # Combined feature extraction
+    #     features = FeatureUnion([
+    #         ("svd", Pipeline([
+    #             ("vect", vectorizer),
+    #             ("svd", svd)
+    #         ])),
+    #         ("lda", Pipeline([
+    #             ("vect", vectorizer),
+    #             ("lda", lda)
+    #         ]))
+    #     ])
+
+    #     # Final classifier
+    #     rf = RandomForestClassifier(
+    #         n_estimators=500,
+    #         max_depth=25,
+    #         min_samples_leaf=2,
+    #         n_jobs=-1,
+    #         class_weight="balanced",
+    #         max_features="sqrt",
+    #         random_state=42
+    #     )
+
+    #     # Full pipeline
+    #     pipeline = Pipeline([
+    #         ("features", features),
+    #         ("clf", rf)
+    #     ])
+
+    #     print("🚀 Training N-GRAMS model...")
+    #     pipeline.fit(X, y)
+    #     print("✅ N-GRAMS model training complete!")
+
+    #     # Save individual components for reload compatibility
+    #     package = {
+    #         "vectorizer": vectorizer,
+    #         "svd": svd,
+    #         "lda": lda,
+    #         "model": rf
+    #     }
+
+    #     os.makedirs(os.path.dirname(RF_NGRAMS_MODEL_PATH), exist_ok=True)
+
+    #     joblib.dump(package, RF_NGRAMS_MODEL_PATH, compress=3)
+
+    #     print(f"💾 N-GRAMS model saved: {RF_NGRAMS_MODEL_PATH}")
+
+    #     self._ngrams_emotion_model = pipeline
+
+    def train_ngrams_model(self):
+        print("📘 Loading dataset...")
+        df = pd.read_csv(NGRAMS_TRAIN_DATASET_PATH)
+        df = df.dropna(subset=["ngrams_input", "emotion"])
+
+        X = df["ngrams_input"].astype(str)
+        y = df["emotion"].astype(str)
+
+        print("🔧 Building pipeline...")
+
+        pipeline = Pipeline([
+            ("vect", CountVectorizer(
+                lowercase=False,
+                token_pattern="[^, ]+",
+                ngram_range=(1, 4),
+                max_features=12000
+            )),
+            ("lda", LatentDirichletAllocation(
+                n_components=12,
+                max_iter=20,
+                learning_method="batch",
+                n_jobs=-1,
+                random_state=42
+            )),
+            ("clf", RandomForestClassifier(
+                n_estimators=500,
+                max_depth=25,
+                min_samples_leaf=2,
+                class_weight="balanced",
+                n_jobs=-1,
+                random_state=42
+            ))
+        ])
+
+        print("🏋️ Training model (vectorizer → LDA → RF)...")
+        pipeline.fit(X, y)
+
+        print("💾 Saving FULL pipeline...")
+        joblib.dump(pipeline, RF_NGRAMS_MODEL_PATH)
+
+        print(f"✅ Training complete. Saved pipeline to:\n{RF_NGRAMS_MODEL_PATH}")

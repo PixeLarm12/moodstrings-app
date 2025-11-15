@@ -7,8 +7,8 @@ from src.utils.StringUtil import get_emotion, get_emotion_description
 class AIService: 
     def rf_predict(self, forte_sequence: str, mode: str, tonic: str = None) -> str:
         rf_service = RandomForestService() 
-        emotion = rf_service.predict_chunk(forte_sequence, mode)
-        evaluation = rf_service.evaluate_chunk() 
+        emotion = rf_service.predict_ngrams(forte_sequence, mode)
+        evaluation = rf_service.evaluate_ngrams() 
 
         return {
             "model_used": "Random Forest",

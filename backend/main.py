@@ -49,6 +49,10 @@ def split_dataset():
         "message": "spliting dataset"
     }
 
+
+"""
+Routes to train the basic random forest model
+"""
 @app.get("/train-rf")
 def train_rf():
     service = AITrainingService();
@@ -58,9 +62,13 @@ def train_rf():
         "message": "training random forest"
     }
 
-@app.get("/chunk-dataset")
-def chunk_dataset():
-    service = AITrainingService("chunk");
+
+"""
+Routes to create, split and train the chunked random forest dataset and model
+"""
+@app.get("/create-chunk-dataset")
+def create_chunk_dataset():
+    service = AITrainingService();
     service.chunk_dataset_based_on_forteclasses_average()
     
     return {
@@ -83,4 +91,35 @@ def train_rf_chunked():
     
     return {
         "message": "training chunked random forest"
+    }
+
+
+"""
+Routes to create, split and train the basic random forest dataset and model with N-grams and LDA
+"""
+@app.get("/create-ngrams-dataset")
+def create_ngrams_dataset():
+    service = AITrainingService();
+    service.build_ngrams_dataset()
+    
+    return {
+        "message": "building ngrams dataset"
+    }
+
+@app.get("/split-ngrams-dataset")
+def split_ngrams_dataset():
+    service = AITrainingService();
+    service.split_ngrams_dataset()
+    
+    return {
+        "message": "spliting ngrams dataset"
+    }
+
+@app.get("/train-rf-ngrams")
+def train_rf_ngrams():
+    service = AITrainingService();
+    service.train_ngrams_model()
+    
+    return {
+        "message": "training ngrams random forest"
     }
