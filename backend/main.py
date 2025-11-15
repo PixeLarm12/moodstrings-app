@@ -95,7 +95,7 @@ def train_rf_chunked():
 
 
 """
-Routes to create, split and train the basic random forest dataset and model with N-grams and LDA
+Routes to create, split and train the chunked random forest dataset and model with N-grams and LDA
 """
 @app.get("/create-ngrams-dataset")
 def create_ngrams_dataset():
@@ -122,4 +122,34 @@ def train_rf_ngrams():
     
     return {
         "message": "training ngrams random forest"
+    }
+
+"""
+Routes to create, split and train the basic random forest dataset and model with N-grams and LDA
+"""
+@app.get("/create-full-ngrams-dataset")
+def create_full_ngrams_dataset():
+    service = AITrainingService();
+    service.build_full_ngrams_dataset()
+    
+    return {
+        "message": "building full ngrams dataset"
+    }
+
+@app.get("/split-full-ngrams-dataset")
+def split_full_ngrams_dataset():
+    service = AITrainingService();
+    service.split_full_ngrams_dataset()
+    
+    return {
+        "message": "spliting full ngrams dataset"
+    }
+
+@app.get("/train-rf-full-ngrams")
+def train_rf_full_ngrams():
+    service = AITrainingService();
+    service.train_full_ngrams_model()
+    
+    return {
+        "message": "training full ngrams random forest"
     }

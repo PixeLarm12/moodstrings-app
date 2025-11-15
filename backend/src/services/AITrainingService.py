@@ -447,3 +447,97 @@ class AITrainingService:
         joblib.dump(pipeline, RF_NGRAMS_MODEL_PATH)
 
         print(f"✅ Training complete. Saved pipeline to:\n{RF_NGRAMS_MODEL_PATH}")
+
+    def build_full_ngrams_dataset(self) -> str:
+        if not os.path.exists(RAW_DATASET_PATH):
+            raise FileNotFoundError(
+                f"Chunk dataset missing: {RAW_DATASET_PATH}\n"
+                f"➡️ Run chunk_dataset_based_on_forteclasses_average() first."
+            )
+
+        df = pd.read_csv(RAW_DATASET_PATH)
+
+        print(f"📊 Building FULL N-GRAMS dataset from {df.shape[0]} samples...")
+
+        # Build the combined token sequence
+        df["ngrams_input"] = df["forteclass_sequence"] + " | " + df["mode"]
+
+        # Save
+        df.to_csv(FULL_NGRAMS_DATASET_PATH, index=False)
+
+        print(f"✅ N-GRAMS dataset saved: {FULL_NGRAMS_DATASET_PATH}")
+
+        return FULL_NGRAMS_DATASET_PATH
+    
+    def split_full_ngrams_dataset(self, test_size=0.15, random_state=42) -> dict:
+        if not os.path.exists(FULL_NGRAMS_DATASET_PATH):
+            raise FileNotFoundError(
+                f"N-grams dataset missing: {FULL_NGRAMS_DATASET_PATH}\n"
+                f"➡️ Run build_full_ngrams_dataset() first."
+            )
+
+        df = pd.read_csv(FULL_NGRAMS_DATASET_PATH)
+
+        print(f"📊 Loaded FULL N-GRAMS dataset: {df.shape[0]} samples")
+        print(f"📤 Splitting ({100 - int(test_size*100)}% train / {int(test_size*100)}% test)")
+
+        train_df, test_df = train_test_split(
+            df,
+            test_size=test_size,
+            random_state=random_state,
+            stratify=df["emotion"]
+        )
+
+        train_df.to_csv(FULL_NGRAMS_TRAIN_DATASET_PATH, index=False)
+        test_df.to_csv(FULL_NGRAMS_TEST_DATASET_PATH, index=False)
+
+        print(f"✅ FULL N-GRAMS train saved: {FULL_NGRAMS_TRAIN_DATASET_PATH} ({train_df.shape[0]} samples)")
+        print(f"🧪 FULL N-GRAMS test saved:  {FULL_NGRAMS_TEST_DATASET_PATH} ({test_df.shape[0]} samples)")
+
+        return {
+            "train_samples": train_df.shape[0],
+            "test_samples": test_df.shape[0]
+        }
+    
+    def train_full_ngrams_model(self):
+        print("📘 Loading dataset...")
+        df = pd.read_csv(FULL_NGRAMS_TRAIN_DATASET_PATH)
+        df = df.dropna(subset=["ngrams_input", "emotion"])
+
+        X = df["ngrams_input"].astype(str)
+        y = df["emotion"].astype(str)
+
+        print("🔧 Building pipeline...")
+
+        pipeline = Pipeline([
+            ("vect", CountVectorizer(
+                lowercase=False,
+                token_pattern="[^, ]+",
+                ngram_range=(1, 4),
+                max_features=12000
+            )),
+            ("lda", LatentDirichletAllocation(
+                n_components=12,
+                max_iter=20,
+                learning_method="batch",
+                n_jobs=-1,
+                random_state=42
+            )),
+            ("clf", RandomForestClassifier(
+                n_estimators=800,
+                max_depth=30,
+                min_samples_leaf=2,
+                min_samples_split=4,
+                n_jobs=-1,
+                max_features="sqrt",
+                random_state=42
+            ))
+        ])
+
+        print("🏋️ Training model (vectorizer → LDA → RF)...")
+        pipeline.fit(X, y)
+
+        print("💾 Saving FULL pipeline...")
+        joblib.dump(pipeline, RF_FULL_NGRAMS_MODEL_PATH)
+
+        print(f"✅ Training complete. Saved pipeline to:\n{RF_FULL_NGRAMS_MODEL_PATH}")

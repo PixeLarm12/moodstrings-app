@@ -36,6 +36,11 @@ NGRAMS_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'ngrams_train_dataset.csv'
 NGRAMS_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'ngrams_test_dataset.csv')
 RF_NGRAMS_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_ngrams_v1.pkl')
 
+FULL_NGRAMS_DATASET_PATH = os.path.join(DATASET_DIR, 'full_ngrams_dataset.csv')  
+FULL_NGRAMS_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'full_ngrams_train_dataset.csv')
+FULL_NGRAMS_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'full_ngrams_test_dataset.csv')
+RF_FULL_NGRAMS_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_full_ngrams_v1.pkl')
+
 class RandomForestService:
     """
     Loads a pretrained RandomForest model saved by AITrainingService and exposes:
@@ -50,7 +55,8 @@ class RandomForestService:
         # model we will actually use (from AITrainingService)
         # self.model_path = os.path.abspath(NEW_RF_MODEL_PATH)
         # self.model_path = os.path.abspath(CHUNK_RF_MODEL_PATH)
-        self.model_path = os.path.abspath(RF_NGRAMS_MODEL_PATH)
+        # self.model_path = os.path.abspath(RF_NGRAMS_MODEL_PATH)
+        self.model_path = os.path.abspath(RF_FULL_NGRAMS_MODEL_PATH)
         self.vectorizer = None
         self.classifier = None
 
@@ -58,8 +64,9 @@ class RandomForestService:
             print(f"🔹 Found trained model at: {self.model_path}")
             # self.load_model()
             # self.load_chunk_model()
-            # self.load_ngrams_model()
-            self._emotion_model = joblib.load(RF_NGRAMS_MODEL_PATH)
+            # self._emotion_model = joblib.load(RF_NGRAMS_MODEL_PATH)
+            self._emotion_model = joblib.load(RF_FULL_NGRAMS_MODEL_PATH)
+            # self._emotion_model = self.load_full_ngrams_model()
         else:
             raise FileNotFoundError(
                 f"Trained model not found at {self.model_path}. "
@@ -109,25 +116,6 @@ class RandomForestService:
         print("✅ Chunked model loaded.")
         print(f"   - Vocabulary size: {len(self.chunk_vectorizer.vocabulary_)}")
         print(f"   - Classes: {list(self.chunk_classifier.classes_)}")
-
-    def load_ngrams_model(self):
-        """
-        Loads the N-Grams + LDA RandomForest model.
-        The joblib file must contain: { vectorizer, lda, model }.
-        """
-        if not os.path.exists(RF_NGRAMS_MODEL_PATH):
-            raise FileNotFoundError(f"N-Grams model file missing: {RF_NGRAMS_MODEL_PATH}")
-
-        package = joblib.load(RF_NGRAMS_MODEL_PATH)
-
-        self._emotion_model = {
-            "vectorizer": package["vectorizer"],
-            "lda": package["lda"],
-            "model": package["model"]
-        }
-
-        print("✅ N-Grams + LDA model loaded successfully")
-
 
     # -----------------------
     # Predict
@@ -180,6 +168,22 @@ class RandomForestService:
         }
 
     def predict_ngrams(self, forteclass_sequence: str, mode: str, tonic: str = None):
+        if self._emotion_model is None:
+            raise ValueError("Model not loaded.")
+
+        # must match training format
+        combined = f"{forteclass_sequence} | {mode} | {tonic}"
+
+        pred = self._emotion_model.predict([combined])[0]
+        probs = self._emotion_model.predict_proba([combined])[0]
+        classes = self._emotion_model.classes_
+
+        return {
+            "emotion": str(pred),
+            "probabilities": {c: float(p) for c, p in zip(classes, probs)}
+        }
+    
+    def predict_full_ngrams(self, forteclass_sequence: str, mode: str, tonic: str = None):
         if self._emotion_model is None:
             raise ValueError("Model not loaded.")
 
@@ -262,6 +266,26 @@ class RandomForestService:
 
     def evaluate_ngrams(self):
         df = pd.read_csv(NGRAMS_TEST_DATASET_PATH)
+        df = df.dropna(subset=["ngrams_input", "emotion"])
+
+        X = df["ngrams_input"].astype(str)
+        y = df["emotion"].astype(str)
+
+        preds = self._emotion_model.predict(X)
+        probs = self._emotion_model.predict_proba(X)
+
+        acc = accuracy_score(y, preds) * 100
+        report = classification_report(y, preds, output_dict=True)
+
+        print(f"🎯 Accuracy: {acc:.2f}%")
+        return {
+            "accuracy": acc,
+            "report": report,
+            "n_samples": len(df)
+        }
+   
+    def evaluate_full_ngrams(self):
+        df = pd.read_csv(FULL_NGRAMS_TEST_DATASET_PATH)
         df = df.dropna(subset=["ngrams_input", "emotion"])
 
         X = df["ngrams_input"].astype(str)
