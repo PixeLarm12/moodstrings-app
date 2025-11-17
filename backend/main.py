@@ -123,3 +123,34 @@ def train_rf_ngrams():
     return {
         "message": "training ngrams random forest"
     }
+
+
+"""
+Routes to create, split and train the balanced chunked random forest dataset and model
+"""
+@app.get("/create-balanced-chunk-dataset")
+def create_balanced_chunk_dataset():
+    service = AITrainingService();
+    service.create_balanced_chunk_dataset()
+    
+    return {
+        "message": "building chunk dataset"
+    }
+
+@app.get("/split-balanced-chunk-dataset")
+def split_balanced_chunk_dataset():
+    service = AITrainingService();
+    service.split_balanced_chunk_dataset()
+    
+    return {
+        "message": "spliting chunk dataset"
+    }
+
+@app.get("/train-rf-balanced")
+def train_rf_balanced():
+    service = AITrainingService();
+    service.train_balanced_chunk_model()
+    
+    return {
+        "message": "training chunk random forest"
+    }

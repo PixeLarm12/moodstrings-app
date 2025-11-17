@@ -29,6 +29,11 @@ NGRAMS_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'ngrams_train_dataset.csv'
 NGRAMS_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'ngrams_test_dataset.csv')
 RF_NGRAMS_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_ngrams_v1.pkl')
 
+BALANCED_PATH = os.path.join(DATASET_DIR, 'balanced_dataset.csv')
+BALANCED_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_train_dataset.csv')
+BALANCED_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_test_dataset.csv')
+RF_BALANCED_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_v1.pkl')
+
 class AITrainingService:
 
     def __init__(self, action: str = None):
@@ -530,3 +535,119 @@ class AITrainingService:
         joblib.dump(pipeline, RF_NGRAMS_MODEL_PATH)
 
         print(f"✅ Training complete. Saved pipeline to:\n{RF_NGRAMS_MODEL_PATH}")
+
+    def create_balanced_chunk_dataset(self) -> str:
+        if not os.path.exists(CHUNK_DATASET_PATH):
+            raise FileNotFoundError(f"Chunk dataset not found: {CHUNK_DATASET_PATH}")
+
+        df = pd.read_csv(CHUNK_DATASET_PATH)
+
+        print(f"📊 Loaded CHUNK dataset: {df.shape[0]} samples")
+        print("🔍 Counting emotion frequencies...")
+
+        counts = df["emotion"].value_counts()
+        print(counts)
+
+        min_count = counts.min()
+        print(f"\n🔎 Minimum class size detected = {min_count}")
+
+        print("✂️ Undersampling all classes to minimum count...")
+
+        balanced_parts = []
+
+        for emotion, emotion_df in df.groupby("emotion"):
+            sampled = emotion_df.sample(
+                n=min_count,
+                replace=False,
+                random_state=42
+            )
+            balanced_parts.append(sampled)
+
+        balanced_df = pd.concat(balanced_parts, axis=0).sample(frac=1, random_state=42)
+
+        balanced_df.to_csv(BALANCED_PATH, index=False)
+
+        print(f"\n✅ Balanced dataset created!")
+        print(f"📄 Saved at: {BALANCED_PATH}")
+        print(f"🆕 Total rows: {balanced_df.shape[0]} (each class = {min_count})")
+
+        return BALANCED_PATH
+
+    def split_balanced_chunk_dataset(self, test_size=0.2, random_state=42) -> dict:
+        if not os.path.exists(BALANCED_PATH):
+            raise FileNotFoundError(f"Balanced chunk dataset not found: {BALANCED_PATH}")
+
+        df = pd.read_csv(BALANCED_PATH)
+
+        print(f"📊 Loaded BALANCED dataset: {df.shape[0]} samples")
+        print(f"📤 Splitting into train/test ({100 - int(test_size*100)}% / {int(test_size*100)}%)")
+
+        train_df, test_df = train_test_split(
+            df,
+            test_size=test_size,
+            random_state=random_state,
+            stratify=df["emotion"]
+        )
+
+        train_df.to_csv(BALANCED_TRAIN_DATASET_PATH, index=False)
+        test_df.to_csv(BALANCED_TEST_DATASET_PATH, index=False)
+
+        print(f"✅ Balanced TRAIN saved: {BALANCED_TRAIN_DATASET_PATH} ({train_df.shape[0]} samples)")
+        print(f"🧪 Balanced TEST saved:  {BALANCED_TEST_DATASET_PATH} ({test_df.shape[0]} samples)")
+
+        return {
+            "train_samples": train_df.shape[0],
+            "test_samples": test_df.shape[0]
+        }
+    
+    def train_balanced_chunk_model(self):
+        if not os.path.exists(BALANCED_TRAIN_DATASET_PATH):
+            raise FileNotFoundError(
+                f"Balanced chunk train dataset missing: {BALANCED_TRAIN_DATASET_PATH}\n"
+                f"➡️ Run split_balanced_chunk_dataset() first."
+            )
+
+        df = pd.read_csv(BALANCED_TRAIN_DATASET_PATH)
+
+        print(f"📚 Training BALANCED CHUNK model with {df.shape[0]} samples...")
+
+        X = df["forteclass_sequence"] + " | " + df["mode"]
+        y = df["emotion"]
+
+        vectorizer = CountVectorizer(
+            analyzer="word",
+            ngram_range=(1, 4),
+            token_pattern=r"[^, ]+"
+        )
+
+        rf = RandomForestClassifier(
+            n_estimators=1000,
+            max_depth=30,
+            min_samples_leaf=2,
+            min_samples_split=4,
+            max_features="sqrt",
+            n_jobs=-1,
+            random_state=42
+        )
+
+        pipeline = Pipeline([
+            ("vect", vectorizer),
+            ("clf", rf)
+        ])
+
+        print("🚀 Training BALANCED model...")
+        pipeline.fit(X, y)
+
+        BAL_MODEL_PATH = os.path.join(MODELS_DIR, "random_forest_balanced_chunked.pkl")
+
+        package = {
+            "vectorizer": pipeline.named_steps["vect"],
+            "model": pipeline.named_steps["clf"]
+        }
+
+        joblib.dump(package, BAL_MODEL_PATH, compress=3)
+
+        print(f"💾 Balanced model saved at: {BAL_MODEL_PATH}")
+
+        self._balanced_chunk_model = pipeline
+
