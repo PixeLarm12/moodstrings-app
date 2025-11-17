@@ -6,6 +6,7 @@ from src.controllers import AdminController as admin_controller
 from src.utils import StringUtil
 from music21 import chord as m21Chord, harmony as m21Harmony
 from src.services.AITrainingService import AITrainingService
+from src.services.RandomForestService import RandomForestService
 
 app = FastAPI()
 
@@ -95,7 +96,7 @@ def train_rf_chunked():
 
 
 """
-Routes to create, split and train the basic random forest dataset and model with N-grams and LDA
+Routes to create, split and train the chunked random forest dataset and model with N-grams and LDA
 """
 @app.get("/create-ngrams-dataset")
 def create_ngrams_dataset():
@@ -124,6 +125,45 @@ def train_rf_ngrams():
         "message": "training ngrams random forest"
     }
 
+"""
+Routes to create, split and train the basic random forest dataset and model with N-grams and LDA
+"""
+@app.get("/create-full-ngrams-dataset")
+def create_full_ngrams_dataset():
+    service = AITrainingService();
+    service.build_full_ngrams_dataset()
+    
+    return {
+        "message": "building full ngrams dataset"
+    }
+
+@app.get("/split-full-ngrams-dataset")
+def split_full_ngrams_dataset():
+    service = AITrainingService();
+    service.split_full_ngrams_dataset()
+    
+    return {
+        "message": "spliting full ngrams dataset"
+    }
+
+@app.get("/train-rf-full-ngrams")
+def train_rf_full_ngrams():
+    service = AITrainingService();
+    service.train_full_ngrams_model()
+    
+    return {
+        "message": "training full ngrams random forest"
+    }
+
+@app.get("/find-evaluation")
+def find_evaluation():
+    service = RandomForestService();
+    evaluation = service.evaluate()
+    # service.predict("3-11B,3-11B,3-11B,3-11B,3-11B,3-11B,3-11B,3-11", "major")
+    
+    return {
+        "evaluation_result": evaluation
+    }
 
 """
 Routes to create, split and train the balanced chunked random forest dataset and model
@@ -143,14 +183,14 @@ def split_balanced_chunk_dataset():
     service.split_balanced_chunk_dataset()
     
     return {
-        "message": "spliting chunk dataset"
+        "message": "spliting balanced chunk dataset"
     }
 
 @app.get("/train-rf-balanced")
 def train_rf_balanced():
     service = AITrainingService();
     service.train_balanced_chunk_model()
-    
+
     return {
-        "message": "training chunk random forest"
+        "message": "training balanced chunk random forest"
     }
