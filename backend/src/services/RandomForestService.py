@@ -41,22 +41,20 @@ FULL_NGRAMS_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'full_ngrams_train_da
 FULL_NGRAMS_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'full_ngrams_test_dataset.csv')
 RF_FULL_NGRAMS_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_full_ngrams_v1.pkl')
 
-class RandomForestService:
-    """
-    Loads a pretrained RandomForest model saved by AITrainingService and exposes:
-      - predict(forteclass_sequence, mode[, tonic])
-      - evaluate()  (uses NEW_TEST_DATASET_PATH)
-      - dataset_emotion_distribution() (inspects NEW_TRAIN_DATASET_PATH)
-      - debug_prediction(...) (shows vocab hits + probabilities)
-    """
+BALANCED_CHUNK_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_dataset.csv')  
+BALANCED_CHUNK_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_train_dataset.csv')
+BALANCED_CHUNK_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_test_dataset.csv')
+RF_BALANCED_CHUNK_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_chunked_v1.pkl')
 
+class RandomForestService:
     def __init__(self):
         self._emotion_model = None
         # model we will actually use (from AITrainingService)
         # self.model_path = os.path.abspath(NEW_RF_MODEL_PATH)
         # self.model_path = os.path.abspath(CHUNK_RF_MODEL_PATH)
         # self.model_path = os.path.abspath(RF_NGRAMS_MODEL_PATH)
-        self.model_path = os.path.abspath(RF_FULL_NGRAMS_MODEL_PATH)
+        # self.model_path = os.path.abspath(RF_FULL_NGRAMS_MODEL_PATH)
+        self.model_path = os.path.abspath(BALANCED_CHUNK_DATASET_PATH)
         self.vectorizer = None
         self.classifier = None
 
@@ -65,8 +63,9 @@ class RandomForestService:
             # self.load_model()
             # self.load_chunk_model()
             # self._emotion_model = joblib.load(RF_NGRAMS_MODEL_PATH)
-            self._emotion_model = joblib.load(RF_FULL_NGRAMS_MODEL_PATH)
+            # self._emotion_model = joblib.load(RF_FULL_NGRAMS_MODEL_PATH)
             # self._emotion_model = self.load_full_ngrams_model()
+            self.load_balanced_chunk_model()
         else:
             raise FileNotFoundError(
                 f"Trained model not found at {self.model_path}. "
@@ -117,6 +116,26 @@ class RandomForestService:
         print(f"   - Vocabulary size: {len(self.chunk_vectorizer.vocabulary_)}")
         print(f"   - Classes: {list(self.chunk_classifier.classes_)}")
 
+    def load_balanced_chunk_model(self):
+        pkg = joblib.load(RF_BALANCED_CHUNK_MODEL_PATH)
+
+        if not isinstance(pkg, dict) or "vectorizer" not in pkg or "model" not in pkg:
+            raise ValueError("Balanced chunked model package invalid. Expected dict with 'vectorizer' and 'model'.")
+
+        self.balanced_chunk_vectorizer = pkg["vectorizer"]
+        self.balanced_chunk_classifier = pkg["model"]
+
+        # Build pipeline
+        self._balanced_chunk_model = Pipeline([
+            ("vect", self.balanced_chunk_vectorizer),
+            ("clf", self.balanced_chunk_classifier)
+        ])
+
+        print("✅ Balanced chunked model loaded.")
+        print(f"   - Vocabulary size: {len(self.balanced_chunk_vectorizer.vocabulary_)}")
+        print(f"   - Classes: {list(self.balanced_chunk_classifier.classes_)}")
+
+        
     # -----------------------
     # Predict
     # -----------------------
@@ -198,6 +217,26 @@ class RandomForestService:
             "emotion": str(pred),
             "probabilities": {c: float(p) for c, p in zip(classes, probs)}
         }
+    
+    def predict_balanced_chunk(self, forteclass_sequence: str, mode: str) -> dict:
+        if not hasattr(self, "_balanced_chunk_model") or self._balanced_chunk_model is None:
+            raise ValueError("Balanced chunked model not loaded. Run load_balanced_chunk_model() first.")
+
+        if not isinstance(forteclass_sequence, str) or not isinstance(mode, str):
+            raise ValueError("forteclass_sequence and mode must be strings.")
+
+        combined = f"{forteclass_sequence} | {mode}"
+
+        X = [combined]
+        pred = self._balanced_chunk_model.predict(X)[0]
+        probs = self._balanced_chunk_model.predict_proba(X)[0]
+        classes = list(self.balanced_chunk_classifier.classes_)
+
+        return {
+            "emotion": str(pred),
+            "probabilities": {c: float(p) for c, p in zip(classes, probs)}
+        }
+
 
     # -----------------------
     # Evaluate using new test dataset created by AITrainingService.split_raw_dataset()
@@ -303,64 +342,35 @@ class RandomForestService:
             "report": report,
             "n_samples": len(df)
         }
+    
+    def evaluate_balanced_chunk(self) -> dict:
+        if not hasattr(self, "_balanced_chunk_model") or self._balanced_chunk_model is None:
+            raise ValueError("Balanced chunked model not loaded. Run load_balanced_chunk_model() first.")
 
-    # -----------------------
-    # Dataset distribution (quick check)
-    # -----------------------
-    def dataset_emotion_distribution(self):
-        """
-        Reads NEW_TRAIN_DATASET_PATH and prints counts per emotion.
-        """
-        if not os.path.exists(NEW_TRAIN_DATASET_PATH):
-            raise FileNotFoundError(f"Train dataset not found: {NEW_TRAIN_DATASET_PATH}")
+        if not os.path.exists(BALANCED_CHUNK_TEST_DATASET_PATH):
+            raise FileNotFoundError(f"Balanced chunked test dataset not found: {BALANCED_CHUNK_TEST_DATASET_PATH}")
 
-        df = pd.read_csv(NEW_TRAIN_DATASET_PATH)
-        counts = df['emotion'].value_counts().to_dict()
+        df = pd.read_csv(BALANCED_CHUNK_TEST_DATASET_PATH)
 
-        print("\n📊 Emotion distribution in training dataset:")
-        for emo, cnt in counts.items():
-            print(f"  {emo}: {cnt} samples")
+        # clean dataset
+        df = df.dropna(subset=['forteclass_sequence', 'mode', 'emotion'])
+        df = df[df['forteclass_sequence'].str.len() > 0]
 
-        return counts
+        X = (df['forteclass_sequence'] + " | " + df['mode']).values
+        y_true = df['emotion'].values
 
-    # -----------------------
-    # Debug helper
-    # -----------------------
-    def debug_prediction(self, forteclass_sequence: str, mode: str):
-        """
-        Prints which vocabulary tokens are hit for this input and the probabilities.
-        Useful to check n-gram coverage.
-        """
-        if self._emotion_model is None:
-            raise ValueError("Model not loaded. Call load_model() first.")
+        print(f"🔍 Evaluating BALANCED CHUNKED model on {len(X)} samples...")
 
-        combined = f"{forteclass_sequence} | {mode}"
-        # transform using vectorizer
-        X_vect = self.vectorizer.transform([combined])
-        nonzero_idx = X_vect.nonzero()[1]
+        y_pred = self._balanced_chunk_model.predict(X)
 
-        # Get token->index mapping reversed for better reporting
-        # vectorizer.vocabulary_ maps token -> idx
-        inv_vocab = {idx: token for token, idx in self.vectorizer.vocabulary_.items()}
+        acc = accuracy_score(y_true, y_pred) * 100
+        report = classification_report(y_true, y_pred, output_dict=True)
 
-        hits = [inv_vocab[i] for i in nonzero_idx] if len(nonzero_idx) else []
+        print(f"🎯 BALANCED CHUNKED Accuracy: {acc:.2f}%")
+        print(classification_report(y_true, y_pred))
 
-        print("\n🔹 Debug input:", combined)
-        print(" - Vector shape:", X_vect.shape)
-        print(f" - # tokens in vocabulary: {len(self.vectorizer.vocabulary_)}")
-        print(f" - # tokens hit: {len(hits)}")
-        print(" - Hit tokens (sample):", hits[:50])
-
-        probs = self.classifier.predict_proba(X_vect)[0]
-        classes = list(self.classifier.classes_)
-        print("\nPredicted probabilities:")
-        for c, p in zip(classes, probs):
-            print(f"  {c}: {p:.4f}")
-
-        pred = self.classifier.predict(X_vect)[0]
-        print("Predicted label:", pred)
         return {
-            "hits": hits,
-            "probs": {c: float(p) for c, p in zip(classes, probs)},
-            "predicted": str(pred)
+            "accuracy": f"{acc:.2f}",
+            "report": report,
+            "n_samples": len(X)
         }

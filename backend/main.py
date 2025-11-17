@@ -158,7 +158,7 @@ def train_rf_full_ngrams():
 @app.get("/find-evaluation")
 def find_evaluation():
     service = RandomForestService();
-    evaluation = service.evaluate()
+    evaluation = service.evaluate_balanced_chunk()
     # service.predict("3-11B,3-11B,3-11B,3-11B,3-11B,3-11B,3-11B,3-11", "major")
     
     return {
