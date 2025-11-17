@@ -46,6 +46,11 @@ BALANCED_CHUNK_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_
 BALANCED_CHUNK_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_test_dataset.csv')
 RF_BALANCED_CHUNK_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_chunked_v1.pkl')
 
+BALANCED_NGRAMS_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_ngrams_dataset.csv')  
+BALANCED_NGRAMS_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_ngrams_train_dataset.csv')
+BALANCED_NGRAMS_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_ngrams_test_dataset.csv')
+RF_BALANCED_NGRAMS_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_ngrams_v1.pkl')
+
 class RandomForestService:
     def __init__(self):
         self._emotion_model = None
@@ -54,7 +59,8 @@ class RandomForestService:
         # self.model_path = os.path.abspath(CHUNK_RF_MODEL_PATH)
         # self.model_path = os.path.abspath(RF_NGRAMS_MODEL_PATH)
         # self.model_path = os.path.abspath(RF_FULL_NGRAMS_MODEL_PATH)
-        self.model_path = os.path.abspath(BALANCED_CHUNK_DATASET_PATH)
+        # self.model_path = os.path.abspath(BALANCED_CHUNK_DATASET_PATH)
+        self.model_path = os.path.abspath(BALANCED_NGRAMS_DATASET_PATH)
         self.vectorizer = None
         self.classifier = None
 
@@ -65,7 +71,8 @@ class RandomForestService:
             # self._emotion_model = joblib.load(RF_NGRAMS_MODEL_PATH)
             # self._emotion_model = joblib.load(RF_FULL_NGRAMS_MODEL_PATH)
             # self._emotion_model = self.load_full_ngrams_model()
-            self.load_balanced_chunk_model()
+            # self.load_balanced_chunk_model()
+            self._emotion_model = joblib.load(RF_BALANCED_NGRAMS_MODEL_PATH)
         else:
             raise FileNotFoundError(
                 f"Trained model not found at {self.model_path}. "
@@ -134,6 +141,13 @@ class RandomForestService:
         print("✅ Balanced chunked model loaded.")
         print(f"   - Vocabulary size: {len(self.balanced_chunk_vectorizer.vocabulary_)}")
         print(f"   - Classes: {list(self.balanced_chunk_classifier.classes_)}")
+
+    def load_model_ngrams_lda(self):
+        if not os.path.exists(RF_BALANCED_NGRAMS_MODEL_PATH):
+            raise FileNotFoundError("NGRAMS+LDA model not found.")
+
+        self._emotion_model = joblib.load(RF_BALANCED_NGRAMS_MODEL_PATH)
+        print("✅ Loaded NGRAMS + LDA RandomForest model!")
 
         
     # -----------------------
@@ -231,6 +245,21 @@ class RandomForestService:
         pred = self._balanced_chunk_model.predict(X)[0]
         probs = self._balanced_chunk_model.predict_proba(X)[0]
         classes = list(self.balanced_chunk_classifier.classes_)
+
+        return {
+            "emotion": str(pred),
+            "probabilities": {c: float(p) for c, p in zip(classes, probs)}
+        }
+
+    def predict_ngrams_lda(self, forteclass_sequence: str, mode: str, tonic: str = None):
+        if self._emotion_model is None:
+            self.load_model_ngrams_lda()
+
+        combined = f"{forteclass_sequence} | {mode}"
+
+        pred = self._emotion_model.predict([combined])[0]
+        probs = self._emotion_model.predict_proba([combined])[0]
+        classes = self._emotion_model.named_steps["clf"].classes_
 
         return {
             "emotion": str(pred),
@@ -374,3 +403,32 @@ class RandomForestService:
             "report": report,
             "n_samples": len(X)
         }
+    
+    def evaluate_balanced_ngrams(self):
+        if self._emotion_model is None:
+            self.load_model_ngrams_lda()
+
+        if not os.path.exists(BALANCED_NGRAMS_TEST_DATASET_PATH):
+            raise FileNotFoundError("Test dataset missing.")
+
+        df = pd.read_csv(BALANCED_NGRAMS_TEST_DATASET_PATH)
+        df = df.dropna(subset=["ngrams_input", "emotion"])
+
+        X = df["ngrams_input"].tolist()
+        y_true = df["emotion"].tolist()
+
+        y_pred = self._emotion_model.predict(X)
+        acc = accuracy_score(y_true, y_pred) * 100
+        report = classification_report(y_true, y_pred, output_dict=True)
+
+        print(f"🎯 Accuracy: {acc:.2f}")
+        print(classification_report(y_true, y_pred))
+
+        return {
+            "accuracy": acc,
+            "report": report,
+            "n_samples": len(df)
+        }
+
+
+    

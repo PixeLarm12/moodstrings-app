@@ -39,6 +39,11 @@ BALANCED_CHUNK_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_
 BALANCED_CHUNK_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_test_dataset.csv')
 RF_BALANCED_CHUNK_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_chunked_v1.pkl')
 
+BALANCED_NGRAMS_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_ngrams_dataset.csv')  
+BALANCED_NGRAMS_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_ngrams_train_dataset.csv')
+BALANCED_NGRAMS_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_ngrams_test_dataset.csv')
+RF_BALANCED_NGRAMS_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_ngrams_v1.pkl')
+
 class AITrainingService:
 
     def __init__(self, action: str = None):
@@ -681,3 +686,95 @@ class AITrainingService:
         print(f"💾 Balanced model saved at: {RF_BALANCED_CHUNK_MODEL_PATH}")
 
         self._balanced_chunk_model = pipeline
+
+    def create_balanced_dataset_ngrams_lda(self):
+        if not os.path.exists(BALANCED_CHUNK_DATASET_PATH):
+            raise FileNotFoundError(f"Raw dataset not found: {BALANCED_CHUNK_DATASET_PATH}")
+
+        df = pd.read_csv(BALANCED_CHUNK_DATASET_PATH)
+        df = df.dropna(subset=["forteclass_sequence", "emotion", "mode"])
+        df = df[df["forteclass_sequence"].str.len() > 0]
+
+        # Ensure balanced dataset
+        min_count = df["emotion"].value_counts().min()
+        df_balanced = (
+            df.groupby("emotion")
+            .sample(n=min_count, random_state=42)
+            .reset_index(drop=True)
+        )
+
+        # Create ngrams_input = sequence | mode
+        df_balanced["ngrams_input"] = (
+            df_balanced["forteclass_sequence"] + " | " + df_balanced["mode"]
+        )
+
+        df_balanced.to_csv(BALANCED_NGRAMS_DATASET_PATH, index=False)
+
+        print("✅ Balanced dataset for NGRAMS + LDA generated!")
+        print(df_balanced["emotion"].value_counts())
+        return df_balanced
+    
+    def split_balanced_dataset_ngrams_lda(self, test_size=0.20):
+        if not os.path.exists(BALANCED_NGRAMS_DATASET_PATH):
+            raise FileNotFoundError(f"Balanced dataset missing: {BALANCED_NGRAMS_DATASET_PATH}")
+
+        df = pd.read_csv(BALANCED_NGRAMS_DATASET_PATH)
+
+        train_df, test_df = train_test_split(
+            df,
+            test_size=test_size,
+            stratify=df["emotion"],
+            random_state=42
+        )
+
+        train_df.to_csv(BALANCED_NGRAMS_TRAIN_DATASET_PATH, index=False)
+        test_df.to_csv(BALANCED_NGRAMS_TEST_DATASET_PATH, index=False)
+
+        print("📌 Balanced NGRAMS+LDA train/test split done!")
+        print("Train size:", len(train_df), " Test size:", len(test_df))
+
+        return train_df, test_df
+    
+    def train_model_ngrams_lda_balanced(self):
+        if not os.path.exists(BALANCED_NGRAMS_TRAIN_DATASET_PATH):
+            raise FileNotFoundError("Dataset missing. Run create_balanced_dataset_ngrams_lda().")
+
+        df = pd.read_csv(BALANCED_NGRAMS_TRAIN_DATASET_PATH)
+
+        X = df["ngrams_input"].astype(str).tolist()
+        y = df["emotion"].astype(str).tolist()
+
+        pipeline = Pipeline([
+            ("vect", CountVectorizer(
+                lowercase=False,
+                token_pattern=r"[^, ]+",
+                ngram_range=(1, 4),
+                max_features=12000
+            )),
+            ("lda", LatentDirichletAllocation(
+                n_components=12,
+                max_iter=20,
+                learning_method="batch",
+                n_jobs=-1,
+                random_state=42
+            )),
+            ("clf", RandomForestClassifier(
+                n_estimators=800,
+                max_depth=30,
+                min_samples_leaf=2,
+                min_samples_split=4,
+                n_jobs=-1,
+                max_features="sqrt",
+                random_state=42
+            ))
+        ])
+
+        print("🔄 Training NGRAMS + LDA + RandomForest (balanced)...")
+        pipeline.fit(X, y)
+
+        joblib.dump(pipeline, RF_BALANCED_NGRAMS_MODEL_PATH)
+        print(f"✅ Model saved → {RF_BALANCED_NGRAMS_MODEL_PATH}")
+
+        return pipeline
+
+

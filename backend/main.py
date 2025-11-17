@@ -158,7 +158,7 @@ def train_rf_full_ngrams():
 @app.get("/find-evaluation")
 def find_evaluation():
     service = RandomForestService();
-    evaluation = service.evaluate_balanced_chunk()
+    evaluation = service.evaluate_balanced_ngrams()
     # service.predict("3-11B,3-11B,3-11B,3-11B,3-11B,3-11B,3-11B,3-11", "major")
     
     return {
@@ -193,4 +193,35 @@ def train_rf_balanced():
 
     return {
         "message": "training balanced chunk random forest"
+    }
+
+
+"""
+Routes to create, split and train the balanced ngrams random forest dataset and model
+"""
+@app.get("/create-balanced-ngrams-dataset")
+def create_balanced_ngrams_dataset():
+    service = AITrainingService();
+    service.create_balanced_dataset_ngrams_lda()
+    
+    return {
+        "message": "building balanced ngrams dataset"
+    }
+
+@app.get("/split-balanced-ngrams-dataset")
+def split_balanced_ngrams_dataset():
+    service = AITrainingService();
+    service.split_balanced_dataset_ngrams_lda()
+    
+    return {
+        "message": "spliting balanced ngrams dataset"
+    }
+
+@app.get("/train-rf-balanced-ngrams")
+def train_rf_balanced_ngrams():
+    service = AITrainingService();
+    service.train_model_ngrams_lda_balanced()
+
+    return {
+        "message": "training balanced ngrams random forest"
     }
