@@ -418,26 +418,48 @@ class AITrainingService:
         pipeline = Pipeline([
             ("vect", CountVectorizer(
                 lowercase=False,
-                token_pattern="[^, ]+",
-                ngram_range=(1, 4),
-                max_features=12000
+                token_pattern=r"[0-9A-Za-z\-]+",
+                ngram_range=(1, 5),
+                max_features=24000
             )),
             ("lda", LatentDirichletAllocation(
-                n_components=12,
-                max_iter=20,
-                learning_method="batch",
-                n_jobs=-1,
-                random_state=42
+                n_components = 30,
+                max_iter = 40,
+                learning_method = "online",
+                learning_decay = 0.7,
+                n_jobs=-1
             )),
             ("clf", RandomForestClassifier(
-                n_estimators=800,
-                max_depth=30,
+                n_estimators=1200,
+                max_depth=25,
                 min_samples_leaf=2,
                 min_samples_split=4,
+                max_features="log2",
                 n_jobs=-1,
-                max_features="sqrt",
                 random_state=42
             ))
+            # ("vect", CountVectorizer(
+            #     lowercase=False,
+            #     token_pattern="[^, ]+",
+            #     ngram_range=(1, 4),
+            #     max_features=12000
+            # )),
+            # ("lda", LatentDirichletAllocation(
+            #     n_components=12,
+            #     max_iter=20,
+            #     learning_method="batch",
+            #     n_jobs=-1,
+            #     random_state=42
+            # )),
+            # ("clf", RandomForestClassifier(
+            #     n_estimators=800,
+            #     max_depth=30,
+            #     min_samples_leaf=2,
+            #     min_samples_split=4,
+            #     n_jobs=-1,
+            #     max_features="sqrt",
+            #     random_state=42
+            # ))
         ])
 
         print("🏋️ Training model (vectorizer → LDA → RF)...")
