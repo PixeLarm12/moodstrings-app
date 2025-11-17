@@ -7,6 +7,7 @@ from src.utils import StringUtil
 from music21 import chord as m21Chord, harmony as m21Harmony
 from src.services.AITrainingService import AITrainingService
 from src.services.RandomForestService import RandomForestService
+from src.services.XMIDIService import XMIDIService
 
 app = FastAPI()
 
@@ -163,6 +164,15 @@ def find_evaluation():
     
     return {
         "evaluation_result": evaluation
+    }
+
+@app.get("/create-dataset-five-classes")
+def create_five_classes_dataset():
+    service = XMIDIService();
+    dataset_path = service.build_dataset(overwrite=True)
+    
+    return {
+        "dataset_raw_path": dataset_path
     }
 
 """
