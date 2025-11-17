@@ -748,7 +748,7 @@ class AITrainingService:
             ("vect", CountVectorizer(
                 lowercase=False,
                 token_pattern=r"[^, ]+",
-                ngram_range=(1, 4),
+                ngram_range=(1, 3),
                 max_features=12000
             )),
             ("lda", LatentDirichletAllocation(
@@ -759,8 +759,8 @@ class AITrainingService:
                 random_state=42
             )),
             ("clf", RandomForestClassifier(
-                n_estimators=800,
-                max_depth=30,
+                n_estimators=1000,
+                max_depth=25,
                 min_samples_leaf=2,
                 min_samples_split=4,
                 n_jobs=-1,
