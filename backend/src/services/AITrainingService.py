@@ -49,6 +49,11 @@ CHUNKED_50_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_50_train_data
 CHUNKED_50_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_50_test_dataset.csv')
 RF_CHUNKED_50_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_chunked_50_v1.pkl')
 
+BALANCED_CHUNKED_50_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_50_dataset.csv')  
+BALANCED_CHUNKED_50_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_50_train_dataset.csv')
+BALANCED_CHUNKED_50_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_50_test_dataset.csv')
+RF_BALANCED_CHUNKED_50_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_chunked_50_v1.pkl')
+
 class AITrainingService:
 
     def __init__(self, action: str = None):
@@ -949,3 +954,148 @@ class AITrainingService:
         self._chunked_50_pipeline = pipeline
 
         return pipeline
+
+    def count_emotions_in_50_chunk_dataset(self):
+        if not os.path.exists(CHUNKED_50_TRAIN_DATASET_PATH):
+            raise FileNotFoundError(
+                f"Dataset not found: {CHUNKED_50_TRAIN_DATASET_PATH}"
+            )
+
+        df = pd.read_csv(CHUNKED_50_TRAIN_DATASET_PATH)
+
+        if "emotion" not in df.columns:
+            raise ValueError("Dataset must contain an 'emotion' column.")
+
+        # Count occurrences
+        counts = df["emotion"].value_counts().to_dict()
+
+        print(f"\n📊 Emotion distribution in: {CHUNKED_50_TRAIN_DATASET_PATH}")
+        for emotion, qty in counts.items():
+            print(f"   • {emotion}: {qty}")
+
+        return counts
+
+    def create_balanced_50_dataset(self) -> str:
+        if not os.path.exists(CHUNKED_50_PATH):
+            raise FileNotFoundError(f"chunked_50_dataset not found: {CHUNKED_50_PATH}")
+
+        df = pd.read_csv(CHUNKED_50_PATH)
+
+        if "emotion" not in df.columns:
+            raise ValueError("Dataset must contain an 'emotion' column.")
+
+        print(f"📄 Loaded CHUNKED_50 dataset: {df.shape[0]} samples")
+
+        counts = df["emotion"].value_counts()
+        min_size = counts.min()
+
+        print("\n📊 Distribution BEFORE balancing:")
+        for e, c in counts.items():
+            print(f"   • {e}: {c}")
+
+        print(f"\n➡️ Balancing using minority class size: {min_size}")
+
+        balanced_parts = []
+        for emotion in counts.index:
+            part = df[df["emotion"] == emotion].sample(
+                n=min_size,
+                replace=False,
+                random_state=42
+            )
+            balanced_parts.append(part)
+
+        balanced_df = pd.concat(balanced_parts, ignore_index=True)
+        balanced_df = balanced_df.sample(frac=1, random_state=42).reset_index(drop=True)
+
+        os.makedirs(os.path.dirname(BALANCED_CHUNKED_50_PATH), exist_ok=True)
+        balanced_df.to_csv(BALANCED_CHUNKED_50_PATH, index=False)
+
+        print("\n✅ Balanced dataset created!")
+        print(f"📄 Saved: {BALANCED_CHUNKED_50_PATH}")
+        print("\n📊 Distribution AFTER balancing:")
+        for e, c in balanced_df["emotion"].value_counts().items():
+            print(f"   • {e}: {c}")
+
+        return BALANCED_CHUNKED_50_PATH
+
+    def split_balanced_50_dataset(self, test_ratio=0.20):
+        if not os.path.exists(BALANCED_CHUNKED_50_PATH):
+            raise FileNotFoundError(f"Balanced chunked dataset missing: {BALANCED_CHUNKED_50_PATH}")
+
+        df = pd.read_csv(BALANCED_CHUNKED_50_PATH)
+
+        print(f"📄 Loaded balanced dataset: {df.shape[0]} samples")
+
+        test_df = df.sample(frac=test_ratio, random_state=42)
+        train_df = df.drop(test_df.index)
+
+        os.makedirs(os.path.dirname(BALANCED_CHUNKED_50_TRAIN_DATASET_PATH), exist_ok=True)
+
+        train_df.to_csv(BALANCED_CHUNKED_50_TRAIN_DATASET_PATH, index=False)
+        test_df.to_csv(BALANCED_CHUNKED_50_TEST_DATASET_PATH, index=False)
+
+        print("\n✅ Balanced dataset split!")
+        print(f"📄 Train: {BALANCED_CHUNKED_50_TRAIN_DATASET_PATH} ({train_df.shape[0]} samples)")
+        print(f"📄 Test:  {BALANCED_CHUNKED_50_TEST_DATASET_PATH} ({test_df.shape[0]} samples)")
+
+        return BALANCED_CHUNKED_50_TRAIN_DATASET_PATH, BALANCED_CHUNKED_50_TEST_DATASET_PATH
+    
+    def train_balanced_50_dataset(self):
+            if not os.path.exists(BALANCED_CHUNKED_50_PATH):
+                raise FileNotFoundError(f"Dataset not found: {BALANCED_CHUNKED_50_PATH}")
+
+            df = pd.read_csv(BALANCED_CHUNKED_50_PATH)
+            df = df.dropna(subset=['forteclass_sequence', 'mode', 'emotion'])
+            df = df[df['forteclass_sequence'].str.len() > 0]
+
+            # Input features
+            X = (df['forteclass_sequence'] + " | " + df['mode']).values
+            y = df['emotion'].values
+
+            # Split
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42, stratify=y
+            )
+
+            print(f"Training on {len(X_train)} samples, testing on {len(X_test)} samples...")
+
+            # -------------------------------
+            # 🔥 FULL PIPELINE WITH NGRAMS + LDA + RANDOM FOREST
+            # -------------------------------
+            pipeline = Pipeline([
+                ("vectorizer", CountVectorizer(
+                    analyzer="word",
+                    ngram_range=(1, 3)     # <<<<<< USING N-GRAMS
+                )),
+                ("lda", LatentDirichletAllocation(
+                    n_components=20,
+                    random_state=42
+                )),
+                ("model", RandomForestClassifier(
+                    n_estimators=300,
+                    max_depth=None,
+                    random_state=42,
+                    n_jobs=-1
+                ))
+            ])
+
+            # Train
+            pipeline.fit(X_train, y_train)
+
+            # Save model
+            joblib.dump(pipeline, RF_BALANCED_CHUNKED_50_MODEL_PATH)
+            print(f"Model saved to {RF_BALANCED_CHUNKED_50_MODEL_PATH}")
+
+            # Evaluate on test split
+            y_pred = pipeline.predict(X_test)
+            acc = accuracy_score(y_test, y_pred) * 100
+
+            print(f"\nAccuracy on TEST split: {acc:.2f}%")
+            print(classification_report(y_test, y_pred))
+
+            return {
+                "accuracy": f"{acc:.2f}",
+                "report": classification_report(y_test, y_pred, output_dict=True),
+                "n_train": len(X_train),
+                "n_test": len(X_test)
+            }

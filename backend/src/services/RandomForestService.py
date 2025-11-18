@@ -56,6 +56,11 @@ CHUNKED_50_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_50_train_data
 CHUNKED_50_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_50_test_dataset.csv')
 RF_CHUNKED_50_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_chunked_50_v1.pkl')
 
+BALANCED_CHUNKED_50_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_50_dataset.csv')  
+BALANCED_CHUNKED_50_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_50_train_dataset.csv')
+BALANCED_CHUNKED_50_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_50_test_dataset.csv')
+RF_BALANCED_CHUNKED_50_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_chunked_50_v1.pkl')
+
 class RandomForestService:
     def __init__(self):
         self._emotion_model = None
@@ -66,7 +71,8 @@ class RandomForestService:
         # self.model_path = os.path.abspath(RF_FULL_NGRAMS_MODEL_PATH)
         # self.model_path = os.path.abspath(BALANCED_CHUNK_DATASET_PATH)
         # self.model_path = os.path.abspath(BALANCED_NGRAMS_DATASET_PATH)
-        self.model_path = os.path.abspath(CHUNKED_50_PATH)
+        # self.model_path = os.path.abspath(CHUNKED_50_PATH)
+        self.model_path = os.path.abspath(RF_BALANCED_CHUNKED_50_MODEL_PATH)
         self.vectorizer = None
         self.classifier = None
 
@@ -79,7 +85,9 @@ class RandomForestService:
             # self._emotion_model = self.load_full_ngrams_model()
             # self.load_balanced_chunk_model()
             # self._emotion_model = joblib.load(RF_BALANCED_NGRAMS_MODEL_PATH)
-            self._emotion_model = joblib.load(RF_CHUNKED_50_MODEL_PATH)
+            # self._emotion_model = joblib.load(RF_CHUNKED_50_MODEL_PATH)
+            # self._emotion_model = joblib.load(RF_BALANCED_CHUNKED_50_MODEL_PATH)
+            self.load_balanced_50_model()
         else:
             raise FileNotFoundError(
                 f"Trained model not found at {self.model_path}. "
@@ -155,7 +163,44 @@ class RandomForestService:
 
         self._emotion_model = joblib.load(RF_BALANCED_NGRAMS_MODEL_PATH)
         print("✅ Loaded NGRAMS + LDA RandomForest model!")
-        
+    
+    def load_balanced_50_model(self):
+        if not os.path.exists(RF_BALANCED_CHUNKED_50_MODEL_PATH):
+            raise FileNotFoundError(
+                f"Balanced 50-chunk model not found: {RF_BALANCED_CHUNKED_50_MODEL_PATH}"
+            )
+
+        # Load entire pipeline (CountVectorizer + LDA + RandomForest)
+        model = joblib.load(RF_BALANCED_CHUNKED_50_MODEL_PATH)
+
+        # Validate
+        required_steps = ["vectorizer", "lda", "model"]
+        pipeline_steps = [name for name, _ in model.steps]
+
+        for component in required_steps:
+            if not any(component in step for step in pipeline_steps):
+                raise ValueError(
+                    f"Loaded model is missing '{component}' step. "
+                    f"Steps found: {pipeline_steps}"
+                )
+
+        # Attach to service
+        self._emotion_model = model
+
+        # Print info
+        vectorizer = model.named_steps["vectorizer"]
+        classifier = model.named_steps["model"]
+
+        print("✅ Balanced 50-chunk model loaded successfully.")
+        print(f"   - Vocabulary size: {len(vectorizer.vocabulary_)}")
+        print(f"   - LDA topics: {model.named_steps['lda'].n_components}")
+        print(f"   - Classes: {list(classifier.classes_)}")
+
+        return self._emotion_model
+
+
+
+
     # -----------------------
     # Predict
     # -----------------------
@@ -271,26 +316,6 @@ class RandomForestService:
             "emotion": str(pred),
             "probabilities": {c: float(p) for c, p in zip(classes, probs)}
         }
-
-    def predict_50_chunk(self, forteclass_sequence: str, mode: str) -> dict:
-        if not hasattr(self, "_emotion_model") or self._emotion_model is None:
-            raise ValueError("50-chunk model not loaded. Run load_emotion_model() first.")
-
-        if not isinstance(forteclass_sequence, str) or not isinstance(mode, str):
-            raise ValueError("forteclass_sequence and mode must be strings.")
-
-        combined = f"{forteclass_sequence} | {mode}"
-
-        X = [combined]
-        pred = self._emotion_model.predict(X)[0]
-        probs = self._emotion_model.predict_proba(X)[0]
-        classes = list(self._50_chunk_classifier.classes_)
-
-        return {
-            "emotion": str(pred),
-            "probabilities": {c: float(p) for c, p in zip(classes, probs)}
-        }
-
 
     # -----------------------
     # Evaluate using new test dataset created by AITrainingService.split_raw_dataset()
@@ -489,4 +514,36 @@ class RandomForestService:
             "n_samples": len(X)
         }
 
-    
+    def evaluate_balanced_50(self) -> dict:
+        if not hasattr(self, "_emotion_model") or self._emotion_model is None:
+            raise ValueError("50-chunk model not loaded. Run load_emotion_model() first.")
+
+        if not os.path.exists(BALANCED_CHUNKED_50_TEST_DATASET_PATH):
+            raise FileNotFoundError(
+                f"Balanced 50-chunk test dataset not found: {BALANCED_CHUNKED_50_TEST_DATASET_PATH}"
+            )
+
+        df = pd.read_csv(BALANCED_CHUNKED_50_TEST_DATASET_PATH)
+
+        # Clean rows
+        df = df.dropna(subset=['forteclass_sequence', 'mode', 'emotion'])
+        df = df[df['forteclass_sequence'].str.len() > 0]
+
+        X = (df['forteclass_sequence'] + " | " + df['mode']).values
+        y_true = df['emotion'].values
+
+        print(f"🔍 Evaluating BALANCED 50-chunk model on {len(X)} samples...")
+
+        y_pred = self._emotion_model.predict(X)
+
+        acc = accuracy_score(y_true, y_pred) * 100
+        report = classification_report(y_true, y_pred, output_dict=True)
+
+        print(f"🎯 BALANCED 50-CHUNK Accuracy: {acc:.2f}%")
+        print(classification_report(y_true, y_pred))
+
+        return {
+            "accuracy": f"{acc:.2f}",
+            "report": report,
+            "n_samples": len(X)
+        }

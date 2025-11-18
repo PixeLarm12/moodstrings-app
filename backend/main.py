@@ -159,8 +159,7 @@ def train_rf_full_ngrams():
 @app.get("/find-evaluation")
 def find_evaluation():
     service = RandomForestService();
-    evaluation = service.evaluate_balanced_ngrams()
-    # service.predict("3-11B,3-11B,3-11B,3-11B,3-11B,3-11B,3-11B,3-11", "major")
+    evaluation = service.evaluate_balanced_50()
     
     return {
         "evaluation_result": evaluation
@@ -261,4 +260,31 @@ def train_50_chunk():
 
     return {
         "message": "train chunked 50 random forest"
+    }
+
+@app.get("/create-balanced-50-chunk")
+def create_balanced_50_chunk():
+    service = AITrainingService();
+    service.create_balanced_50_dataset()
+
+    return {
+        "message": "created chunked balanced-50 random forest"
+    }
+
+@app.get("/split-balanced-50-chunk")
+def split_balanced_50_chunk():
+    service = AITrainingService();
+    service.split_balanced_50_dataset()
+
+    return {
+        "message": "split chunked balanced-50 random forest"
+    }
+
+@app.get("/train-balanced-50-chunk")
+def train_balanced_50_chunk():
+    service = AITrainingService();
+    service.train_balanced_50_dataset()
+
+    return {
+        "message": "train chunked balanced-50 random forest"
     }
