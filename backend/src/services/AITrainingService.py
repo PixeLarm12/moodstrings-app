@@ -44,6 +44,11 @@ BALANCED_NGRAMS_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_ngrams_
 BALANCED_NGRAMS_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_ngrams_test_dataset.csv')
 RF_BALANCED_NGRAMS_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_ngrams_v1.pkl')
 
+CHUNKED_50_PATH = os.path.join(DATASET_DIR, 'chunked_50_dataset.csv')  
+CHUNKED_50_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_50_train_dataset.csv')
+CHUNKED_50_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_50_test_dataset.csv')
+RF_CHUNKED_50_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_chunked_50_v1.pkl')
+
 class AITrainingService:
 
     def __init__(self, action: str = None):
@@ -777,4 +782,170 @@ class AITrainingService:
 
         return pipeline
 
+    def chunk_50_dataset(self, chunk_size=50) -> str:
+        if not os.path.exists(RAW_DATASET_PATH):
+            raise FileNotFoundError(f"Raw dataset not found: {RAW_DATASET_PATH}")
 
+        df = pd.read_csv(RAW_DATASET_PATH)
+
+        if "num_classes" not in df.columns:
+            raise ValueError("raw_dataset.csv must contain a num_classes column.")
+
+        print(f"📊 Loaded RAW dataset: {df.shape[0]} samples")
+
+        new_rows = []
+
+        for idx, row in df.iterrows():
+            full_seq = row["forteclass_sequence"]
+            emotion = row["emotion"]
+            mode = row["mode"]
+
+            tokens = [t for t in full_seq.split(",") if t.strip()]
+
+            # Skip rows that are smaller than chunk_size (cannot produce any valid chunk)
+            if len(tokens) < chunk_size:
+                continue
+
+            # Split into perfect chunks of 50
+            for i in range(0, len(tokens), chunk_size):
+                sub = tokens[i:i + chunk_size]
+
+                # Only accept perfect chunks
+                if len(sub) == chunk_size:
+                    new_rows.append({
+                        "forteclass_sequence": ",".join(sub),
+                        "num_classes": chunk_size,
+                        "mode": mode,
+                        "emotion": emotion
+                    })
+
+        # Convert to dataframe
+        out_df = pd.DataFrame(new_rows)
+
+        out_df.to_csv(CHUNKED_50_PATH, index=False)
+
+        print(f"\n✅ Chunking complete!")
+        print(f"📄 New dataset saved: {CHUNKED_50_PATH}")
+        print(f"🆕 Total rows: {out_df.shape[0]} (was {df.shape[0]})")
+        print(f"📉 Average num_classes AFTER chunking: {out_df['num_classes'].mean():.2f}")
+
+        return CHUNKED_50_PATH
+    
+    def split_chunked_50_dataset(self, test_size: float = 0.2, random_state: int = 42) -> dict:
+        """
+        Split CHUNKED_50_PATH into CHUNKED_50_TRAIN_DATASET_PATH and CHUNKED_50_TEST_DATASET_PATH.
+        Each row will have 'ngrams_input' = forteclass_sequence + " | " + mode (same format used elsewhere).
+        """
+        if not os.path.exists(CHUNKED_50_PATH):
+            raise FileNotFoundError(f"Chunked-50 dataset not found: {CHUNKED_50_PATH}\n➡️ Run chunk_50_dataset() first.")
+
+        df = pd.read_csv(CHUNKED_50_PATH)
+        print(f"📊 Loaded CHUNKED-50 dataset: {df.shape[0]} samples")
+
+        df = df.dropna(subset=["forteclass_sequence", "mode", "emotion"])
+        df = df[df["forteclass_sequence"].str.len() > 0]
+
+        # create the input column used by the pipeline
+        df["ngrams_input"] = df["forteclass_sequence"] + " | " + df["mode"]
+
+        print("📤 Splitting into train/test (stratified by emotion)...")
+        train_df, test_df = train_test_split(
+            df,
+            test_size=test_size,
+            random_state=random_state,
+            stratify=df["emotion"]
+        )
+
+        train_df.to_csv(CHUNKED_50_TRAIN_DATASET_PATH, index=False)
+        test_df.to_csv(CHUNKED_50_TEST_DATASET_PATH, index=False)
+
+        print(f"✅ CHUNKED_50 train saved: {CHUNKED_50_TRAIN_DATASET_PATH} ({train_df.shape[0]} samples)")
+        print(f"🧪 CHUNKED_50 test saved:  {CHUNKED_50_TEST_DATASET_PATH} ({test_df.shape[0]} samples)")
+
+        return {"train_samples": train_df.shape[0], "test_samples": test_df.shape[0]}
+
+
+    def train_chunked_50_model(self):
+        """
+        Train a pipeline on the CHUNKED_50 split:
+          CountVectorizer -> LatentDirichletAllocation -> RandomForestClassifier
+        Saves the *full pipeline* (so RandomForestService can joblib.load a pipeline) to RF_CHUNKED_50_MODEL_PATH.
+        """
+        if not os.path.exists(CHUNKED_50_TRAIN_DATASET_PATH):
+            raise FileNotFoundError(
+                f"Chunked-50 train dataset not found: {CHUNKED_50_TRAIN_DATASET_PATH}\n"
+                f"➡️ Run split_chunked_50_dataset() first."
+            )
+
+        print("📘 Loading CHUNKED_50 train/test...")
+        train_df = pd.read_csv(CHUNKED_50_TRAIN_DATASET_PATH)
+        test_df = pd.read_csv(CHUNKED_50_TEST_DATASET_PATH) if os.path.exists(CHUNKED_50_TEST_DATASET_PATH) else None
+
+        # Ensure columns exist
+        train_df = train_df.dropna(subset=["ngrams_input", "emotion"])
+        X_train = train_df["ngrams_input"].astype(str)
+        y_train = train_df["emotion"].astype(str)
+
+        if test_df is not None:
+            test_df = test_df.dropna(subset=["ngrams_input", "emotion"])
+            X_test = test_df["ngrams_input"].astype(str)
+            y_test = test_df["emotion"].astype(str)
+        else:
+            X_test = None
+            y_test = None
+
+        print(f"📚 Training with {len(X_train)} samples...")
+
+        # ----------------------------
+        # Build pipeline (tuned but reasonable)
+        # ----------------------------
+        pipeline = Pipeline([
+            ("vect", CountVectorizer(
+                lowercase=False,
+                token_pattern=r"[^, ]+",
+                ngram_range=(1, 4),
+                max_features=12000
+            )),
+            ("lda", LatentDirichletAllocation(
+                n_components=16,      # a bit larger for 50-chunk windows
+                max_iter=30,
+                learning_method="online",
+                learning_decay=0.7,
+                n_jobs=-1,
+                random_state=42
+            )),
+            ("clf", RandomForestClassifier(
+                n_estimators=600,
+                max_depth=30,
+                min_samples_leaf=2,
+                min_samples_split=4,
+                max_features="sqrt",
+                n_jobs=-1,
+                class_weight="balanced",
+                random_state=42
+            ))
+        ])
+
+        print("🔧 Fitting pipeline (vectorizer -> LDA -> RF)...")
+        pipeline.fit(X_train, y_train)
+        print("✅ Chunked-50 training complete!")
+
+        # Evaluate on held-out test split if available
+        if X_test is not None and len(X_test) > 0:
+            print("🧪 Evaluating on test split...")
+            y_pred = pipeline.predict(X_test)
+            acc = accuracy_score(y_test, y_pred)
+            print(f"🎯 CHUNKED_50 Test Accuracy: {acc:.4f}")
+            print(classification_report(y_test, y_pred))
+        else:
+            print("⚠️ No test split available to evaluate (skipping evaluation).")
+
+        # Save the full pipeline (so RandomForestService can joblib.load a Pipeline)
+        os.makedirs(os.path.dirname(RF_CHUNKED_50_MODEL_PATH), exist_ok=True)
+        joblib.dump(pipeline, RF_CHUNKED_50_MODEL_PATH, compress=3)
+        print(f"💾 CHUNKED_50 pipeline saved: {RF_CHUNKED_50_MODEL_PATH}")
+
+        # Keep reference in memory
+        self._chunked_50_pipeline = pipeline
+
+        return pipeline

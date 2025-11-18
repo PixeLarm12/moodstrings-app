@@ -235,3 +235,30 @@ def train_rf_balanced_ngrams():
     return {
         "message": "training balanced ngrams random forest"
     }
+
+@app.get("/create-50-chunk")
+def create_50_chunk():
+    service = AITrainingService();
+    service.chunk_50_dataset()
+
+    return {
+        "message": "created chunked 50 random forest"
+    }
+
+@app.get("/split-50-chunk")
+def split_50_chunk():
+    service = AITrainingService();
+    service.split_chunked_50_dataset()
+
+    return {
+        "message": "split chunked 50 random forest"
+    }
+
+@app.get("/train-50-chunk")
+def train_50_chunk():
+    service = AITrainingService();
+    service.train_chunked_50_model()
+
+    return {
+        "message": "train chunked 50 random forest"
+    }

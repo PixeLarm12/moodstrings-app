@@ -51,6 +51,11 @@ BALANCED_NGRAMS_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_ngrams_
 BALANCED_NGRAMS_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_ngrams_test_dataset.csv')
 RF_BALANCED_NGRAMS_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_ngrams_v1.pkl')
 
+CHUNKED_50_PATH = os.path.join(DATASET_DIR, 'chunked_50_dataset.csv')  
+CHUNKED_50_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_50_train_dataset.csv')
+CHUNKED_50_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_50_test_dataset.csv')
+RF_CHUNKED_50_MODEL_PATH = os.path.join(MODELS_DIR, 'random_forest_chunked_50_v1.pkl')
+
 class RandomForestService:
     def __init__(self):
         self._emotion_model = None
@@ -60,7 +65,8 @@ class RandomForestService:
         # self.model_path = os.path.abspath(RF_NGRAMS_MODEL_PATH)
         # self.model_path = os.path.abspath(RF_FULL_NGRAMS_MODEL_PATH)
         # self.model_path = os.path.abspath(BALANCED_CHUNK_DATASET_PATH)
-        self.model_path = os.path.abspath(BALANCED_NGRAMS_DATASET_PATH)
+        # self.model_path = os.path.abspath(BALANCED_NGRAMS_DATASET_PATH)
+        self.model_path = os.path.abspath(CHUNKED_50_PATH)
         self.vectorizer = None
         self.classifier = None
 
@@ -72,7 +78,8 @@ class RandomForestService:
             # self._emotion_model = joblib.load(RF_FULL_NGRAMS_MODEL_PATH)
             # self._emotion_model = self.load_full_ngrams_model()
             # self.load_balanced_chunk_model()
-            self._emotion_model = joblib.load(RF_BALANCED_NGRAMS_MODEL_PATH)
+            # self._emotion_model = joblib.load(RF_BALANCED_NGRAMS_MODEL_PATH)
+            self._emotion_model = joblib.load(RF_CHUNKED_50_MODEL_PATH)
         else:
             raise FileNotFoundError(
                 f"Trained model not found at {self.model_path}. "
@@ -148,7 +155,6 @@ class RandomForestService:
 
         self._emotion_model = joblib.load(RF_BALANCED_NGRAMS_MODEL_PATH)
         print("✅ Loaded NGRAMS + LDA RandomForest model!")
-
         
     # -----------------------
     # Predict
@@ -260,6 +266,25 @@ class RandomForestService:
         pred = self._emotion_model.predict([combined])[0]
         probs = self._emotion_model.predict_proba([combined])[0]
         classes = self._emotion_model.named_steps["clf"].classes_
+
+        return {
+            "emotion": str(pred),
+            "probabilities": {c: float(p) for c, p in zip(classes, probs)}
+        }
+
+    def predict_50_chunk(self, forteclass_sequence: str, mode: str) -> dict:
+        if not hasattr(self, "_emotion_model") or self._emotion_model is None:
+            raise ValueError("50-chunk model not loaded. Run load_emotion_model() first.")
+
+        if not isinstance(forteclass_sequence, str) or not isinstance(mode, str):
+            raise ValueError("forteclass_sequence and mode must be strings.")
+
+        combined = f"{forteclass_sequence} | {mode}"
+
+        X = [combined]
+        pred = self._emotion_model.predict(X)[0]
+        probs = self._emotion_model.predict_proba(X)[0]
+        classes = list(self._50_chunk_classifier.classes_)
 
         return {
             "emotion": str(pred),
@@ -430,5 +455,38 @@ class RandomForestService:
             "n_samples": len(df)
         }
 
+    def evaluate_50_chunk(self) -> dict:
+        if not hasattr(self, "_emotion_model") or self._emotion_model is None:
+            raise ValueError("50-chunk model not loaded. Run load_emotion_model() first.")
+
+        if not os.path.exists(CHUNKED_50_TEST_DATASET_PATH):
+            raise FileNotFoundError(
+                f"50-chunk test dataset not found: {CHUNKED_50_TEST_DATASET_PATH}"
+            )
+
+        df = pd.read_csv(CHUNKED_50_TEST_DATASET_PATH)
+
+        # Clean rows
+        df = df.dropna(subset=['forteclass_sequence', 'mode', 'emotion'])
+        df = df[df['forteclass_sequence'].str.len() > 0]
+
+        X = (df['forteclass_sequence'] + " | " + df['mode']).values
+        y_true = df['emotion'].values
+
+        print(f"🔍 Evaluating 50-chunk model on {len(X)} samples...")
+
+        y_pred = self._emotion_model.predict(X)
+
+        acc = accuracy_score(y_true, y_pred) * 100
+        report = classification_report(y_true, y_pred, output_dict=True)
+
+        print(f"🎯 50-CHUNK Accuracy: {acc:.2f}%")
+        print(classification_report(y_true, y_pred))
+
+        return {
+            "accuracy": f"{acc:.2f}",
+            "report": report,
+            "n_samples": len(X)
+        }
 
     
