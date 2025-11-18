@@ -11,10 +11,10 @@ BASE_DIR = Path(__file__).resolve().parent
 MODELS_DIR = (BASE_DIR / '..' / 'final-models').resolve()
 DATASET_DIR = (BASE_DIR / '..' / 'final-dataset').resolve()
 
-BALANCED_CHUNKED_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_dataset.csv')  
-BALANCED_CHUNKED_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_train_dataset.csv')
-BALANCED_CHUNKED_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_test_dataset.csv')
-RF_BALANCED_CHUNKED_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_chunked_model.pkl')
+BALANCED_CHUNKED_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_40_strict_dataset.csv')  
+BALANCED_CHUNKED_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_40_strict_train_dataset.csv')
+BALANCED_CHUNKED_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_40_strict_test_dataset.csv')
+RF_BALANCED_CHUNKED_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_chunked_40_strict_model.pkl')
 
 FULL_DATASET_DATASET_PATH = os.path.join(DATASET_DIR, 'full_dataset.csv')  
 FULL_DATASET_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'full_train_dataset.csv')

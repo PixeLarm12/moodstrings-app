@@ -18,13 +18,15 @@ RAW_DATASET_PATH = os.path.join(DATASET_DIR, 'raw_dataset.csv')
 
 CHUNKED_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_dataset.csv')  
 
-BALANCED_CHUNKED_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_dataset.csv')  
-BALANCED_CHUNKED_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_train_dataset.csv')
-BALANCED_CHUNKED_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_test_dataset.csv')
-RF_BALANCED_CHUNKED_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_chunked_model.pkl')
+BALANCED_CHUNKED_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_40_strict_dataset.csv')  
+CHUNKED_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_40_strict_train_dataset.csv')
+CHUNKED_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_40_strict_test_dataset.csv')
+BALANCED_CHUNKED_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_40_strict_train_dataset.csv')
+BALANCED_CHUNKED_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_40_strict_test_dataset.csv')
+RF_BALANCED_CHUNKED_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_chunked_40_strict_model.pkl')
 
 class ModelTrainingService:
-    def build_chunked_dataset(self, chunk_size=50) -> str:
+    def build_chunked_dataset(self, chunk_size=40) -> str:
         if not os.path.exists(RAW_DATASET_PATH):
             raise FileNotFoundError(f"Raw dataset not found: {RAW_DATASET_PATH}")
 
@@ -115,6 +117,87 @@ class ModelTrainingService:
             print(f"   • {e}: {c}")
 
         return BALANCED_CHUNKED_DATASET_PATH
+    
+    def build_balanced_chunked_dataset_traintest(self) -> str:
+        if not os.path.exists(CHUNKED_TEST_DATASET_PATH):
+            raise FileNotFoundError(f"test_chunked_dataset not found: {CHUNKED_TEST_DATASET_PATH}")
+        
+        if not os.path.exists(CHUNKED_TRAIN_DATASET_PATH):
+            raise FileNotFoundError(f"train_chunked_dataset not found: {CHUNKED_TRAIN_DATASET_PATH}")
+
+        dfTrain = pd.read_csv(CHUNKED_TRAIN_DATASET_PATH)
+        dfTest = pd.read_csv(CHUNKED_TEST_DATASET_PATH)
+
+
+        if "emotion" not in dfTrain.columns:
+            raise ValueError("Dataset must contain an 'emotion' column.")
+        
+        if "emotion" not in dfTest.columns:
+            raise ValueError("Dataset must contain an 'emotion' column.")
+
+        # TRAIN
+        print(f"📄 Loaded CHUNKED_50 dataset: {dfTrain.shape[0]} samples")
+
+        counts = dfTrain["emotion"].value_counts()
+        min_size = counts.min()
+
+        print("\n📊 Distribution BEFORE balancing:")
+        for e, c in counts.items():
+            print(f"   • {e}: {c}")
+
+        print(f"\n➡️ Balancing using minority class size: {min_size}")
+
+        balanced_parts = []
+        for emotion in counts.index:
+            part = dfTrain[dfTrain["emotion"] == emotion].sample(
+                n=min_size,
+                replace=False,
+                random_state=42
+            )
+            balanced_parts.append(part)
+
+        balanced_dfTrain = pd.concat(balanced_parts, ignore_index=True)
+        balanced_dfTrain = balanced_dfTrain.sample(frac=1, random_state=42).reset_index(drop=True)
+
+        os.makedirs(os.path.dirname(BALANCED_CHUNKED_TRAIN_DATASET_PATH), exist_ok=True)
+        balanced_dfTrain.to_csv(BALANCED_CHUNKED_TRAIN_DATASET_PATH, index=False)
+
+        print("\n✅ Balanced TRAIN dataset created!")
+        print(f"📄 Saved: {BALANCED_CHUNKED_TRAIN_DATASET_PATH}")
+
+
+        # TEST
+        print(f"📄 Loaded CHUNKED_50 dataset: {dfTest.shape[0]} samples")
+
+        counts = dfTest["emotion"].value_counts()
+        min_size = counts.min()
+
+        print("\n📊 Distribution BEFORE balancing:")
+        for e, c in counts.items():
+            print(f"   • {e}: {c}")
+
+        print(f"\n➡️ Balancing using minority class size: {min_size}")
+
+        balanced_parts = []
+        for emotion in counts.index:
+            part = dfTest[dfTest["emotion"] == emotion].sample(
+                n=min_size,
+                replace=False,
+                random_state=42
+            )
+            balanced_parts.append(part)
+
+        balanced_dfTest = pd.concat(balanced_parts, ignore_index=True)
+        balanced_dfTest = balanced_dfTest.sample(frac=1, random_state=42).reset_index(drop=True)
+
+        os.makedirs(os.path.dirname(BALANCED_CHUNKED_TEST_DATASET_PATH), exist_ok=True)
+        balanced_dfTest.to_csv(BALANCED_CHUNKED_TEST_DATASET_PATH, index=False)
+
+        print("\n✅ Balanced TRAIN dataset created!")
+        print(f"📄 Saved: {BALANCED_CHUNKED_TEST_DATASET_PATH}")
+ 
+
+        return BALANCED_CHUNKED_TRAIN_DATASET_PATH, BALANCED_CHUNKED_TEST_DATASET_PATH
 
     def split_balanced_dataset(self, test_ratio=0.20):
         if not os.path.exists(BALANCED_CHUNKED_DATASET_PATH):
@@ -127,16 +210,16 @@ class ModelTrainingService:
         test_df = df.sample(frac=test_ratio, random_state=42)
         train_df = df.drop(test_df.index)
 
-        os.makedirs(os.path.dirname(BALANCED_CHUNKED_TRAIN_DATASET_PATH), exist_ok=True)
+        os.makedirs(os.path.dirname(CHUNKED_TRAIN_DATASET_PATH), exist_ok=True)
 
-        train_df.to_csv(BALANCED_CHUNKED_TRAIN_DATASET_PATH, index=False)
-        test_df.to_csv(BALANCED_CHUNKED_TEST_DATASET_PATH, index=False)
+        train_df.to_csv(CHUNKED_TRAIN_DATASET_PATH, index=False)
+        test_df.to_csv(CHUNKED_TEST_DATASET_PATH, index=False)
 
         print("\n✅ Balanced dataset split!")
-        print(f"📄 Train: {BALANCED_CHUNKED_TRAIN_DATASET_PATH} ({train_df.shape[0]} samples)")
-        print(f"📄 Test:  {BALANCED_CHUNKED_TEST_DATASET_PATH} ({test_df.shape[0]} samples)")
+        print(f"📄 Train: {CHUNKED_TRAIN_DATASET_PATH} ({train_df.shape[0]} samples)")
+        print(f"📄 Test:  {CHUNKED_TEST_DATASET_PATH} ({test_df.shape[0]} samples)")
 
-        return BALANCED_CHUNKED_TRAIN_DATASET_PATH, BALANCED_CHUNKED_TEST_DATASET_PATH
+        return CHUNKED_TRAIN_DATASET_PATH, CHUNKED_TEST_DATASET_PATH
     
     def train_balanced_dataset(self):
         if not os.path.exists(BALANCED_CHUNKED_TRAIN_DATASET_PATH):

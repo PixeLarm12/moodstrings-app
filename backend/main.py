@@ -43,7 +43,7 @@ async def download_sheet(uploaded_file: UploadFile):
 @app.get("/test-evaluation")
 def test_evaluation():
     service = RandomForestService();
-    full = service.evaluate_full_ngrams()
+    full = service.evaluate_model_balanced()
     
     return {
         "full": full,
@@ -60,6 +60,13 @@ def build_chunked_dataset():
 def balance_chunked_dataset():
     service = ModelTrainingService();
     service.build_balanced_chunked_dataset()
+    
+    return { "message": "built balanced dataset" }
+
+@app.get("/balance-chunked-dataset-traintest")
+def balance_chunked_dataset_traintest():
+    service = ModelTrainingService();
+    service.build_balanced_chunked_dataset_traintest()
     
     return { "message": "built balanced dataset" }
 
