@@ -195,21 +195,13 @@ class MidiService:
         tonic = key_info["tonic"].split(" ")[0]
         mode = key_info.get("mode").lower()
 
-        # this is notes, so remove chord accidents
-        cleaned = (progression
-                .replace("aug", "")
-                .replace("+", "")
-                .replace("dim", "")
-                .replace("o", "")
-                .replace("°", "")
-                .replace("major", "")
-                .replace("m", " ")
-                .replace(" ", ""))
-
-        chords_list = [
-            ch.strip().replace('"', '').replace('b', '-')
-            for ch in cleaned.split("-")
+        raw_chords = [
+            ch.strip().replace('"', '')
+            for ch in progression.replace("–", "-").replace("—", "-").split("-")
         ]
+
+        # extract only root notes - deriveAll uses notes, not chords. So, some cases that have Am, should be A, for example
+        chords_list = [self.extract_root(ch) for ch in raw_chords if ch]
 
         major_scale = m21Scale.MajorScale()
         minor_scale = m21Scale.MinorScale()
@@ -261,6 +253,14 @@ class MidiService:
             }
 
         return self._scale
+
+    def extract_root(self, ch_str: str) -> str:
+        try:
+            ch = m21Harmony.ChordSymbol(ch_str)
+            root = ch.root().name
+            return root.replace("-", "b")
+        except Exception:
+            return ch_str.replace("-", "b")
 
 
     def find_relative_scales(self):
