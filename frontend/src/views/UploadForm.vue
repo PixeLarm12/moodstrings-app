@@ -42,19 +42,28 @@
           class="mt-4 w-full"
         ></audio>
 
+        <label
+          v-if="!optionRecordMic"
+          for="fileUpload"
+          class="block w-full text-sm text-white cursor-pointer 
+                py-2 px-4 rounded-lg font-semibold 
+                bg-sky-600 hover:bg-sky-700 text-center"
+        >
+          Upload file
+        </label>
+
         <input
+          id="fileUpload"
           v-if="!optionRecordMic"
           type="file"
           @change="handleFileChange"
-          class="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 
-                 file:rounded-lg file:border-0 file:text-sm file:font-semibold 
-                 file:bg-sky-600 file:text-white hover:file:bg-sky-700"
+          class="hidden"
         />
 
         <button
           v-if="submitReadOnlyChecker"
           type="submit"
-          class="w-full py-2 bg-sky-600 rounded-lg font-semibold hover:bg-sky-700"
+          class="w-full mt-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-semibold"
         >
           Send
         </button>
