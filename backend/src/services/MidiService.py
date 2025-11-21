@@ -5,7 +5,7 @@ from pretty_midi import PrettyMIDI
 from music21 import chord as m21Chord, converter as m21Converter, key as m21Key, harmony as m21Harmony, pitch as m21Pitch, scale as m21Scale
 import soundfile as sf
 import librosa
-from src.utils.StringUtil import sanitize_chord_name, simplify_chord_name, get_clean_chord_name
+from src.utils.StringUtil import sanitize_chord_name, simplify_chord_name, clean_pitched_common_name
 import os
 from src.enums import MusicEnum
 from collections import Counter
@@ -195,11 +195,14 @@ class MidiService:
         tonic = key_info["tonic"].split(" ")[0]
         mode = key_info.get("mode").lower()
 
+        # this is notes, so remove chord accidents
         cleaned = (progression
-                .replace('♯', '#')
-                .replace('♭', 'b')
-                .replace("–", "-")
-                .replace("—", "-")
+                .replace("aug", "")
+                .replace("+", "")
+                .replace("dim", "")
+                .replace("o", "")
+                .replace("°", "")
+                .replace("major", "")
                 .replace("m", " ")
                 .replace(" ", ""))
 
@@ -336,7 +339,7 @@ class MidiService:
                         continue
 
                     # chord_name = sanitize_chord_name(simplify_chord_name(objChord.pitchedCommonName), 'tab')
-                    chord_name = get_clean_chord_name(objChord.pitchedCommonName)
+                    chord_name = clean_pitched_common_name(objChord.pitchedCommonName)
                     
                     if not chord_name or chord_name == "[No Name]" or chord_name == prev_chord:
                         continue

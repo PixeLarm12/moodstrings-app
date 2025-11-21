@@ -5,7 +5,7 @@ from src.services.AudioService import AudioService
 from datetime import date
 from fastapi.responses import StreamingResponse
 from src.utils import FileUtil
-from src.utils.StringUtil import sanitize_chord_name, classify_tempo
+from src.utils.StringUtil import classify_tempo, clean_chord_name
 import io
 
 def transcribe(file, is_recorded):
@@ -48,12 +48,12 @@ def transcribe(file, is_recorded):
         "errors": errors
     }
 
-def progression_info(chordProgression, tempo, file):
+def progression_info(chord_progression, tempo, file):
     errors = []
 
     if not tempo:
         errors.append({"message": "BPM not informed."})
-    elif not chordProgression:
+    elif not chord_progression:
         errors.append({"message": "Progression not informed."})
     elif tempo <= 0:
         errors.append({"message": "BPM can't be less or equal than 0."})
@@ -62,8 +62,10 @@ def progression_info(chordProgression, tempo, file):
 
     if len(errors) <= 0:
         try:
+            cleaned = clean_chord_name(chord_progression)
+            
             audio_service = AudioService(file)
-            midi_file = audio_service.create_midi_file_from_progression(chord_progression=chordProgression, bpm=tempo)
+            midi_file = audio_service.create_midi_file_from_progression(chord_progression=cleaned, bpm=tempo)
             midi_service = MidiService(midi_data=midi_file, bpm=tempo)
             progression = midi_service.extract_notes_and_chords()
 
@@ -72,7 +74,7 @@ def progression_info(chordProgression, tempo, file):
             key_info = midi_service.find_estimate_key()
             key_info = midi_service.correct_key_with_first_event(key_info, progression)
             bpm, tempo_name = classify_tempo(midi_service.find_tempo())
-            scale = midi_service.find_scale(key_info, chordProgression)
+            scale = midi_service.find_scale(key_info, cleaned)
             
             if scale['exists']:
                 relative_scales = midi_service.find_relative_scales()
@@ -83,9 +85,6 @@ def progression_info(chordProgression, tempo, file):
             chordsForteClass = midi_service.extract_chord_progression_forteclass()
 
             emotion = ai_service.rf_predict(chordsForteClass[:-1], key_info["mode"], key_info["tonic"])
-
-            print(f"PREDICTED FORTECLASS_SEQUENCE: {chordsForteClass[:-1]}")
-            print(f"EMOTION: {emotion}")
 
             return {
                 "progression": progression,
