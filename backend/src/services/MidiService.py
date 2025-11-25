@@ -341,7 +341,7 @@ class MidiService:
                     # chord_name = sanitize_chord_name(simplify_chord_name(objChord.pitchedCommonName), 'tab')
                     chord_name = clean_pitched_common_name(objChord.pitchedCommonName)
                     
-                    if not chord_name or chord_name == "[No Name]" or chord_name == prev_chord:
+                    if not chord_name or chord_name == "[No Name]":
                         continue
 
                     prev_chord = chord_name
