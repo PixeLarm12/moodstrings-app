@@ -229,14 +229,14 @@ class MidiService:
             harmonic_chords = []
             for i, pitch in enumerate(actual_scale.pitches):
                 chord_name = pitch.name.replace("-", "b")
-                name = sanitize_chord_name(chord_name.replace("-", "b"))
+                sanitize_name = sanitize_chord_name(chord_name.replace("-", "b"))
                 function = actual_scale.getScaleDegreeFromPitch(pitch.name)
-                function_roman = MusicEnum.HarmonicFunctions.FUNCTIONS_EN.value[function-1]
+                roman, name = MusicEnum.HarmonicFunctions.FUNCTIONS_EN.value[function-1]
 
                 harmonic_chords.append({
-                    "function": function_roman,
                     "chord": chord_name,
-                    "name": name
+                    "name": sanitize_name,
+                    "function": f"{roman} ({name})"
                 })
 
             key_name = sanitize_chord_name(actual_scale.name.replace("-", "b"), 'tab')
@@ -281,14 +281,14 @@ class MidiService:
         harmonic_chords = []
         for i, pitch in enumerate(relative.pitches):
             chord_name = pitch.name.replace("-", "b")
-            name = sanitize_chord_name(chord_name.replace("-", "b"))
+            sanitize_name = sanitize_chord_name(chord_name.replace("-", "b"))
             function = relative.getScaleDegreeFromPitch(pitch.name)
-            function_roman = MusicEnum.HarmonicFunctions.FUNCTIONS_EN.value[function-1]
+            roman, name = MusicEnum.HarmonicFunctions.FUNCTIONS_EN.value[function-1]
 
             harmonic_chords.append({
-                "function": function_roman,
                 "chord": chord_name,
-                "name": name
+                "name": sanitize_name,
+                "function": f"{roman} ({name})" 
             })
             
         key_name = sanitize_chord_name(relative.name.replace("-", "b"), 'tab')
@@ -357,7 +357,7 @@ class MidiService:
                         "chord": chord_name,
                         "name": sanitize_chord_name(chord_name),
                         "notes": chord_notes,
-                        "function": function
+                        # "function": function
                     })
 
         return chord_progression

@@ -4,14 +4,14 @@
       <h1 class="text-2xl text-sky-400 font-bold mb-4">{{ chordName }}</h1>
     </template>
 
-    <h2 class="text-xl">Harmonic function based on scale: </h2>
-    <p class="my-2 text-sky-400">
+    <h2 v-if="chordFunction" class="text-xl">Harmonic function based on scale: </h2>
+    <p v-if="chordFunction" class="my-2 text-sky-400">
       {{ chordFunction }}
     </p>
 
-    <h3 class="text-xl mt-4 mb-2">The chord were created by these notes:</h3>
+    <h3 v-if="notes.length > 0" class="text-xl mt-4 mb-2">The chord were created by these notes:</h3>
 
-    <div class="flex flex-row justify-start text-sky-400">
+    <div v-if="notes.length > 0" class="flex flex-row justify-start text-sky-400">
       <span v-for="(note, index) in notes" :key="index" class="text-xl font-semibold">
         {{ note }}<span v-if="index < notes.length - 1">-</span>
       </span>

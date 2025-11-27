@@ -6,12 +6,12 @@
 
     <div v-if="scales.actual && scales.relatives" class="w-full">
       <h2 class="font-semibold text-lg text-sky-400">Scale: {{ scales.actual.key }}</h2>
-      <ChordsPlayedComponent :progression="scales.actual.chords" :lock-chord-modal="true"></ChordsPlayedComponent>
+      <ChordsPlayedComponent :progression="scales.actual.chords"></ChordsPlayedComponent>
       
       <hr class="my-10 text-sky-700">
       
       <h2 class="font-semibold text-lg text-sky-400">Relative: {{ scales.relatives.key }}</h2>
-      <ChordsPlayedComponent :progression="scales.relatives.chords" :lock-chord-modal="true"></ChordsPlayedComponent>
+      <ChordsPlayedComponent :progression="scales.relatives.chords"></ChordsPlayedComponent>
     </div>
 
     <div v-else class="flex flex-col justify-center text-lg italic">
