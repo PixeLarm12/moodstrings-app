@@ -32,13 +32,13 @@ async def get_progression_info(
 ):  
     return audio_controller.progression_info(chordProgression, tempo, uploaded_file)
 
-@app.post("/download-midi")
-async def download_midi(uploaded_file: UploadFile):
-    return await audio_controller.get_midi_to_download(uploaded_file)
+# @app.post("/download-midi")
+# async def download_midi(uploaded_file: UploadFile):
+#     return await audio_controller.get_midi_to_download(uploaded_file)
 
-@app.post("/download-sheet")
-async def download_sheet(uploaded_file: UploadFile):
-    return await audio_controller.get_musical_sheet_to_download(uploaded_file)
+# @app.post("/download-sheet")
+# async def download_sheet(uploaded_file: UploadFile):
+#     return await audio_controller.get_musical_sheet_to_download(uploaded_file)
 
 @app.get("/test-evaluation")
 def test_evaluation():
@@ -49,67 +49,67 @@ def test_evaluation():
         "full": full,
     }
 
-@app.get("/build-chunked-dataset")
-def build_chunked_dataset():
-    service = ModelTrainingService();
-    service.build_chunked_dataset()
+# @app.get("/build-chunked-dataset")
+# def build_chunked_dataset():
+#     service = ModelTrainingService();
+#     service.build_chunked_dataset()
     
-    return { "message": "built chunk dataset" }
+#     return { "message": "built chunk dataset" }
 
-@app.get("/balance-chunked-dataset")
-def balance_chunked_dataset():
-    service = ModelTrainingService();
-    service.build_balanced_chunked_dataset()
+# @app.get("/balance-chunked-dataset")
+# def balance_chunked_dataset():
+#     service = ModelTrainingService();
+#     service.build_balanced_chunked_dataset()
     
-    return { "message": "built balanced dataset" }
+#     return { "message": "built balanced dataset" }
 
-@app.get("/balance-chunked-dataset-traintest")
-def balance_chunked_dataset_traintest():
-    service = ModelTrainingService();
-    service.build_balanced_chunked_dataset_traintest()
+# @app.get("/balance-chunked-dataset-traintest")
+# def balance_chunked_dataset_traintest():
+#     service = ModelTrainingService();
+#     service.build_balanced_chunked_dataset_traintest()
     
-    return { "message": "built balanced dataset" }
+#     return { "message": "built balanced dataset" }
 
-@app.get("/split-dataset")
-def split_dataset():
-    service = ModelTrainingService();
-    service.split_balanced_dataset()
+# @app.get("/split-dataset")
+# def split_dataset():
+#     service = ModelTrainingService();
+#     service.split_balanced_dataset()
     
-    return {
-        "message": "splitted balanced dataset"
-    }
+#     return {
+#         "message": "splitted balanced dataset"
+#     }
 
-@app.get("/train-balanced")
-def train_balanced():
-    service = ModelTrainingService();
-    service.train_balanced_dataset()
+# @app.get("/train-balanced")
+# def train_balanced():
+#     service = ModelTrainingService();
+#     service.train_balanced_dataset()
 
-    return {
-        "message": "trained balanced random forest"
-    }
+#     return {
+#         "message": "trained balanced random forest"
+#     }
 
 
-@app.get("/build-full-dataset")
-def build_full_dataset():
-    service = RFTrainingService();
-    service.build_full_dataset()
+# @app.get("/build-full-dataset")
+# def build_full_dataset():
+#     service = RFTrainingService();
+#     service.build_full_dataset()
     
-    return { "message": "built full dataset" }
+#     return { "message": "built full dataset" }
 
-@app.get("/split-full_dataset")
-def split_full_dataset():
-    service = RFTrainingService();
-    service.split_full_dataset()
+# @app.get("/split-full_dataset")
+# def split_full_dataset():
+#     service = RFTrainingService();
+#     service.split_full_dataset()
     
-    return {
-        "message": "splitted full dataset"
-    }
+#     return {
+#         "message": "splitted full dataset"
+#     }
 
-@app.get("/train-full-dataset")
-def train_full_dataset():
-    service = RFTrainingService();
-    service.train_full_dataset()
+# @app.get("/train-full-dataset")
+# def train_full_dataset():
+#     service = RFTrainingService();
+#     service.train_full_dataset()
 
-    return {
-        "message": "trained full random forest"
-    }
+#     return {
+#         "message": "trained full random forest"
+#     }

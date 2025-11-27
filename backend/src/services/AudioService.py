@@ -84,6 +84,8 @@ class AudioService:
             for ch in chord_progression.split("-")
         ]
 
+        
+
         if not chords_list:
             raise ValueError("Chord progression must contain at least one chord.")
 

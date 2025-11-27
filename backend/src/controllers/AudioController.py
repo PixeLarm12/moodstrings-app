@@ -63,6 +63,7 @@ def progression_info(chord_progression, tempo, file):
     if len(errors) <= 0:
         try:
             cleaned = clean_chord_name(chord_progression)
+            print(f"CLEAND {cleaned}")
             
             audio_service = AudioService(file)
             midi_file = audio_service.create_midi_file_from_progression(chord_progression=cleaned, bpm=tempo)
