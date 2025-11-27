@@ -3,9 +3,9 @@ from src.services import AudioService
 from src.enums import HttpEnum
 from src.exceptions import AppException
 
-async def analyze_audio(media: UploadFile = None):
+async def analyze_audio(lang = "en-US", media: UploadFile = None):
     service = AudioService(media)
-    content = await service.transcribe()
+    content = await service.transcribe(lang=lang)
 
     if not content:
         raise AppException(

@@ -9,6 +9,40 @@
         File name: {{ file.name }}
       </h2>
 
+      <div v-show="!loading && !showProgressionInfo && !showValidationForm" class="w-full mt-4 py-2 flex flex-col gap-3">
+        <h3 class="text-center font-semibold">
+          Select the current language of your audio uploaded:
+        </h3>
+
+        <div class="flex flex-row justify-center gap-6">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="audioLang"
+              value="en-US"
+              class="accent-sky-600"
+              v-model="selectedLang"
+              selected
+            />
+            <img src="@/assets/us_flag.svg" class="w-6 h-6 rounded-sm" />
+            <span class="font-medium">English (US)</span>
+          </label>
+
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="audioLang"
+              value="pt-BR"
+              class="accent-sky-600"
+              v-model="selectedLang"
+            />
+            <img src="@/assets/br_flag.svg" class="w-6 h-6 rounded-sm" />
+            <span class="font-medium">Português (BR)</span>
+          </label>
+
+        </div>
+      </div>
+
       <button
         v-show="!loading && !showProgressionInfo && !showValidationForm"
         @click="optionRecordMic = !optionRecordMic"
@@ -133,6 +167,7 @@ export default {
       tempo: [],
       tonic: "",
       lyrics: "",
+      selectedLang: "en-US",
       API_URL: import.meta.env.VITE_API_URL,
       LYRICS_API_URL: import.meta.env.VITE_LYRICS_API_URL
     }
@@ -346,6 +381,7 @@ export default {
 
       const formData = new FormData()
       formData.append("uploaded_audio", this.file)
+      formData.append("lang", this.selectedLang)
 
       try {
         const response = await axios.post(`${this.LYRICS_API_URL}/audio`, formData,   {

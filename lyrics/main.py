@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, Request
+from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from src.controllers import FileController as file_controller
 from src.utils.HttpUtil import HttpUtil
@@ -34,6 +34,9 @@ app.add_middleware(
 )
 
 @app.post("/audio")
-async def audio(uploaded_audio: UploadFile = None):
-    content, code, message = await file_controller.analyze_audio(uploaded_audio)
+async def audio(
+    lang: str = Form(...),
+    uploaded_audio: UploadFile = File(...)
+):
+    content, code, message = await file_controller.analyze_audio(lang=lang, media=uploaded_audio)
     return HttpUtil.response(content, code, message)

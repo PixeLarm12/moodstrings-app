@@ -11,7 +11,7 @@ class AudioService:
     def __init__(self, file):
         self.file = file
 
-    async def transcribe(self, chunk_size=30):
+    async def transcribe(self, lang="en-US", chunk_size=30):
         try:
             suffix = os.path.splitext(self.file.filename)[-1].lower()
 
@@ -37,7 +37,7 @@ class AudioService:
                     try:
                         audio_data = recognizer.record(source, duration=chunk_size)
 
-                        text = recognizer.recognize_google(audio_data, language="en-US")
+                        text = recognizer.recognize_google(audio_data, language=lang)
                         full_text.append(text + "\n\n")
 
                     except sr.UnknownValueError:

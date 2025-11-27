@@ -1,6 +1,7 @@
 <template>
   <div class="flex flex-col items-center space-y-4">
     <button
+      v-if="!audioUrl"
       @click="toggleRecording"
       class="block w-full text-sm text-white cursor-pointer 
               py-2 px-4 rounded-lg font-semibold 
