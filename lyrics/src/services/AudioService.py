@@ -41,7 +41,6 @@ class AudioService:
 
 
                 while current < duration:
-                    print(f"current: {current}")
                     try:
                         audio_data = recognizer.record(source, duration=chunk_size)
 
