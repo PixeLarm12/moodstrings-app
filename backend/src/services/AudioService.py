@@ -78,18 +78,13 @@ class AudioService:
     def create_midi_file_from_progression(self, chord_progression: str, bpm: int = 90, duration: float = 1.0):
         if not chord_progression or not isinstance(chord_progression, str):
             raise ValueError("Chord progression must be a non-empty string.")
-
-        # Normalize input
-        cleaned = (chord_progression
-                .replace('♯', '#')
-                .replace("–", "-")
-                .replace("—", "-")
-                .replace(" ", ""))
-
+        
         chords_list = [
             ch.strip().replace('"', '')
-            for ch in cleaned.split("-")
+            for ch in chord_progression.split("-")
         ]
+
+        
 
         if not chords_list:
             raise ValueError("Chord progression must contain at least one chord.")
@@ -108,6 +103,7 @@ class AudioService:
                 c = chord.Chord(ch.pitches) # just to create Chord object separated
 
             except Exception:
+                
                 c = note.Note(raw_chord)
 
             c.duration.quarterLength = duration

@@ -55,13 +55,17 @@
         />
 
         <label v-if="progression.chords?.length || !(!progression.chords?.length)" class="block text-sm text-gray-300 mb-1">Chords (separated by hifen "-"):</label>
-        <input
+        <textarea
           v-if="progression.chords?.length || !(!progression.chords?.length)"
           v-model="manualChords"
           type="text"
           placeholder="Example: C G Am F"
-          class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-sky-500"
-        />
+          class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 
+                text-white placeholder-gray-500 
+                focus:ring-2 focus:ring-sky-500 
+                resize-auto"
+        ></textarea>
+
 
         <div class="flex justify-center gap-6 mt-4">
           <button

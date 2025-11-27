@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+python-multipart
+# numpy
+pydub
+# requests
+# openai-whisper
+# torch
+# pytube
+# yt-dlp
+# PyPDF2
+speechrecognition
