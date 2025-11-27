@@ -1,7 +1,7 @@
 <template>
   <div class="flex items-center justify-center py-8 px-4">
       <ScalesModal :show="showScalesModal" :scales="scales" @close="showScalesModal = false" />
-      <LyricsModal :file="file" :show="showLyricsModal" @close="showLyricsModal = false"/>
+      <LyricsModal :file="file" :show="showLyricsModal" :lyrics="lyrics" @close="showLyricsModal = false"/>
 
       <div v-if="(progression.chords.length > 0)" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
 
@@ -115,7 +115,11 @@ export default {
     file: {
         type: File,
         default: null
-    }
+    },
+    lyrics: {
+      type: String,
+      default: ""
+    },
   },
   components: {
     ScalesModal,

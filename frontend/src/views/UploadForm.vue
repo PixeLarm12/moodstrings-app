@@ -90,6 +90,7 @@
         :key-name="keyName" 
         :tonic="tonic"
         :file="file"
+        :lyrics="lyrics"
         @reset="handleFormReset"
       />
       <!-- END MUSIC INFORMATION -->
@@ -131,7 +132,9 @@ export default {
       keyName: "",
       tempo: [],
       tonic: "",
-      API_URL: import.meta.env.VITE_API_URL
+      lyrics: "",
+      API_URL: import.meta.env.VITE_API_URL,
+      LYRICS_API_URL: import.meta.env.VITE_LYRICS_API_URL
     }
   },
   components: {
@@ -256,6 +259,8 @@ export default {
         this.showValidationForm = true
         this.showProgressionInfo = false
       }
+
+      this.findLyrics()
     },
     formatProgressionStrings(progression) {
       if (!progression || typeof progression !== "object") {
@@ -332,7 +337,29 @@ export default {
       this.optionRecordMic = false
       this.showValidationForm = false
       this.showProgressionInfo = false
-    }
+    },
+    async findLyrics() {
+      if (!this.file) {
+        return
+      }
+
+      const formData = new FormData()
+      formData.append("uploaded_audio", this.file)
+
+      try {
+        const response = await axios.post(`${this.LYRICS_API_URL}/audio`, formData,   {
+          headers: { "Content-Type": "multipart/form-data" }
+        })
+
+        if (!response.data.errors) {
+          this.lyrics = response.data.data
+        } else {
+          this.lyrics = "No lyrics"
+        }
+      } catch (error) {
+        this.lyrics = "No lyrics" 
+      }
+    },
   },
   computed: {
     success() {
