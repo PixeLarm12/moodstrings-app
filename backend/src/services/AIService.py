@@ -4,17 +4,18 @@ from src.services.KNNService import KNNService
 from src.services.SVMService import SVMService
 from src.utils.StringUtil import get_emotion, get_emotion_description
 
-class AIService:
-    def rf_predict(self, forte_sequence: str) -> str:
+class AIService: 
+    def rf_predict(self, forte_sequence: str, mode: str, tonic: str = None) -> str:
         rf_service = RandomForestService() 
-        emotion = rf_service.predict(forte_sequence)
-        evaluation = rf_service.evaluate() 
+        emotion = rf_service.predict_full_ngrams(forte_sequence, mode)
+        evaluation = rf_service.evaluate_full_ngrams() 
 
         return {
             "model_used": "Random Forest",
-            "content": get_emotion(emotion),
+            "content": get_emotion(emotion["emotion"]),
             "evaluation": evaluation,
-            "description": get_emotion_description(emotion)
+            "description": get_emotion_description(emotion["emotion"]),
+            "emotion_proba": emotion["probabilities"]
         }
     
     def nb_predict(self, forte_sequence: str) -> str:
@@ -24,7 +25,7 @@ class AIService:
 
         return {
             "model_used": "Naive Bayes",
-            "content": get_emotion_portuguese(emotion),
+            "content": get_emotion(emotion),
             "evaluation": evaluation
         }
     
@@ -35,7 +36,7 @@ class AIService:
 
         return {
             "model_used": "KNN",
-            "content": get_emotion_portuguese(emotion),
+            "content": get_emotion(emotion),
             # "evaluation": evaluation
         }
     
@@ -46,7 +47,7 @@ class AIService:
 
         return {
             "model_used": "SVM",
-            "content": get_emotion_portuguese(emotion),
+            "content": get_emotion(emotion),
             "evaluation": evaluation
         }
 

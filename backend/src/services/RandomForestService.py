@@ -1,110 +1,168 @@
 import os
 import pandas as pd
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.pipeline import Pipeline
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, accuracy_score
-from typing import Tuple
 from pathlib import Path
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import classification_report, accuracy_score
+from sklearn.pipeline import FeatureUnion
 import joblib
-import time
+import numpy as np
 
-BASE_DIR = Path(__file__).resolve().parent                    # /app/src/services
-MODELS_DIR = (BASE_DIR / '..' / 'AIModels').resolve()        # /app/src/AIModels
-DATASET_DIR = (BASE_DIR / '..' / 'dataset').resolve()        # /app/src/dataset
-MODEL_PATH = MODELS_DIR / 'emotion_randomforest_model.pkl'
+BASE_DIR = Path(__file__).resolve().parent                   
+MODELS_DIR = (BASE_DIR / '..' / 'final-models').resolve()
+DATASET_DIR = (BASE_DIR / '..' / 'final-dataset').resolve()
 
-TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'train_dataset.csv')
-TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'test_dataset.csv')
-MODEL_PATH = os.path.join(MODELS_DIR, 'emotion_randomforest_model.pkl')
+BALANCED_CHUNKED_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_40_strict_dataset.csv')  
+BALANCED_CHUNKED_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'balanced_chunked_40_strict_train_dataset.csv')
+BALANCED_CHUNKED_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'chunked_40_strict_test_dataset.csv')
+RF_BALANCED_CHUNKED_PATH = os.path.join(MODELS_DIR, 'random_forest_balanced_chunked_40_strict_model.pkl')
 
+FULL_DATASET_DATASET_PATH = os.path.join(DATASET_DIR, 'full_dataset.csv')  
+FULL_DATASET_TRAIN_DATASET_PATH = os.path.join(DATASET_DIR, 'full_train_dataset.csv')
+FULL_DATASET_TEST_DATASET_PATH = os.path.join(DATASET_DIR, 'full_test_dataset.csv')
+RF_FULL_PATH = os.path.join(MODELS_DIR, 'random_forest_full_model.pkl')
 
 class RandomForestService:
     def __init__(self):
         self._emotion_model = None
-        self.model_path = os.path.abspath(MODEL_PATH)
+        # self.model_path = os.path.abspath(RF_BALANCED_CHUNKED_PATH)
+        self.model_path = os.path.abspath(RF_FULL_PATH)
+        self.vectorizer = None
+        self.classifier = None
 
-        # check if current saved model exists
         if os.path.exists(self.model_path):
-            print(f"🔹 Existent model found in: {self.model_path}")
-            self.load_model()
+            print(f"🔹 Found trained model at: {self.model_path}")
+            self._emotion_model = joblib.load(RF_FULL_PATH)
+            # self.load_balanced_model()
         else:
-            print("⚠️ Model didn't find. Initializing new training...")
-            self.train_models()
+            raise FileNotFoundError(
+                f"Trained model not found at {self.model_path}"
+            )
 
-    def train_models(self):
-        if not os.path.exists(TRAIN_DATASET_PATH):
-            raise FileNotFoundError(f"Train dataset not found: {TRAIN_DATASET_PATH}")
+    def load_balanced_model(self):
+        if not os.path.exists(RF_BALANCED_CHUNKED_PATH):
+            raise FileNotFoundError(f"Balanced chunk model not found: {RF_BALANCED_CHUNKED_PATH}")
 
-        train_df = pd.read_csv(TRAIN_DATASET_PATH)
+        pkg = joblib.load(RF_BALANCED_CHUNKED_PATH)
 
-        required_columns = ["forteclass_sequence", "emotion"]
-        if not all(col in train_df.columns for col in required_columns):
-            raise ValueError(f"Dataset needs more columns: {required_columns}")
+        if "vectorizer" not in pkg or "lda" not in pkg or "model" not in pkg:
+            raise ValueError("Invalid model package: missing vectorizer, lda, or model.")
 
-        train_df = train_df.dropna(subset=['forteclass_sequence'])
-        train_df = train_df[train_df['forteclass_sequence'].str.len() > 0]
+        self.vectorizer = pkg["vectorizer"]
+        self.lda = pkg["lda"]
+        self.classifier = pkg["model"]
 
-        X_train = train_df['forteclass_sequence']
-        y_train = train_df['emotion']
-
-        print(f"Training with {len(X_train)} samples...")
-
+        # Rebuild the complete pipeline
         self._emotion_model = Pipeline([
-            ("vect", CountVectorizer(token_pattern=r'[^,]+', lowercase=False)),
-            ("clf", RandomForestClassifier(n_estimators=100, random_state=42))
+            ("vectorizer", self.vectorizer),
+            ("lda", self.lda),
+            ("model", self.classifier)
         ])
 
-        start = time.time()
-        self._emotion_model.fit(X_train, y_train)
-        print(f"✅ Trained model found in {time.time() - start:.2f}s")
+        print("✅ Balanced chunk model loaded successfully.")
+        print(f"   - Vocabulary size: {len(self.vectorizer.vocabulary_)}")
+        print(f"   - LDA components: {self.lda.n_components}")
+        print(f"   - Classes: {list(self.classifier.classes_)}")
 
-        self.save_model()
-        print("📦 Successfully saved model!")
+        return self._emotion_model
 
-    def load_model(self):
-        self._emotion_model = joblib.load(self.model_path)
-        print(f"✅ Model loaded from: {self.model_path}")
 
-    def save_model(self):
-        os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
-        joblib.dump(self._emotion_model, self.model_path)
-        print(f"💾 Model saved in: {self.model_path}")
+    # -----------------------
+    # Predict
+    # -----------------------
+    def predict_balanced_chunk(self, forteclass_sequence: str, mode: str) -> dict:
+        # Validate model
+        if not hasattr(self, "_emotion_model") or self._emotion_model is None:
+            raise ValueError("Balanced chunked model not loaded. Run load_balanced_50_model() first.")
 
-    def predict(self, forteclass_sequence: str) -> str:
-        if not forteclass_sequence or len(forteclass_sequence.strip()) == 0:
-            raise ValueError("Forteclasses sequence is null or invalid")
+        # Validate inputs
+        if not isinstance(forteclass_sequence, str) or not isinstance(mode, str):
+            raise ValueError("forteclass_sequence and mode must be strings.")
 
+        # Combine inputs
+        combined = f"{forteclass_sequence} | {mode}"
+        X = [combined]
+
+        # Predict
+        pred = self._emotion_model.predict(X)[0]
+        probs = self._emotion_model.predict_proba(X)[0]
+
+        # Extract class names
+        classes = list(self._emotion_model.named_steps["model"].classes_)
+
+        return {
+            "emotion": str(pred),
+            "probabilities": {c: float(p) for c, p in zip(classes, probs)}
+        }
+    
+    def predict_full_ngrams(self, forteclass_sequence: str, mode: str, tonic: str = None):
         if self._emotion_model is None:
-            raise ValueError("Model not loaded")
+            raise ValueError("Model not loaded.")
 
-        pred = self._emotion_model.predict([forteclass_sequence])[0]
-        return pred
+        # must match training format
+        combined = f"{forteclass_sequence} | {mode} | {tonic}"
 
-    def evaluate(self) -> dict:
-            if not os.path.exists(TEST_DATASET_PATH):
-                raise FileNotFoundError(f"Test dataset not found: {TEST_DATASET_PATH}")
+        pred = self._emotion_model.predict([combined])[0]
+        probs = self._emotion_model.predict_proba([combined])[0]
+        classes = self._emotion_model.classes_
 
-            test_df = pd.read_csv(TEST_DATASET_PATH)
-            test_df = test_df.dropna(subset=['forteclass_sequence'])
-            test_df = test_df[test_df['forteclass_sequence'].str.len() > 0]
+        return {
+            "emotion": str(pred),
+            "probabilities": {c: float(p) for c, p in zip(classes, probs)}
+        }
 
-            X_test = test_df['forteclass_sequence']
-            y_test = test_df['emotion']
+    # -----------------------
+    # Evaluation
+    # -----------------------
+    def evaluate_model_balanced(self) -> dict:
+        if not hasattr(self, "_emotion_model") or self._emotion_model is None:
+            raise ValueError("50-chunk model not loaded. Run load_emotion_model() first.")
 
-            print(f"\n🔍 Evaluating with {len(X_test)} samples...")
+        if not os.path.exists(BALANCED_CHUNKED_TEST_DATASET_PATH):
+            raise FileNotFoundError(
+                f"Balanced 50-chunk test dataset not found: {BALANCED_CHUNKED_TEST_DATASET_PATH}"
+            )
 
-            y_pred = self._emotion_model.predict(X_test)
+        df = pd.read_csv(BALANCED_CHUNKED_TEST_DATASET_PATH)
 
-            accuracy = accuracy_score(y_test, y_pred)
-            print(f"\n=== RANDOM FOREST EMOTION MODEL EVALUATION ===")
-            print(f"Accuracy: {accuracy:.4f}")
-            print("\nDetailed classification report:")
-            print(classification_report(y_test, y_pred))
+        # Clean rows
+        df = df.dropna(subset=['forteclass_sequence', 'mode', 'emotion'])
+        df = df[df['forteclass_sequence'].str.len() > 0]
 
-            # Return metrics
-            return {
-                "accuracy": round(accuracy * 100, 2),
-                "samples": len(X_test),
-                # "unique_emotions": sorted(y_test.unique())
-            }
+        X = (df['forteclass_sequence'] + " | " + df['mode']).values
+        y_true = df['emotion'].values
+
+        print(f"🔍 Evaluating BALANCED 50-chunk model on {len(X)} samples...")
+
+        y_pred = self._emotion_model.predict(X)
+
+        acc = accuracy_score(y_true, y_pred) * 100
+        report = classification_report(y_true, y_pred, output_dict=True)
+
+        print(f"🎯 BALANCED 50-CHUNK Accuracy: {acc:.2f}%")
+        print(classification_report(y_true, y_pred))
+
+        return {
+            "accuracy": f"{acc:.2f}",
+            "report": report,
+            "n_samples": len(X)
+        }
+    
+    def evaluate_full_ngrams(self):
+        df = pd.read_csv(FULL_DATASET_TEST_DATASET_PATH)
+        df = df.dropna(subset=["ngrams_input", "emotion"])
+
+        X = df["ngrams_input"].astype(str)
+        y = df["emotion"].astype(str)
+
+        preds = self._emotion_model.predict(X)
+        probs = self._emotion_model.predict_proba(X)
+
+        acc = accuracy_score(y, preds) * 100
+        report = classification_report(y, preds, output_dict=True)
+
+        print(f"🎯 Accuracy: {acc:.2f}%")
+        return {
+            "accuracy": acc,
+            "report": report,
+            "n_samples": len(df)
+        }

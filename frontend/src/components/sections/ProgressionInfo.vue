@@ -1,6 +1,7 @@
 <template>
   <div class="flex items-center justify-center py-8 px-4">
       <ScalesModal :show="showScalesModal" :scales="scales" @close="showScalesModal = false" />
+      <LyricsModal :file="file" :show="showLyricsModal" :lyrics="lyrics" @close="showLyricsModal = false"/>
 
       <div v-if="(progression.chords.length > 0)" class="bg-gray-800 p-4 rounded-lg text-left space-y-1">
 
@@ -14,6 +15,23 @@
             </div>
 
             <div class="w-full md:col-span-5 flex flex-col justify-start gap-2 md:gap-4">
+              <button
+                type="button"
+                :disabled="lyrics.length === 0"
+                class="py-2 px-12 bg-sky-600 rounded-lg font-semibold 
+                      hover:bg-sky-700 disabled:bg-gray-400 disabled:cursor-not-allowed
+                      flex items-center justify-center gap-2"
+                @click="showLyricsModal = true"
+              >
+                <template v-if="lyrics.length === 0">
+                  <Loading v-show="!lyrics" :file-name="file ? file.name : ''" :is-lyrics="true"></Loading>
+                </template>
+
+                <template v-else>
+                  <span>Check Lyrics</span>
+                </template>
+              </button>
+              
               <!-- <button
                   v-if="(progression.chords.length > 0)"
                   type="button"
@@ -67,12 +85,15 @@ import axios from "axios"
 import ScalesModal from "../modal/ScalesModal.vue"
 import EmotionsComponent from "../music/EmotionsComponent.vue"
 import ChordsPlayedComponent from "../music/ChordsPlayedComponent.vue"
+import LyricsModal from "../modal/LyricsModal.vue"
+import Loading from "../utils/Loading.vue"
 
 export default {
   name: "ProgressionInfo",
   data() {
     return {
       showScalesModal: false,
+      showLyricsModal: false,
       API_URL: import.meta.env.VITE_API_URL
     }
   },
@@ -86,8 +107,8 @@ export default {
       default: () => []
     },
     scales: {
-      type: Array,
-      default: () => []
+      type: Object,
+      default: () => {}
     },
     tempo: {
       type: Object,
@@ -100,12 +121,22 @@ export default {
     tonic: {
       type: String,
       default: ""
-    }
+    },
+    file: {
+        type: File,
+        default: null
+    },
+    lyrics: {
+      type: String,
+      default: ""
+    },
   },
   components: {
     ScalesModal,
     EmotionsComponent,
-    ChordsPlayedComponent
+    ChordsPlayedComponent,
+    LyricsModal,
+    Loading
   },
   methods: {
     handleFileChange(event) {

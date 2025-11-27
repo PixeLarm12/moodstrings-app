@@ -1,13 +1,47 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-900 text-white">
     <div class="w-full max-w-md md:max-w-2xl text-center space-y-6">
-      <img src="/logo.png" alt="Logo" class="w-24 h-24 mx-auto rounded-full shadow-lg" />
+      <img src="/logo.png" alt="Logo" class="w-32 h-32 md:w-52 md:h-52 mx-auto shadow-lg mb-12" />
 
       <h1 class="text-3xl font-bold">Chord and Emotion Recognizer</h1>
 
       <h2 v-if="file && file.name && (progression.chords.length > 0)" class="text-lg font-semibold italic mb-2 text-gray-500">
         File name: {{ file.name }}
       </h2>
+
+      <div v-show="!loading && !showProgressionInfo && !showValidationForm" class="w-full mt-4 py-2 flex flex-col gap-3">
+        <h3 class="text-center font-semibold">
+          Select the current language of your audio uploaded:
+        </h3>
+
+        <div class="flex flex-row justify-center gap-6">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="audioLang"
+              value="en-US"
+              class="accent-sky-600"
+              v-model="selectedLang"
+              selected
+            />
+            <img src="@/assets/us_flag.svg" class="w-6 h-6 rounded-sm" />
+            <span class="font-medium">English (US)</span>
+          </label>
+
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="audioLang"
+              value="pt-BR"
+              class="accent-sky-600"
+              v-model="selectedLang"
+            />
+            <img src="@/assets/br_flag.svg" class="w-6 h-6 rounded-sm" />
+            <span class="font-medium">Português (BR)</span>
+          </label>
+
+        </div>
+      </div>
 
       <button
         v-show="!loading && !showProgressionInfo && !showValidationForm"
@@ -42,19 +76,28 @@
           class="mt-4 w-full"
         ></audio>
 
+        <label
+          v-if="!optionRecordMic"
+          for="fileUpload"
+          class="block w-full text-sm text-white cursor-pointer 
+                py-2 px-4 rounded-lg font-semibold 
+                bg-sky-600 hover:bg-sky-700 text-center"
+        >
+          Upload file
+        </label>
+
         <input
+          id="fileUpload"
           v-if="!optionRecordMic"
           type="file"
           @change="handleFileChange"
-          class="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 
-                 file:rounded-lg file:border-0 file:text-sm file:font-semibold 
-                 file:bg-sky-600 file:text-white hover:file:bg-sky-700"
+          class="hidden"
         />
 
         <button
           v-if="submitReadOnlyChecker"
           type="submit"
-          class="w-full py-2 bg-sky-600 rounded-lg font-semibold hover:bg-sky-700"
+          class="w-full mt-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-semibold"
         >
           Send
         </button>
@@ -80,6 +123,8 @@
         :tempo="tempo" 
         :key-name="keyName" 
         :tonic="tonic"
+        :file="file"
+        :lyrics="lyrics"
         @reset="handleFormReset"
       />
       <!-- END MUSIC INFORMATION -->
@@ -121,7 +166,10 @@ export default {
       keyName: "",
       tempo: [],
       tonic: "",
-      API_URL: import.meta.env.VITE_API_URL
+      lyrics: "",
+      selectedLang: "en-US",
+      API_URL: import.meta.env.VITE_API_URL,
+      LYRICS_API_URL: import.meta.env.VITE_LYRICS_API_URL
     }
   },
   components: {
@@ -186,6 +234,8 @@ export default {
         this.file = null
         this.uploadedFileUrl = ""
       }
+
+      this.findLyrics()
     },
     cleanFields(keepFile = false) {
       this.message = ""
@@ -197,6 +247,7 @@ export default {
       this.keyName = ""
       this.tempo = []
       this.tonic = ""
+      this.lyrics = ""
       this.isAudioRecorded = false
       
       if(!keepFile){
@@ -322,7 +373,30 @@ export default {
       this.optionRecordMic = false
       this.showValidationForm = false
       this.showProgressionInfo = false
-    }
+    },
+    async findLyrics() {
+      if (!this.file) {
+        return
+      }
+
+      const formData = new FormData()
+      formData.append("uploaded_audio", this.file)
+      formData.append("lang", this.selectedLang)
+
+      try {
+        const response = await axios.post(`${this.LYRICS_API_URL}/audio`, formData,   {
+          headers: { "Content-Type": "multipart/form-data" }
+        })
+
+        if (!response.data.errors) {
+          this.lyrics = response.data.data
+        } else {
+          this.lyrics = "No lyrics"
+        }
+      } catch (error) {
+        this.lyrics = "No lyrics" 
+      }
+    },
   },
   computed: {
     success() {

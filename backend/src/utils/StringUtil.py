@@ -1,6 +1,6 @@
 import re
 
-def get_clean_chord_name(text) -> str:
+def clean_pitched_common_name(text) -> str:
     QUALITY_MAP = {
         "major": "",
         "minor": "m",
@@ -64,6 +64,16 @@ def get_clean_chord_name(text) -> str:
         return f"{root}maj7"
 
     return f"{root}{quality}{extension}"
+
+def clean_chord_name(chord_progression: str) -> str:
+    return (chord_progression
+            .replace('♯', '#')
+            .replace("–", "-")
+            .replace("—", "-")
+            .replace("aug", "+")
+            .replace("dim", " ") #verify Why dim does not work
+            .replace("maj", "")
+            .replace(" ", ""))
 
 def simplify_chord_name(chord_name: str) -> str:
     if not chord_name:

@@ -26,6 +26,8 @@ dataset_forteclass_FULL.csv
 backend/dataset_forteclass_FULL.csv
 backend/src/dataset/
 backend/midi_raw_files/
+backend/src/final-dataset/
+backend/src/final-models/
 *_dataset.csv
 dataset_*.csv
 # PROTEÇÃO EXTRA - CSVs em qualquer lugar do backend
