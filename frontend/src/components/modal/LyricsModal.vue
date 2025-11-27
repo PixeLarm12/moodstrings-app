@@ -14,8 +14,8 @@
     </button>  
 
     <div v-if="lyrics" class="flex flex-col justify-center">
-        <p class="text-left break-keep">
-            {{ lyrics }}
+        <p class="text-left whitespace-pre-line break-keep">
+          {{ lyrics }}
         </p>
     </div>
   </DefaultModal>

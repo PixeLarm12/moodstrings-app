@@ -45,7 +45,7 @@ class AudioService:
                         audio_data = recognizer.record(source, duration=chunk_size)
 
                         text = recognizer.recognize_google(audio_data, language="pt-BR")
-                        full_text.append(text)
+                        full_text.append(text.capitalize() + "\n\n")
 
                     except sr.UnknownValueError:
                         full_text.append("")
@@ -65,6 +65,7 @@ class AudioService:
                     current += chunk_size
 
             os.remove(tmp_wav_path)
+
             return " ".join(full_text).strip()
 
         except Exception as e:
@@ -73,3 +74,13 @@ class AudioService:
                 message=f"[{HttpEnum.Message.INTERNAL_SERVER_ERROR.value}] Audio transcription error: {e}",
                 data=[]
             )
+
+    def format_lyrics(self, text: str) -> str:
+        # remove espaços duplos
+        text = " ".join(text.split())
+
+        # quebra linhas onde adicionamos \n entre chunks
+        lines = [line.strip() for line in text.split("\n") if line.strip()]
+
+        return "\n".join(lines)
+
