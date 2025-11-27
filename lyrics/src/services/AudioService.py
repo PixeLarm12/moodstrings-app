@@ -45,7 +45,7 @@ class AudioService:
                         audio_data = recognizer.record(source, duration=chunk_size)
 
                         text = recognizer.recognize_google(audio_data, language="pt-BR")
-                        full_text.append(text.capitalize() + "\n\n")
+                        full_text.append(text + "\n\n")
 
                     except sr.UnknownValueError:
                         full_text.append("")
@@ -66,7 +66,9 @@ class AudioService:
 
             os.remove(tmp_wav_path)
 
-            return " ".join(full_text).strip()
+            raw = " ".join(full_text).strip()
+            return self.format_lyrics(raw)
+
 
         except Exception as e:
             raise AppException(
@@ -75,12 +77,27 @@ class AudioService:
                 data=[]
             )
 
-    def format_lyrics(self, text: str) -> str:
-        # remove espaços duplos
-        text = " ".join(text.split())
+    def format_lyrics(self, text: str, words_per_line=8):
+        words = text.split()
+        
+        lines = []
+        current_line = []
 
-        # quebra linhas onde adicionamos \n entre chunks
-        lines = [line.strip() for line in text.split("\n") if line.strip()]
+        for word in words:
+            current_line.append(word)
 
-        return "\n".join(lines)
+            if len(current_line) >= words_per_line:
+                current_line[0] = current_line[0].capitalize()
+                lines.append(" ".join(current_line))
+                current_line = []
+
+        if current_line:
+            lines.append(" ".join(current_line))
+
+        blocks = []
+        for i in range(0, len(lines), 4):
+            block = "\n".join(lines[i:i+4])
+            blocks.append(block)
+
+        return "\n\n".join(blocks)
 

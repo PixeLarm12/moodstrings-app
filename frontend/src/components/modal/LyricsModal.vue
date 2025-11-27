@@ -13,7 +13,7 @@
         Try to get audio lyrics!
     </button>  
 
-    <div v-if="lyrics" class="flex flex-col justify-center">
+    <div v-if="lyrics" class="flex flex-row justify-center">
         <p class="text-left whitespace-pre-line break-keep">
           {{ lyrics }}
         </p>
