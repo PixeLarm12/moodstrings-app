@@ -6,7 +6,7 @@ from src.enums import HttpEnum
 from src.exceptions import AppException
 
 class AudioService:
-    SUPPORTED_EXTENSIONS = [".mp3", ".wav", ".ogg", ".flac", ".m4a"]
+    SUPPORTED_EXTENSIONS = [".mp3", ".wav", ".ogg", ".flac", ".m4a", "webm"]
 
     def __init__(self, file):
         self.file = file
@@ -15,19 +15,12 @@ class AudioService:
         try:
             suffix = os.path.splitext(self.file.filename)[-1].lower()
 
-            if suffix not in self.SUPPORTED_EXTENSIONS:
-                raise AppException(
-                    code=HttpEnum.Code.UNPROCESSABLE_ENTITY,
-                    message=f"[{HttpEnum.Message.UNPROCESSABLE_ENTITY.value}] Extension {suffix} not supported.",
-                    data=[]
-                )
-
             with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_wav:
                 self.file.file.seek(0)
 
                 audio = AudioSegment.from_file(self.file.file, format=suffix.replace(".", ""))
-                audio = audio.set_channels(1)
-                audio = audio.set_frame_rate(16000)
+                audio = audio.set_channels(2)
+                audio = audio.set_frame_rate(32000)
                 audio.export(tmp_wav.name, format="wav")
 
                 tmp_wav_path = tmp_wav.name
@@ -44,7 +37,7 @@ class AudioService:
                     try:
                         audio_data = recognizer.record(source, duration=chunk_size)
 
-                        text = recognizer.recognize_google(audio_data, language="pt-BR")
+                        text = recognizer.recognize_google(audio_data, language="en-US")
                         full_text.append(text + "\n\n")
 
                     except sr.UnknownValueError:
