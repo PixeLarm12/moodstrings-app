@@ -5,7 +5,7 @@
     </template>
 
     <button
-        v-if="! lyrics"
+        v-if="! lyrics && !loading"
         type="button"
         class="py-2 px-2 1/2 bg-sky-700 rounded-lg font-semibold hover:bg-sky-900"
         @click="findLyrics"
@@ -13,11 +13,13 @@
         Try to get audio lyrics!
     </button>  
 
-    <div v-if="lyrics" class="flex flex-row justify-center">
+    <div v-if="lyrics && !loading" class="flex flex-row justify-center">
         <p class="text-left whitespace-pre-line break-keep">
           {{ lyrics }}
         </p>
     </div>
+
+    <Loading v-show="loading" :file-name="file ? file.name : ''" :is-lyrics="true"></Loading>
   </DefaultModal>
 </template>
 
@@ -51,6 +53,8 @@ export default {
         return
       }
 
+      this.loading = true;
+
       const formData = new FormData()
       formData.append("uploaded_audio", this.file)
 
@@ -60,11 +64,14 @@ export default {
         })
 
         if (!response.data.errors) {
+          this.loading = false
           this.lyrics = response.data.data
         } else {
+          this.loading = false
           this.lyrics = "No lyrics"
         }
       } catch (error) {
+        this.loading = false
         this.lyrics = "No lyrics" 
       }
     },
