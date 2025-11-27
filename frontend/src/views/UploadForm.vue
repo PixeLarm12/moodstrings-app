@@ -89,6 +89,7 @@
         :tempo="tempo" 
         :key-name="keyName" 
         :tonic="tonic"
+        :file="file"
         @reset="handleFormReset"
       />
       <!-- END MUSIC INFORMATION -->
@@ -130,9 +131,7 @@ export default {
       keyName: "",
       tempo: [],
       tonic: "",
-      lyrics: "",
-      API_URL: import.meta.env.VITE_API_URL,
-      LYRICS_API_URL: import.meta.env.VITE_LYRICS_API_URL
+      API_URL: import.meta.env.VITE_API_URL
     }
   },
   components: {
@@ -197,8 +196,6 @@ export default {
         this.file = null
         this.uploadedFileUrl = ""
       }
-
-      this.getLyrics()
     },
     cleanFields(keepFile = false) {
       this.message = ""
@@ -335,38 +332,7 @@ export default {
       this.optionRecordMic = false
       this.showValidationForm = false
       this.showProgressionInfo = false
-    },
-    async getLyrics() {
-      if (!this.file) {
-        return
-      }
-
-      const formData = new FormData()
-      formData.append("uploaded_audio", this.file)
-
-      try {
-        this.errors = []
-        this.message = ""
-
-        const response = await axios.post(`${this.LYRICS_API_URL}/audio`, formData,   {
-          headers: { "Content-Type": "multipart/form-data" }
-        })
-
-        if (!response.data.errors) {
-          this.lyrics = response.data.lyrics
-        } else {
-          // this.message = "Error transcribing lyrics: "
-          // this.errors = response.data.message
-          this.lyrics = "No lyrics"
-        }
-      } catch (error) {
-        // this.message = "Something went wrong transcribing lyrics: "
-        // this.errors = [{
-        //   "message": error.response.data.message
-        // }]
-        this.lyrics = "No lyrics" 
-      }
-    },
+    }
   },
   computed: {
     success() {

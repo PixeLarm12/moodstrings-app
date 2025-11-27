@@ -71,7 +71,7 @@ def clean_chord_name(chord_progression: str) -> str:
             .replace("–", "-")
             .replace("—", "-")
             .replace("aug", "+")
-            .replace("dim", "o")
+            .replace("dim", " ") #verify Why dim does not work
             .replace("maj", "")
             .replace(" ", ""))
 
