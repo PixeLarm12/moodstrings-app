@@ -199,6 +199,8 @@ export default {
         this.file = null
         this.uploadedFileUrl = ""
       }
+
+      this.findLyrics()
     },
     cleanFields(keepFile = false) {
       this.message = ""
@@ -210,6 +212,7 @@ export default {
       this.keyName = ""
       this.tempo = []
       this.tonic = ""
+      this.lyrics = ""
       this.isAudioRecorded = false
       
       if(!keepFile){
@@ -259,8 +262,6 @@ export default {
         this.showValidationForm = true
         this.showProgressionInfo = false
       }
-
-      this.findLyrics()
     },
     formatProgressionStrings(progression) {
       if (!progression || typeof progression !== "object") {

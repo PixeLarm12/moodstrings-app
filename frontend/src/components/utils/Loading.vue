@@ -1,7 +1,7 @@
 <template>
   <div class="text-lg flex justify-center items-center space-x-1 italic">
     <span v-if="!isLyrics">Reading information about&nbsp;<i class="font-semibold">"{{ fileName }}"</i></span>
-    <span v-else>Trying to get lyrics from&nbsp;<i class="font-semibold">"{{ fileName }}"</i></span>
+    <span v-else>Loading lyrics</span>
     <span class="dot-animate">.</span>
     <span class="dot-animate" style="animation-delay: 0.2s">.</span>
     <span class="dot-animate" style="animation-delay: 0.4s">.</span>
