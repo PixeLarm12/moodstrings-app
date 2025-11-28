@@ -29,7 +29,7 @@ backend/midi_raw_files/
 backend/src/final-dataset/full_test_dataset.csv
 backend/src/final-dataset/full_train_dataset.csv
 backend/src/final-dataset/full_dataset.csv
-backend/src/final-models/
+backend/src/final-models/random_forest_full_model.pkl
 # *_dataset.csv
 # dataset_*.csv
 # PROTEÇÃO EXTRA - CSVs em qualquer lugar do backend
