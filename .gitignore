@@ -22,24 +22,26 @@ frontend/.vscode
 todo.md
 
 # DATASETS - Ignorar arquivos CSV grandes, manter apenas os comprimidos (.gz)
-dataset_forteclass_FULL.csv
-backend/dataset_forteclass_FULL.csv
-backend/src/dataset/
+# dataset_forteclass_FULL.csv
+# backend/dataset_forteclass_FULL.csv
+# backend/src/dataset/
 backend/midi_raw_files/
-backend/src/final-dataset/
+backend/src/final-dataset/full_test_dataset.csv
+backend/src/final-dataset/full_train_dataset.csv
+backend/src/final-dataset/full_dataset.csv
 backend/src/final-models/
-*_dataset.csv
-dataset_*.csv
+# *_dataset.csv
+# dataset_*.csv
 # PROTEÇÃO EXTRA - CSVs em qualquer lugar do backend
-backend/**/*.csv
-backend/dataset_forteclass_*.csv
-**/*_dataset.*
-**/forteclass_train_test/
-**/dataset/
+# backend/**/*.csv
+# backend/dataset_forteclass_*.csv
+# **/*_dataset.*
+# **/forteclass_train_test/
+# **/dataset/
 
 # MODELOS TREINADOS
-backend/src/AIModels/genre_forteclass_model.pkl
-backend/src/AIModels/*.pkl
+# backend/src/AIModels/genre_forteclass_model.pkl
+# backend/src/AIModels/*.pkl
 # *.pkl
 *.joblib
 # *.model
