@@ -58,6 +58,13 @@ def test_evaluation(api_token: str):
             "message": "API Token is invalid."
         }
 
+@app.get("/get-api-key")
+def get_api_key(api_token: str):
+    return {
+        "API_KEY": API_KEY,
+        "api_token": api_token,
+    }
+
 
 # @app.get("/build-chunked-dataset")
 # def build_chunked_dataset():
