@@ -58,6 +58,20 @@ def test_evaluation(api_token: str):
             "message": "API Token is invalid."
         }
 
+@app.get("/check-paths")
+def check_paths(api_token: str):
+    if api_token == API_KEY:
+        service = RFTrainingService();
+        response = service.check_all_paths()
+        
+        return {
+            "paths": response,
+        }
+    else:
+        return {
+            "message": "API Token is invalid."
+        }
+
 # @app.get("/build-chunked-dataset")
 # def build_chunked_dataset():
 #     service = ModelTrainingService();

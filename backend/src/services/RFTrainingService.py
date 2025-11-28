@@ -113,3 +113,19 @@ class RFTrainingService:
         joblib.dump(pipeline, RF_FULL_PATH)
 
         print(f"✅ Training complete. Saved pipeline to:\n{RF_FULL_PATH}")
+
+    def check_all_paths(self) -> dict:
+        results = {}
+
+        paths_to_check = {
+            "RAW_DATASET_PATH": RAW_DATASET_PATH,
+            "FULL_DATASET_DATASET_PATH": FULL_DATASET_DATASET_PATH,
+            "FULL_DATASET_TRAIN_DATASET_PATH": FULL_DATASET_TRAIN_DATASET_PATH,
+            "FULL_DATASET_TEST_DATASET_PATH": FULL_DATASET_TEST_DATASET_PATH,
+            "RF_FULL_PATH": RF_FULL_PATH,
+        }
+
+        for name, path in paths_to_check.items():
+            results[name] = os.path.exists(path)
+
+        return results
