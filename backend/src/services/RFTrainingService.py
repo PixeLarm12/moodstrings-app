@@ -110,7 +110,7 @@ class RFTrainingService:
         pipeline.fit(X, y)
 
         print("💾 Saving FULL pipeline...")
-        joblib.dump(pipeline, RF_FULL_PATH)
+        joblib.dump(pipeline, RF_FULL_PATH, compress=3)
 
         print(f"✅ Training complete. Saved pipeline to:\n{RF_FULL_PATH}")
 
