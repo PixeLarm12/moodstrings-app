@@ -1,4 +1,5 @@
-import json
+from dotenv import load_dotenv
+import os
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from src.controllers import AudioController as audio_controller
@@ -6,6 +7,9 @@ from src.services.ModelTrainingService import ModelTrainingService
 from src.services.RandomForestService import RandomForestService
 from src.services.RFTrainingService import RFTrainingService
 from src.services.XMIDIService import XMIDIService
+
+load_dotenv()
+API_KEY = os.getenv("API_DATASET_TOKEN")
 
 app = FastAPI()
 
@@ -41,13 +45,19 @@ async def get_progression_info(
 #     return await audio_controller.get_musical_sheet_to_download(uploaded_file)
 
 @app.get("/test-evaluation")
-def test_evaluation():
-    service = RandomForestService();
-    full = service.evaluate_model_balanced()
-    
-    return {
-        "full": full,
-    }
+def test_evaluation(api_token: str):
+    if api_token == API_KEY:
+        service = RandomForestService();
+        full = service.evaluate_full_ngrams()
+        
+        return {
+            "evaluation": full,
+        }
+    else:
+        return {
+            "message": "API Token is invalid."
+        }
+
 
 # @app.get("/build-chunked-dataset")
 # def build_chunked_dataset():
@@ -90,26 +100,41 @@ def test_evaluation():
 
 
 @app.get("/build-full-dataset")
-def build_full_dataset():
-    service = RFTrainingService();
-    service.build_full_dataset()
-    
-    return { "message": "built full dataset" }
+def build_full_dataset(api_token: str):
+    if api_token == API_KEY:
+        service = RFTrainingService();
+        service.build_full_dataset()
+        
+        return { "message": "Full dataset ngrams built succesfully!" }
+    else:
+        return {
+            "message": "API Token is invalid."
+        }
 
 @app.get("/split-full_dataset")
-def split_full_dataset():
-    service = RFTrainingService();
-    service.split_full_dataset()
-    
-    return {
-        "message": "splitted full dataset"
-    }
+def split_full_dataset(api_token: str):
+    if api_token == API_KEY:
+        service = RFTrainingService();
+        service.split_full_dataset()
+        
+        return {
+            "message": "Full dataset ngrams splitted succesfully!"
+        }
+    else:
+        return {
+            "message": "API Token is invalid."
+        }
 
 @app.get("/train-full-dataset")
-def train_full_dataset():
-    service = RFTrainingService();
-    service.train_full_dataset()
+def train_full_dataset(api_token: str):
+    if api_token == API_KEY:
+        service = RFTrainingService();
+        service.train_full_dataset()
 
-    return {
-        "message": "trained full random forest"
-    }
+        return {
+            "message": "Full dataset ngrams random forest model trained succesfully!"
+        }
+    else:
+        return {
+            "message": "API Token is invalid."
+        }
