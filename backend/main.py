@@ -89,27 +89,27 @@ def test_evaluation():
 #     }
 
 
-# @app.get("/build-full-dataset")
-# def build_full_dataset():
-#     service = RFTrainingService();
-#     service.build_full_dataset()
+@app.get("/build-full-dataset")
+def build_full_dataset():
+    service = RFTrainingService();
+    service.build_full_dataset()
     
-#     return { "message": "built full dataset" }
+    return { "message": "built full dataset" }
 
-# @app.get("/split-full_dataset")
-# def split_full_dataset():
-#     service = RFTrainingService();
-#     service.split_full_dataset()
+@app.get("/split-full_dataset")
+def split_full_dataset():
+    service = RFTrainingService();
+    service.split_full_dataset()
     
-#     return {
-#         "message": "splitted full dataset"
-#     }
+    return {
+        "message": "splitted full dataset"
+    }
 
-# @app.get("/train-full-dataset")
-# def train_full_dataset():
-#     service = RFTrainingService();
-#     service.train_full_dataset()
+@app.get("/train-full-dataset")
+def train_full_dataset():
+    service = RFTrainingService();
+    service.train_full_dataset()
 
-#     return {
-#         "message": "trained full random forest"
-#     }
+    return {
+        "message": "trained full random forest"
+    }
