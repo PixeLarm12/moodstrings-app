@@ -19,7 +19,5 @@ def validate(file):
         errors.append({"message": "Content type mp3 does not corresponds for mp3 file"})
     elif (content_type == "audio/webm" and file_extension != ".webm") or (content_type != "audio/webm" and file_extension == ".webm"):
         errors.append({"message": "Content type mp3 does not corresponds for webm file"})
-    elif (content_type == "audio/mid" and (file_extension != ".mid" or file_extension != ".midi")) or (content_type != "audio/mid" and (file_extension == ".mid" or file_extension == ".midi")):
-        errors.append({"message": "Content type mp3 does not corresponds for midi file"})
     
     return errors

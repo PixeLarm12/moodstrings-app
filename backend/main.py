@@ -43,7 +43,7 @@ async def get_progression_info(
 @app.get("/test-evaluation")
 def test_evaluation():
     service = RandomForestService();
-    full = service.evaluate_model_balanced()
+    full = service.evaluate_full_ngrams()
     
     return {
         "full": full,
@@ -105,11 +105,11 @@ def test_evaluation():
 #         "message": "splitted full dataset"
 #     }
 
-# @app.get("/train-full-dataset")
-# def train_full_dataset():
-#     service = RFTrainingService();
-#     service.train_full_dataset()
+@app.get("/train-full-dataset")
+def train_full_dataset():
+    service = RFTrainingService();
+    service.train_full_dataset()
 
-#     return {
-#         "message": "trained full random forest"
-#     }
+    return {
+        "message": "trained full random forest"
+    }

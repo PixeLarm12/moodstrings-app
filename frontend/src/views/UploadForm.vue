@@ -70,11 +70,13 @@
       <!-- UPLOAD FORM -->
       <form v-if="showUploadForm" @submit.prevent="handleSubmit" class="space-y-4">
         <audio
-          v-if="uploadedFileUrl"
+          v-if="showAudioPlayer"
           :src="uploadedFileUrl"
           controls
           class="mt-4 w-full"
         ></audio>
+
+        <h3 v-else-if="!showAudioPlayer && file" class="font-semibold italic">{{ file.name }}</h3>
 
         <label
           v-if="!optionRecordMic"
@@ -150,6 +152,7 @@ export default {
     return {
       file: null,
       uploadedFileUrl: null,
+      fileExtension: "",
       isAudioRecorded: false,
       optionRecordMic: false,
       loading: false,
@@ -186,6 +189,8 @@ export default {
       if (this.file) {
         this.uploadedFileUrl = URL.createObjectURL(this.file)
       }
+
+      this.fileExtension = this.file.name.split('.').pop().toLowerCase()
     },
     async handleSubmit() {
       if (!this.file) {
@@ -410,7 +415,16 @@ export default {
     },
     submitReadOnlyChecker() {
       return this.file
-    }
+    },
+    showAudioPlayer() {
+      let isAbleToPlay = false;
+
+      if(this.fileExtension == "mp3" || this.fileExtension == "webm"){
+        isAbleToPlay = true;
+      }
+
+      return isAbleToPlay
+    },
   },
   watch: {
     optionRecordMic(newVal, oldValue){
