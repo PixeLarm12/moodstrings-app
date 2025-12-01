@@ -371,6 +371,7 @@ export default {
       this.file = audioFile
       this.isAudioRecorded = true
       this.uploadedFileUrl = URL.createObjectURL(audioFile)
+      this.fileExtension = audioFile.name.split('.').pop().toLowerCase()
     },
     handleFormReset(){
       this.cleanFields()
