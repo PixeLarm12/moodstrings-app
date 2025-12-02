@@ -379,6 +379,8 @@ export default {
       this.optionRecordMic = false
       this.showValidationForm = false
       this.showProgressionInfo = false
+      this.fileExtension = ""
+      this.file = null
     },
     async findLyrics() {
       if (!this.file) {
