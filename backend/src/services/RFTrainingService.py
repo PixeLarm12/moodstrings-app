@@ -141,3 +141,59 @@ class RFTrainingService:
         joblib.dump(pipeline, RF_FULL_PATH)
 
         print(f"✅ Training complete. Saved pipeline to:\n{RF_FULL_PATH}")
+
+    def evaluate_final_rf(self):
+        print("📘 Loading test dataset...")
+        if not os.path.exists(FULL_DATASET_TEST_DATASET_PATH):
+            raise FileNotFoundError(
+                f"Test dataset missing: {FULL_DATASET_TEST_DATASET_PATH}"
+            )
+
+        df_test = pd.read_csv(FULL_DATASET_TEST_DATASET_PATH)
+        df_test = df_test.dropna(subset=["ngrams_input", "emotion"])
+
+        X_test = df_test["ngrams_input"].astype(str)
+        y_test = df_test["emotion"].astype(str)
+
+        print("🔍 Loading saved pipeline...")
+        if not os.path.exists(RF_FULL_PATH):
+            raise FileNotFoundError(
+                f"Trained RF model not found: {RF_FULL_PATH}"
+            )
+
+        pipeline = joblib.load(RF_FULL_PATH)
+
+        print("🧪 Evaluating model...")
+        y_pred = pipeline.predict(X_test)
+
+        accuracy = accuracy_score(y_test, y_pred)
+
+        metrics_report = classification_report(
+            y_test,
+            y_pred,
+            digits=4,
+            output_dict=True
+        )
+
+        print("\n📊 FINAL RANDOM FOREST EVALUATION")
+        print("======================================")
+        print(f"🎯 Accuracy: {accuracy:.4f}\n")
+
+        emotions = ["happy", "sad", "angry", "calm"] 
+
+        for emo in emotions:
+            if emo in metrics_report:
+                print(f"🟦 Emotion: {emo}")
+                print(f"   Precision: {metrics_report[emo]['precision']:.2f}")
+                print(f"   Recall:    {metrics_report[emo]['recall']:.2f}")
+                print(f"   F1-Score:  {metrics_report[emo]['f1-score']:.2f}")
+                print(f"   Support:   {metrics_report[emo]['support']}")
+                print("--------------------------------------")
+
+        print("📄 Classification report completo:")
+        print(classification_report(y_test, y_pred, digits=4))
+
+        return {
+            "accuracy": accuracy,
+            "metrics": metrics_report
+        }

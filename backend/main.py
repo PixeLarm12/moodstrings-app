@@ -42,9 +42,9 @@ async def get_progression_info(
 
 @app.get("/test-evaluation")
 def test_evaluation():
-    service = RandomForestService();
-    full = service.evaluate_full_ngrams()
-    
+    service = RFTrainingService();
+    full = service.evaluate_final_rf()
+
     return {
         "full": full,
     }
